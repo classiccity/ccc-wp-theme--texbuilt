@@ -41,7 +41,6 @@
 !/wp-content/mu-plugins/
 /wp-content/mu-plugins/*
 !/wp-content/mu-plugins/ccc-fix-auth-header.php
-!/wp-content/mu-plugins/ccc-auth-debug.php
 
 # macOS cruft should never be tracked, even inside whitelisted folders.
 **/.DS_Store
