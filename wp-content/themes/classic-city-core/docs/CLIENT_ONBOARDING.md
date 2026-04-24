@@ -435,13 +435,111 @@ placeholders).
 
 ---
 
-## Phase 11 — Start authoring content
+## Phase 11 — Start authoring content (manual / admin)
 
 From here on, content work happens in WPE admin on the **staging**
 environment. Production stays clean until explicitly promoted via
 **Copy Environment** in the WPE User Portal.
 
 Nothing about content / media / menus goes into git — only code.
+
+---
+
+## Phase 12 — Deploy content programmatically (hybrid REST + wp-cli)
+
+When pre-building pages elsewhere (e.g., in the style-guide sandbox)
+and pushing them into a fresh client install, use this hybrid:
+
+- **REST API** for reads (list themes, check user, fetch existing
+  pages) and simple writes that WPE doesn't flag (settings updates).
+- **wp-cli over SSH Gateway** for content writes that WPE's WAF
+  blocks — namely `POST /wp/v2/media` and `POST /wp/v2/pages`. The
+  WAF returns 403 from nginx for both on default WPE installs.
+
+### Media upload pattern
+
+Each file:
+
+```bash
+# 1. Pipe the file up (SSH Gateway blocks scp's sftp subsystem)
+cat ~/path/to/image.jpg | \
+  ssh {install}@{install}.ssh.wpengine.net \
+  "cat > /home/wpe-user/sites/{install}/image.jpg"
+
+# 2. Import via wp-cli — --porcelain returns just the attachment ID
+NEW_ID=$(ssh {install}@{install}.ssh.wpengine.net \
+  "cd /home/wpe-user/sites/{install} && wp media import image.jpg --porcelain && rm image.jpg")
+```
+
+### ID remapping for block content
+
+If you pre-built Gutenberg block content against a sandbox install,
+the block attributes store attachment IDs that won't match the new
+install. Upload the media first (captures new IDs), then rewrite the
+block content's `"image":<N>` literals from sandbox IDs to WPE IDs
+before creating the page:
+
+```python
+# In a Python rewrite step
+pattern = re.compile(rf'(?<=":){sandbox_id}(?=[,}}])')
+new_content = pattern.sub(str(wpe_id), content)
+```
+
+The negative lookbehind for `":` and lookahead for `,` or `}` prevents
+collision with unrelated numbers (alt text lengths, positions, etc).
+
+### Page creation via wp-cli
+
+```bash
+# Write the rewritten block content to a file, pipe it up, create the page.
+cat rewritten-content.html | \
+  ssh {install}@{install}.ssh.wpengine.net \
+  "cat > /home/wpe-user/sites/{install}/content.html"
+
+PAGE_ID=$(ssh {install}@{install}.ssh.wpengine.net \
+  "cd /home/wpe-user/sites/{install} && \
+   wp post create content.html \
+     --post_type=page \
+     --post_title='Home' \
+     --post_name='home' \
+     --post_status='publish' \
+     --porcelain && \
+   rm content.html")
+```
+
+### Setting as front page
+
+Either via REST (settings endpoint is not WAF-blocked):
+
+```bash
+curl -u "USER:APP_PASSWORD" -X POST \
+  -H "Content-Type: application/json" \
+  -d "{\"show_on_front\":\"page\",\"page_on_front\":$PAGE_ID}" \
+  "https://{install}.wpengine.com/wp-json/wp/v2/settings"
+```
+
+Or via wp-cli (same SSH session):
+
+```bash
+wp option update show_on_front page
+wp option update page_on_front $PAGE_ID
+```
+
+### What DOES work via REST on WPE
+
+- `GET` anything (auth'd or public)
+- `POST /wp/v2/settings` — site options (tested, works)
+- Custom endpoints defined by plugins/themes (not WAF-flagged)
+
+### What requires wp-cli
+
+- `POST /wp/v2/media` (all file uploads)
+- `POST /wp/v2/pages` and `POST /wp/v2/posts` with full block content
+- Any write with `.jpg`/`.png`/`.mp4` in the query string
+
+The WAF rules can be relaxed via WPE support request if you need
+full REST write access, but the wp-cli path is reliable and doesn't
+require WPE-side config changes.
 
 ---
 
@@ -570,6 +668,9 @@ Whitelist addition in `.gitignore`:
 | REST API returns `rest_not_logged_in` 401 even with correct credentials | WPE strips `Authorization` header before PHP sees it | Deploy `ccc-fix-auth-header.php` mu-plugin (restores HTTP_AUTHORIZATION + PHP_AUTH_USER/PW from WPE's CGI variables) |
 | REST API still 401 after the mu-plugin | Wrong username (using the name vs the email-login) | Hit `/wp/v2/users/me` with both forms — WPE often provisions admins with `user_login = email address` |
 | Theme activation not supported via REST API | WP core's `/wp/v2/themes` is read-only | Either activate manually in wp-admin, use `wp theme activate` via SSH Gateway, or ship a bootstrap mu-plugin that auto-activates on first load |
+| REST API POST to `/wp/v2/media` returns 403 from nginx | WPE's WAF blocks REST media uploads by default | Use `wp media import <file>` via SSH Gateway instead. Pipe the file up first: `cat local.jpg \| ssh … "cat > /home/wpe-user/sites/{install}/f.jpg"`, then `wp media import f.jpg --porcelain` to get the new attachment ID. |
+| REST API POST to `/wp/v2/pages` returns 403 from nginx | Same WPE WAF category — write endpoints that accept arbitrary content are blocked | Use `wp post create <content-file> --post_type=page --post_title="…" --post_name="…" --post_status=publish --porcelain` via SSH. Reads (`GET`) still work via REST. |
+| REST API `search=something.jpg` returns 403 | WPE WAF flags `.jpg` in query strings as suspicious | Drop the query-string check, or do the listing via wp-cli: `wp post list --post_type=attachment --format=json` |
 
 ---
 
@@ -735,6 +836,18 @@ after two examples. A good home for the script is
   a Plain-permalinks gotcha. The `?rest_route=` fallback URL is
   still valid and more resilient (works under any permalink
   structure), but the canonical `/wp-json/` URLs now work too.
+- **2026-04-24 (evening, follow-up 3)** — Deployed the TexBuilt
+  homepage content to the WPE install programmatically (13 images
+  + ~11KB block content → live page at install root). Discovered
+  that WPE's WAF blocks REST writes on `POST /wp/v2/media` and
+  `POST /wp/v2/pages` with 403s from nginx, and query strings
+  containing image extensions (`.jpg`, etc) also get flagged.
+  Added a new **Phase 12 — Deploy content programmatically** that
+  documents the hybrid pattern: REST for reads + settings writes,
+  wp-cli over SSH Gateway for media uploads + page/post creation.
+  Includes a Python ID-remapping snippet for rewriting Gutenberg
+  block content when moving pre-built pages between installs.
+  Three new pitfalls table entries for the specific 403 scenarios.
 - **2026-04-24 (late pm)** — **Converted parent theme from submodule to
   subtree** across the entire runbook. WP Engine's Git Push pipeline
   has a "checking submodules" step but does NOT actually clone
