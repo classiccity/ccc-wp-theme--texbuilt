@@ -4,7 +4,8 @@ Step-by-step for spinning up a new client site. Target state at the end:
 - A WP Engine install running the parent theme + a new client-specific
   child theme.
 - A GitHub repo holding the client's **site-root** directory (with the
-  parent theme as a submodule and child theme versioned directly).
+  parent theme merged in as a git subtree and the child theme versioned
+  directly).
 - A Local site mirroring the WPE install for local dev.
 
 > **Important architectural note:** The client repo root is the
@@ -105,8 +106,8 @@ cd "/Users/chris/Local Sites/{SITE_NAME}/app/public"
 rm -rf .git
 git init -b main
 
-# Set origin to the repo created in Phase 3. Use SSH so submodules work
-# without credential prompts.
+# Set origin to the repo created in Phase 3. Use SSH so the upstream
+# parent fetch (Phase 7) and future deploys don't prompt for credentials.
 git remote add origin git@github.com:classiccity/ccc-wp-theme--{slug}.git
 ```
 
@@ -125,7 +126,6 @@ and un-ignores only the paths we version:
 
 # Un-ignore repo metadata.
 !/.gitignore
-!/.gitmodules
 
 # Un-ignore the path down to our versioned theme folders.
 !/wp-content/
@@ -147,18 +147,39 @@ to git.
 
 ---
 
-## Phase 7 — Add the parent theme as a submodule
+## Phase 7 — Add the parent theme as a subtree
+
+**Not a submodule.** WP Engine's Git Push has a "checking submodules"
+step in its deploy pipeline but does NOT actually clone submodule
+content into the deploy target, so submoduled parent themes deploy as
+empty directories. Subtree merges the parent theme's files directly
+into the client repo as real tracked content, which WPE pushes fine.
 
 ```bash
 cd "/Users/chris/Local Sites/{SITE_NAME}/app/public"
-git submodule add git@github.com:classiccity/ccc-wp-theme.git wp-content/themes/classic-city-core
+
+# Add a named remote for the upstream parent so later `subtree pull`
+# commands can reference it by name instead of retyping the URL.
+git remote add upstream-parent git@github.com:classiccity/ccc-wp-theme.git
+
+# Merge the parent theme into wp-content/themes/classic-city-core as a
+# squashed subtree. --squash collapses all upstream history into a
+# single "Squashed ... content from commit <sha>" commit, keeping the
+# client repo's history clean.
+git subtree add --prefix=wp-content/themes/classic-city-core \
+  upstream-parent main --squash
 ```
 
-This clones the parent theme into `wp-content/themes/classic-city-core/`
-and creates a `.gitmodules` file recording the submodule pointer.
+After this, `wp-content/themes/classic-city-core/` contains real files
+(not a submodule pointer). The parent theme is now part of the client
+repo's working tree and history.
 
-**Verification:** `ls wp-content/themes/classic-city-core/` shows the
-parent theme files. `cat .gitmodules` shows the submodule path + URL.
+**Verification:**
+```bash
+ls wp-content/themes/classic-city-core/style.css   # should exist
+git log --oneline -3                               # shows two commits:
+                                                   # the merge, and the squash
+```
 
 ---
 
@@ -188,17 +209,19 @@ find "/Users/chris/Local Sites/{SITE_NAME}/app/public/wp-content/themes/sg-{slug
 - **`landing/index.html`** (if present) — update brand copy, contact
   details, image URLs.
 
-Commit everything:
+Commit the child theme and the gitignore:
 
 ```bash
 cd "/Users/chris/Local Sites/{SITE_NAME}/app/public"
-git add .gitignore wp-content/themes/sg-{slug} wp-content/themes/classic-city-core .gitmodules
-git commit -m "Initial repo: parent submodule + sg-{slug} child theme"
+git add .gitignore wp-content/themes/sg-{slug}
+git commit -m "Add sg-{slug} child theme"
 ```
 
-**Verification:** `git log --oneline` shows one commit with
-`.gitignore`, `.gitmodules`, the submodule pointer, and all the child
-theme files.
+(The parent-theme subtree was already committed in Phase 7, so we
+don't need to re-add it here.)
+
+**Verification:** `git log --oneline` shows three commits: the
+subtree-squash, the subtree merge, and the child theme add.
 
 ---
 
@@ -285,22 +308,31 @@ wpe is the deploy remote.
 **Pulling parent theme updates into this client:**
 ```bash
 cd "/Users/chris/Local Sites/{SITE_NAME}/app/public"
-git submodule update --remote wp-content/themes/classic-city-core
-# Review what changed in the parent theme:
-( cd wp-content/themes/classic-city-core && git log --oneline HEAD@{1}..HEAD )
-# If happy, lock the new pointer in:
-git add wp-content/themes/classic-city-core
-git commit -m "Bump classic-city-core to latest"
+
+# If you haven't already, add the named remote pointing at the parent
+# repo — one-time, per client checkout:
+# git remote add upstream-parent git@github.com:classiccity/ccc-wp-theme.git
+
+git subtree pull --prefix=wp-content/themes/classic-city-core \
+  upstream-parent main --squash
+
 git push origin main
 git push wpe main
 ```
+
+`--squash` is important — without it, you get the full parent-repo
+history merged into the client repo on every pull, which makes `git log`
+messy fast. With `--squash`, each upstream pull collapses to a single
+merge commit regardless of how many upstream commits it brings in.
 
 **Pulling changes authored by another teammate on GitHub:**
 ```bash
 cd "/Users/chris/Local Sites/{SITE_NAME}/app/public"
 git pull origin main
-git submodule update --init --recursive
 ```
+
+No submodule dance needed — the parent theme files are part of the
+client repo's own tree.
 
 ---
 
@@ -369,11 +401,11 @@ Whitelist addition in `.gitignore`:
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `Repository not found` on `git submodule add` over HTTPS | Private repo, no cached credentials | Use SSH form (`git@github.com:...`) and verify `ssh -T git@github.com` works |
+| `Repository not found` on `git subtree add` or `git clone` over HTTPS | Private repo, no cached credentials | Use SSH form (`git@github.com:...`) and verify `ssh -T git@github.com` works |
 | `Permission denied (publickey)` on GitHub | No SSH key registered | `ssh-keygen` → add `.pub` to GitHub → verify |
-| Submodule clones but is empty on another machine | Cloned without `--recurse-submodules` | `git submodule update --init --recursive` |
-| Parent theme changes don't show up on a client site | Forgot to bump the submodule pointer | `git submodule update --remote wp-content/themes/classic-city-core && git commit` |
-| Push to WPE succeeds but themes are 404 at `/wp-content/themes/...` | Repo is scoped to the themes folder instead of site root | Restructure: git repo root needs to be `app/public/`, with `wp-content/themes/...` paths inside. See the Restructure appendix. |
+| Push to WPE succeeds but parent theme is missing on the server (child theme can't activate) | Parent theme was added as a submodule, not a subtree. WPE's "checking submodules" step doesn't actually clone submodule content. | Remove the submodule (`git submodule deinit`, `git rm`, delete `.gitmodules`) and re-add via `git subtree add --squash`. See the "Submodule-to-subtree migration" appendix. |
+| Parent theme changes don't show up on a client site | Forgot to pull the subtree update | `git subtree pull --prefix=wp-content/themes/classic-city-core upstream-parent main --squash` then push to both remotes |
+| Push to WPE succeeds but themes are 404 at `/wp-content/themes/...` | Repo is scoped to the themes folder instead of site root | Restructure: git repo root needs to be `app/public/`, with `wp-content/themes/...` paths inside. See the "Site-root restructure" appendix. |
 | Leftover files at site root after a restructured push | WPE Git Push is additive — never deletes files removed between pushes | SFTP in (or WPE File Manager in User Portal) and delete the stale folders manually |
 | Pushing to `wpe` remote hangs or denies | SSH key not on Git Push tab for that install | WPE User Portal → Install → Git Push → add `~/.ssh/id_ed25519.pub` |
 | `ssh {install}@{install}.ssh.wpengine.net` says publickey denied | SSH Gateway uses a different key registration than Git Push | WPE User Portal → Install → SSH Gateway → add the same key separately |
@@ -386,11 +418,10 @@ Whitelist addition in `.gitignore`:
 
 ---
 
-## Restructure appendix
+## Site-root restructure appendix
 
 If you already pushed a repo scoped to the themes folder (like TexBuilt's
-first attempt) and want to move to site-root scope without losing
-branching history:
+first attempt) and want to move to site-root scope:
 
 ```bash
 cd "/Users/chris/Local Sites/{SITE_NAME}/app/public"
@@ -400,14 +431,15 @@ cp -R wp-content/themes/sg-{slug} /tmp/sg-{slug}-backup-$(date +%s)
 
 # Nuke the old themes-folder repo state
 rm -rf wp-content/themes/.git wp-content/themes/.gitmodules wp-content/themes/.gitignore
-rm -rf wp-content/themes/classic-city-core  # submodule checkout, re-add later
+rm -rf wp-content/themes/classic-city-core
 
-# Init fresh at site root
+# Init fresh at site root and follow Phases 5–8 of the main runbook.
 git init -b main
 # ... write the whitelist .gitignore from Phase 6 ...
-git submodule add git@github.com:classiccity/ccc-wp-theme.git wp-content/themes/classic-city-core
-git add .gitignore .gitmodules wp-content/themes/sg-{slug} wp-content/themes/classic-city-core
-git commit -m "Initial repo: site-root layout for WPE Git Push"
+git remote add upstream-parent git@github.com:classiccity/ccc-wp-theme.git
+git subtree add --prefix=wp-content/themes/classic-city-core upstream-parent main --squash
+git add .gitignore wp-content/themes/sg-{slug}
+git commit -m "Add sg-{slug} child theme"
 
 # Wire remotes + force push (replaces the old GitHub + WPE branches)
 git remote add origin git@github.com:classiccity/ccc-wp-theme--{slug}.git
@@ -417,8 +449,43 @@ git push --force wpe main
 ```
 
 Expect ~5 minutes of manual cleanup afterward: the old misplaced files
-at the WPE site root aren't auto-deleted by git push, so SFTP in and
-delete them.
+at the WPE site root aren't auto-deleted by git push, so SFTP in (or
+use WPE File Manager) and delete them.
+
+---
+
+## Submodule-to-subtree migration appendix
+
+If you already have a client repo with the parent theme as a submodule
+and want to convert to subtree (because WPE Git Push doesn't extract
+submodule content — leaves the parent theme empty on the server):
+
+```bash
+cd "/Users/chris/Local Sites/{SITE_NAME}/app/public"
+
+# De-register the submodule, remove its files, remove the .gitmodules file.
+git submodule deinit -f wp-content/themes/classic-city-core
+git rm -f wp-content/themes/classic-city-core
+rm -rf .git/modules/wp-content/themes/classic-city-core
+rm -f .gitmodules
+git add -A .gitmodules
+git commit -m "Remove classic-city-core submodule (converting to subtree)"
+
+# Add upstream remote + pull parent in as a squashed subtree.
+git remote add upstream-parent git@github.com:classiccity/ccc-wp-theme.git 2>/dev/null || true
+git subtree add --prefix=wp-content/themes/classic-city-core \
+  upstream-parent main --squash
+
+# Push to both origins. No --force needed — this is a forward migration.
+git push origin main
+git push wpe main
+```
+
+**Verification:** after the WPE deploy completes,
+`curl -I https://{install}.wpengine.com/wp-content/themes/classic-city-core/style.css`
+returns 200. The WP admin → Appearance → Themes panel lists both the
+parent and child themes, and the child theme activates without
+reverting.
 
 ---
 
@@ -441,7 +508,7 @@ to click something in Local or the WPE portal. Realistic scope:
 - `gh repo create` for the client repo
 - `git init` at site root
 - Writing the `.gitignore` with substituted slug
-- `git submodule add` the parent theme
+- `git subtree add --squash` the parent theme (named remote pre-added)
 - Copy child theme template, substitute placeholders (slug, name,
   colors, font stack)
 - Commit + push to GitHub
@@ -487,3 +554,13 @@ after two examples. A good home for the script is
   Also noted that WP core's REST API doesn't support theme activation;
   documented the three fallback paths (manual click / SSH+WP-CLI /
   bootstrap mu-plugin).
+- **2026-04-24 (late pm)** — **Converted parent theme from submodule to
+  subtree** across the entire runbook. WP Engine's Git Push pipeline
+  has a "checking submodules" step but does NOT actually clone
+  submodule content into the deploy target — result was the parent
+  theme directory was empty on WPE and `sg-texbuilt` couldn't activate.
+  TexBuilt was migrated mid-session using `git subtree add --squash`;
+  Phases 7 + "Ongoing workflow" + pitfalls rewritten; added the
+  Submodule-to-subtree migration appendix for any future client repos
+  set up the old way; ARCHITECTURE.md "Why submodule" section rewritten
+  as "Why subtree" with the WPE limitation explained.
