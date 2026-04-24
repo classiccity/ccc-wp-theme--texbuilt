@@ -146,6 +146,13 @@ wp option update rg_gforms_key '$GF_KEY'
 wp option update blogname '$CLIENT_NAME'
 wp option update blogdescription 'A website for $CLIENT_NAME'
 
+# Permalinks: post name only. Fresh WP installs default to "Plain"
+# (?p=123) which breaks /wp-json/ REST API routes — requests hit the
+# homepage instead of the API handler. Post-name permalinks both look
+# nicer AND enable standard REST URLs to work.
+wp rewrite structure '/%postname%/'
+wp rewrite flush
+
 # Remove WPE default plugins we don't want. Conditional so we don't
 # error when they're not there (some WPE install templates don't
 # ship them).
@@ -171,11 +178,13 @@ wp plugin list --status=active --fields=name,version --format=table
 echo ""
 echo "blogname:        \$(wp option get blogname)"
 echo "blogdescription: \$(wp option get blogdescription)"
+echo "permalink:       \$(wp option get permalink_structure)"
 EOF
 ```
 
 Expected: three active plugins (ACF Pro, Gravity Forms, Yoast SEO),
-site name = `$CLIENT_NAME`, description = "A website for $CLIENT_NAME".
+site name = `$CLIENT_NAME`, description = "A website for $CLIENT_NAME",
+permalink structure = `/%postname%/`.
 
 ### 1b-gotchas learned during TexBuilt onboarding
 
@@ -557,7 +566,7 @@ Whitelist addition in `.gitignore`:
 | `ssh {install}@{install}.ssh.wpengine.net` says publickey denied | SSH Gateway uses a different key registration than Git Push | WPE User Portal → Install → SSH Gateway → add the same key separately |
 | Hash URLs like `#contact` won't save in ACF fields | ACF's URL field rejects bare fragments | Already handled by `inc/acf-validations.php` in the parent theme |
 | `wp theme activate` via WPE SSH fails | SSH Gateway not set up or WP-CLI not in default PATH | Set up SSH Gateway key first, then SSH and run `wp theme activate` in the install directory |
-| REST API returns HTML instead of JSON for `/wp-json/…` | Permalinks are set to "Plain" on a fresh install | Either switch permalinks to non-plain OR use the `?rest_route=…` URL form. The query-string form is universally compatible. |
+| REST API returns HTML instead of JSON for `/wp-json/…` | Permalinks are still set to "Plain" (Phase 1b's `wp rewrite structure` didn't run or got reverted) | Either rerun `wp rewrite structure '/%postname%/'` via SSH, flip it in Settings → Permalinks, OR use the `?rest_route=…` URL form which works under any permalink structure. |
 | REST API returns `rest_not_logged_in` 401 even with correct credentials | WPE strips `Authorization` header before PHP sees it | Deploy `ccc-fix-auth-header.php` mu-plugin (restores HTTP_AUTHORIZATION + PHP_AUTH_USER/PW from WPE's CGI variables) |
 | REST API still 401 after the mu-plugin | Wrong username (using the name vs the email-login) | Hit `/wp/v2/users/me` with both forms — WPE often provisions admins with `user_login = email address` |
 | Theme activation not supported via REST API | WP core's `/wp/v2/themes` is read-only | Either activate manually in wp-admin, use `wp theme activate` via SSH Gateway, or ship a bootstrap mu-plugin that auto-activates on first load |
@@ -719,6 +728,13 @@ after two examples. A good home for the script is
   remove WPE-default plugins Genesis Blocks and Akismet when they
   exist. Added a security callout that `keys.txt` contains secrets
   and must never be committed or uploaded.
+- **2026-04-24 (evening, follow-up 2)** — Added permalink structure
+  to Phase 1b: `wp rewrite structure '/%postname%/'` runs with the
+  other site meta commands. Nice side effect — this also fixes the
+  REST API `/wp-json/` routing issue that was documented earlier as
+  a Plain-permalinks gotcha. The `?rest_route=` fallback URL is
+  still valid and more resilient (works under any permalink
+  structure), but the canonical `/wp-json/` URLs now work too.
 - **2026-04-24 (late pm)** — **Converted parent theme from submodule to
   subtree** across the entire runbook. WP Engine's Git Push pipeline
   has a "checking submodules" step but does NOT actually clone
