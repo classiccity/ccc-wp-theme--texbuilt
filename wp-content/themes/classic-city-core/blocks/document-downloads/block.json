@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/document-downloads",
+	"title": "Document Downloads",
+	"description": "List of downloadable documents. Each item links to a file and shows its type icon.",
+	"category": "theme",
+	"icon": "download",
+	"keywords": [
+		"downloads",
+		"documents",
+		"files",
+		"pdf"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"align": [
+			"wide",
+			"full"
+		],
+		"anchor": true,
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "auto",
+		"renderTemplate": "render.php"
+	}
+}

@@ -1,0 +1,35 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/hero-full-image",
+	"title": "Hero: Full Image",
+	"description": "Full-width hero with a headline over a full-bleed background image, plus a card for body/button on top.",
+	"category": "theme",
+	"icon": "format-image",
+	"keywords": [
+		"hero",
+		"full image",
+		"banner"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"jsx": true,
+		"align": [
+			"full"
+		],
+		"anchor": true,
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}

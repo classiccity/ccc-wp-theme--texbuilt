@@ -1,0 +1,41 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/feature-grid",
+	"title": "Feature Grid",
+	"description": "3-column grid of features, each with an icon, heading, and body.",
+	"category": "theme",
+	"icon": "screenoptions",
+	"keywords": [
+		"features",
+		"grid",
+		"icons"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"align": [
+			"wide",
+			"full"
+		],
+		"anchor": true,
+		"color": {
+			"background": true,
+			"gradients": false,
+			"text": false,
+			"link": false
+		},
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "auto",
+		"renderTemplate": "render.php"
+	}
+}

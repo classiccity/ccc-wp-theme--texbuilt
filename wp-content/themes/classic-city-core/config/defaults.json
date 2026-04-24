@@ -1,0 +1,103 @@
+{
+  "colorNames": [
+    "cta",
+    "cta-alt",
+    "primary",
+    "primary-alt",
+    "secondary",
+    "secondary-alt",
+    "tertiary",
+    "tertiary-alt",
+    "light",
+    "light-alt",
+    "dark",
+    "dark-alt"
+  ],
+  "typeScale": {
+    "h1": 48,
+    "h2": 38,
+    "h3": 30,
+    "h4": 24,
+    "h5": 20,
+    "h6": 16,
+    "h1Min": 32,
+    "h2Min": 26,
+    "h3Min": 22,
+    "h4Min": 20,
+    "h5Min": 18,
+    "h6Min": 16,
+    "bodyXs": 12,
+    "bodySm": 14,
+    "bodyMd": 16,
+    "bodyLg": 18,
+    "body2xl": 22
+  },
+  "spacing": [
+    10,
+    20,
+    30,
+    40,
+    50,
+    60,
+    70,
+    80,
+    90,
+    100
+  ],
+  "shadows": [
+    {
+      "name": "sm",
+      "value": "0 1px 2px 0 rgba(0,0,0,0.05)"
+    },
+    {
+      "name": "md",
+      "value": "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)"
+    },
+    {
+      "name": "lg",
+      "value": "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)"
+    },
+    {
+      "name": "xl",
+      "value": "0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)"
+    }
+  ],
+  "headingBaseFontSize": "1.2rem",
+  "bodyBaseFontSize": "1rem",
+  "bodyBackgroundColor": "#FFFFFF",
+  "headingLetterSpacing": "-0.02em",
+  "eyebrowLetterSpacing": "0.12em",
+  "radius": "8px",
+  "buttonPadding": {
+    "y": "0.75em",
+    "x": "1.5em"
+  },
+  "layout": {
+    "contentSize": "1200px",
+    "wideSize": "1400px",
+    "narrowSize": "800px"
+  },
+  "fonts": {
+    "heading": {
+      "type": "google",
+      "family": "Inter",
+      "weights": [
+        400,
+        600,
+        700
+      ]
+    },
+    "body": {
+      "type": "google",
+      "family": "Inter",
+      "weights": [
+        400,
+        500,
+        700
+      ]
+    }
+  },
+  "icons": {
+    "style": "solid"
+  }
+}

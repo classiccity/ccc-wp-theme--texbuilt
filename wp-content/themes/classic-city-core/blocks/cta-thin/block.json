@@ -1,0 +1,41 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/cta-thin",
+	"title": "Thin CTA",
+	"description": "Narrow full-width call-to-action strip \u2014 headline + subtext on the left, button on the right. Fully field-driven; no inner content.",
+	"category": "theme",
+	"icon": "minus",
+	"keywords": [
+		"cta",
+		"thin",
+		"strip",
+		"banner"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"align": [
+			"full"
+		],
+		"anchor": true,
+		"color": {
+			"background": true,
+			"gradients": true,
+			"text": false,
+			"link": false
+		},
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "auto",
+		"renderTemplate": "render.php"
+	}
+}
