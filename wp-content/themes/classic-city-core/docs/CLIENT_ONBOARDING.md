@@ -58,45 +58,63 @@ _(If you've already done this manually, skip to Phase 3.)_
 
 ---
 
-## Phase 1b — Install default plugins + licenses
+## Phase 1b — Install default plugins + site meta
 
-Every client install needs **ACF Pro** and **Gravity Forms** before
-anything else. These can't live in the parent theme repo (license
-terms + self-update noise), and shouldn't be committed to client repos
-(same reasons, plus plugin updates create noisy git churn). Install
-them authoritatively on WPE first; they'll come down with the Local
-pull in Phase 4.
+Every client install gets the same baseline: three default plugins
+(ACF Pro, Gravity Forms, Yoast SEO), site name + description set, and
+any unused WPE-default plugins removed. All of this runs in a single
+SSH session and takes about 30 seconds.
+
+Plugins aren't committed to any git repo:
+- **License terms** for ACF Pro and Gravity Forms discourage
+  redistribution, and committing them to a client repo + WPE deploy
+  technically distributes plugin code.
+- **Self-update noise** — plugins update themselves via wp-admin, which
+  would create drift between the repo and live install.
+- **Update ergonomics** — WPE handles plugin updates cleanly in admin.
 
 ### 1b-prereqs
 
-- ZIP files and license keys kept in `~/Downloads/default-plugins/` (or
-  wherever — just be consistent across clients). Expected contents:
-  - `advanced-custom-fields-pro*.zip`
-  - `gravityforms*.zip`
-  - `keys.txt` with two lines:
+- **Local plugin stash** at `~/Downloads/default-plugins/` (or anywhere
+  consistent). Expected contents:
+  - `advanced-custom-fields-pro*.zip` (paid plugin, local upload)
+  - `gravityforms*.zip` (paid plugin, local upload)
+  - `keys.txt` with:
     ```
     ACF: <base64-encoded ACF Pro license key>
     Gravity Forms: <32-char Gravity Forms license key>
     ```
-- **SSH Gateway key registered on the install.** Different tab from Git
-  Push. Per-install, manual ~30s: WPE User Portal → install → SSH
-  Gateway → paste `~/.ssh/id_ed25519.pub`. Verify with
+  - Yoast SEO is NOT included here — it's free on WordPress.org and
+    `wp plugin install wordpress-seo` fetches it directly.
+
+- **SECURITY — `keys.txt` contains secrets.** Never commit it. Never
+  upload it to WPE. Never paste the contents into a PR or chat that
+  ends up logged. If this file lives under a git-tracked folder (e.g.,
+  if `~/Downloads` ever gets versioned), add it to your global
+  `.gitignore` explicitly. Consider `chmod 600 keys.txt` to restrict
+  read access to your user.
+
+- **SSH Gateway key registered on the install** — different tab from
+  Git Push. Per-install, manual ~30s: WPE User Portal → install →
+  SSH Gateway → paste `~/.ssh/id_ed25519.pub`. Verify with
   `ssh {install}@{install}.ssh.wpengine.net "echo ok"`.
 
 ### 1b-script
 
-Single bash block — run from anywhere:
+Single bash block. Replace the two `{…}` placeholders before running.
 
 ```bash
 INSTALL={install}
+CLIENT_NAME="{Client Display Name}"
 PLUGINS_DIR=~/Downloads/default-plugins
 
 ACF_KEY=$(grep '^ACF:' "$PLUGINS_DIR/keys.txt" | sed 's/^ACF: //')
 GF_KEY=$(grep '^Gravity Forms:' "$PLUGINS_DIR/keys.txt" | sed 's/^Gravity Forms: //')
 
-# Upload zips INTO the WP install directory (wp-cli needs them reachable
-# from its working dir on WPE — /home/wpe-user/ paths it can't see).
-# Pipe-over-ssh because WPE SSH Gateway restricts SCP's sftp subsystem.
+# Upload the paid-plugin zips INTO the WP install directory. wp-cli
+# can't reach /home/wpe-user/ paths directly; /home/wpe-user/sites/$INSTALL/
+# is where it can see files. Pipe-over-ssh because WPE SSH Gateway
+# blocks scp's sftp subsystem.
 cat "$PLUGINS_DIR"/advanced-custom-fields-pro*.zip | \
   ssh $INSTALL@$INSTALL.ssh.wpengine.net \
   "cat > /home/wpe-user/sites/$INSTALL/acf-pro.zip"
@@ -105,16 +123,59 @@ cat "$PLUGINS_DIR"/gravityforms_*.zip | \
   ssh $INSTALL@$INSTALL.ssh.wpengine.net \
   "cat > /home/wpe-user/sites/$INSTALL/gravityforms.zip"
 
-# Install + activate + license + cleanup in one SSH round-trip.
+# Install, activate, license, set meta, clean up defaults, cleanup zips
+# — one round-trip.
 ssh $INSTALL@$INSTALL.ssh.wpengine.net bash -s <<EOF
 cd /home/wpe-user/sites/$INSTALL
+
+# Paid plugins from uploaded zips.
 wp plugin install ./acf-pro.zip --activate --force
 wp plugin install ./gravityforms.zip --activate --force
+
+# Free plugin from WordPress.org.
+wp plugin install wordpress-seo --activate
+
+# License keys. Direct option updates — plugin features work, but the
+# plugins may show a "Please activate" nag until someone clicks their
+# admin Activate button once (they handshake with their license API
+# only when triggered by the admin form).
 wp option update acf_pro_license '$ACF_KEY'
 wp option update rg_gforms_key '$GF_KEY'
+
+# Site meta.
+wp option update blogname '$CLIENT_NAME'
+wp option update blogdescription 'A website for $CLIENT_NAME'
+
+# Remove WPE default plugins we don't want. Conditional so we don't
+# error when they're not there (some WPE install templates don't
+# ship them).
+if wp plugin is-installed genesis-blocks 2>/dev/null; then
+  wp plugin delete genesis-blocks --deactivate
+fi
+if wp plugin is-installed akismet 2>/dev/null; then
+  wp plugin delete akismet --deactivate
+fi
+
+# Done — remove the uploaded zips so they don't clutter the install.
 rm -f acf-pro.zip gravityforms.zip
 EOF
 ```
+
+### 1b-verification
+
+```bash
+ssh $INSTALL@$INSTALL.ssh.wpengine.net bash -s <<EOF
+cd /home/wpe-user/sites/$INSTALL
+echo "--- active plugins ---"
+wp plugin list --status=active --fields=name,version --format=table
+echo ""
+echo "blogname:        \$(wp option get blogname)"
+echo "blogdescription: \$(wp option get blogdescription)"
+EOF
+```
+
+Expected: three active plugins (ACF Pro, Gravity Forms, Yoast SEO),
+site name = `$CLIENT_NAME`, description = "A website for $CLIENT_NAME".
 
 ### 1b-gotchas learned during TexBuilt onboarding
 
@@ -122,29 +183,24 @@ EOF
   subsystem. SCP fails with "Connection closed." Use pipe-over-SSH
   (`cat file | ssh "cat > remote"`) instead.
 - **Don't upload to `/home/wpe-user/`** for wp-cli's consumption —
-  wp-cli can't resolve `~` across nested shells AND apparently runs
-  with restricted path access outside the WP install directory.
-  Upload directly into `/home/wpe-user/sites/{install}/` and reference
-  with a relative path.
+  wp-cli can't resolve `~` across nested shells AND runs with
+  restricted path access outside the WP install directory. Upload
+  into `/home/wpe-user/sites/{install}/` and reference with a
+  relative path from that `cd`.
 - **License options aren't full "activated" state.** We set the
   `acf_pro_license` and `rg_gforms_key` options directly, which makes
-  the plugins functional (no nag banners, features work). ACF and GF
-  may still show "Please activate" in admin because they haven't
-  handshaken with their license APIs. Either accept the cosmetic
-  banner, or click Activate once in admin per install.
+  the plugins functional. ACF and GF may still show "Please activate"
+  in admin because they haven't handshaken with their license APIs.
+  Either accept the cosmetic banner, or click Activate once in admin
+  per install to dismiss it for good.
 - **Don't use `wp eval` with complex PHP inside a bash heredoc** —
   bash `$…` expansion mangles PHP variables. If license activation
-  via ACF's own function is needed, put the PHP in a standalone
+  via a plugin's own function is needed, put the PHP in a standalone
   `.php` file and `wp eval-file`.
-
-### 1b-verification
-
-```bash
-ssh $INSTALL@$INSTALL.ssh.wpengine.net \
-  "cd sites/$INSTALL && wp plugin list --status=active --fields=name,version"
-```
-
-Should list both `advanced-custom-fields-pro` and `gravityforms`.
+- **Conditional plugin removal matters.** Genesis Blocks and Akismet
+  aren't always installed on fresh WPE installs; the template used
+  for the install determines what's pre-loaded. The `is-installed`
+  check keeps the script clean when they're not there.
 
 ---
 
@@ -656,6 +712,13 @@ after two examples. A good home for the script is
   heredoc + `wp eval` with complex PHP is fragile — use `wp eval-file`
   with a separate `.php` file when PHP is required. SSH Gateway key
   registration is a separate per-install manual step from Git Push.
+- **2026-04-24 (evening, follow-up)** — Expanded Phase 1b to also
+  install Yoast SEO (from wp.org, no zip needed), set `blogname` +
+  `blogdescription` options (site name = client display name;
+  description = "A website for {client name}"), and conditionally
+  remove WPE-default plugins Genesis Blocks and Akismet when they
+  exist. Added a security callout that `keys.txt` contains secrets
+  and must never be committed or uploaded.
 - **2026-04-24 (late pm)** — **Converted parent theme from submodule to
   subtree** across the entire runbook. WP Engine's Git Push pipeline
   has a "checking submodules" step but does NOT actually clone
