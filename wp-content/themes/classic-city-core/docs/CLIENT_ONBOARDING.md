@@ -58,6 +58,96 @@ _(If you've already done this manually, skip to Phase 3.)_
 
 ---
 
+## Phase 1b — Install default plugins + licenses
+
+Every client install needs **ACF Pro** and **Gravity Forms** before
+anything else. These can't live in the parent theme repo (license
+terms + self-update noise), and shouldn't be committed to client repos
+(same reasons, plus plugin updates create noisy git churn). Install
+them authoritatively on WPE first; they'll come down with the Local
+pull in Phase 4.
+
+### 1b-prereqs
+
+- ZIP files and license keys kept in `~/Downloads/default-plugins/` (or
+  wherever — just be consistent across clients). Expected contents:
+  - `advanced-custom-fields-pro*.zip`
+  - `gravityforms*.zip`
+  - `keys.txt` with two lines:
+    ```
+    ACF: <base64-encoded ACF Pro license key>
+    Gravity Forms: <32-char Gravity Forms license key>
+    ```
+- **SSH Gateway key registered on the install.** Different tab from Git
+  Push. Per-install, manual ~30s: WPE User Portal → install → SSH
+  Gateway → paste `~/.ssh/id_ed25519.pub`. Verify with
+  `ssh {install}@{install}.ssh.wpengine.net "echo ok"`.
+
+### 1b-script
+
+Single bash block — run from anywhere:
+
+```bash
+INSTALL={install}
+PLUGINS_DIR=~/Downloads/default-plugins
+
+ACF_KEY=$(grep '^ACF:' "$PLUGINS_DIR/keys.txt" | sed 's/^ACF: //')
+GF_KEY=$(grep '^Gravity Forms:' "$PLUGINS_DIR/keys.txt" | sed 's/^Gravity Forms: //')
+
+# Upload zips INTO the WP install directory (wp-cli needs them reachable
+# from its working dir on WPE — /home/wpe-user/ paths it can't see).
+# Pipe-over-ssh because WPE SSH Gateway restricts SCP's sftp subsystem.
+cat "$PLUGINS_DIR"/advanced-custom-fields-pro*.zip | \
+  ssh $INSTALL@$INSTALL.ssh.wpengine.net \
+  "cat > /home/wpe-user/sites/$INSTALL/acf-pro.zip"
+
+cat "$PLUGINS_DIR"/gravityforms_*.zip | \
+  ssh $INSTALL@$INSTALL.ssh.wpengine.net \
+  "cat > /home/wpe-user/sites/$INSTALL/gravityforms.zip"
+
+# Install + activate + license + cleanup in one SSH round-trip.
+ssh $INSTALL@$INSTALL.ssh.wpengine.net bash -s <<EOF
+cd /home/wpe-user/sites/$INSTALL
+wp plugin install ./acf-pro.zip --activate --force
+wp plugin install ./gravityforms.zip --activate --force
+wp option update acf_pro_license '$ACF_KEY'
+wp option update rg_gforms_key '$GF_KEY'
+rm -f acf-pro.zip gravityforms.zip
+EOF
+```
+
+### 1b-gotchas learned during TexBuilt onboarding
+
+- **Don't use plain `scp`** — WPE's SSH Gateway restricts the SFTP
+  subsystem. SCP fails with "Connection closed." Use pipe-over-SSH
+  (`cat file | ssh "cat > remote"`) instead.
+- **Don't upload to `/home/wpe-user/`** for wp-cli's consumption —
+  wp-cli can't resolve `~` across nested shells AND apparently runs
+  with restricted path access outside the WP install directory.
+  Upload directly into `/home/wpe-user/sites/{install}/` and reference
+  with a relative path.
+- **License options aren't full "activated" state.** We set the
+  `acf_pro_license` and `rg_gforms_key` options directly, which makes
+  the plugins functional (no nag banners, features work). ACF and GF
+  may still show "Please activate" in admin because they haven't
+  handshaken with their license APIs. Either accept the cosmetic
+  banner, or click Activate once in admin per install.
+- **Don't use `wp eval` with complex PHP inside a bash heredoc** —
+  bash `$…` expansion mangles PHP variables. If license activation
+  via ACF's own function is needed, put the PHP in a standalone
+  `.php` file and `wp eval-file`.
+
+### 1b-verification
+
+```bash
+ssh $INSTALL@$INSTALL.ssh.wpengine.net \
+  "cd sites/$INSTALL && wp plugin list --status=active --fields=name,version"
+```
+
+Should list both `advanced-custom-fields-pro` and `gravityforms`.
+
+---
+
 ## Phase 2 — Parent theme repo (already exists)
 
 The parent theme lives at `classiccity/ccc-wp-theme` on GitHub. Skip
@@ -554,6 +644,18 @@ after two examples. A good home for the script is
   Also noted that WP core's REST API doesn't support theme activation;
   documented the three fallback paths (manual click / SSH+WP-CLI /
   bootstrap mu-plugin).
+- **2026-04-24 (evening)** — Added **Phase 1b — Install default plugins
+  + licenses** after TexBuilt needed ACF Pro + Gravity Forms on the
+  WPE install. Executed via SSH Gateway + `wp-cli` with four notable
+  gotchas documented inline: (1) WPE's SSH Gateway blocks SCP's SFTP
+  subsystem, use pipe-over-SSH; (2) wp-cli can't see `/home/wpe-user/`
+  paths, upload to `/home/wpe-user/sites/{install}/` instead;
+  (3) `wp option update` for license keys is sufficient for plugin
+  functionality but doesn't trigger ACF/GF's license-API handshake,
+  so their admin screens may still show a nag banner; (4) bash
+  heredoc + `wp eval` with complex PHP is fragile — use `wp eval-file`
+  with a separate `.php` file when PHP is required. SSH Gateway key
+  registration is a separate per-install manual step from Git Push.
 - **2026-04-24 (late pm)** — **Converted parent theme from submodule to
   subtree** across the entire runbook. WP Engine's Git Push pipeline
   has a "checking submodules" step but does NOT actually clone
