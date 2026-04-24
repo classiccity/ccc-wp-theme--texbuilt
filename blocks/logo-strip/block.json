@@ -1,0 +1,35 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/logo-strip",
+	"title": "Logo Strip",
+	"description": "Row of client/partner logos. 5-col on desktop, 2-col on mobile.",
+	"category": "theme",
+	"icon": "screenoptions",
+	"keywords": [
+		"logos",
+		"partners",
+		"clients"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"align": [
+			"wide",
+			"full"
+		],
+		"anchor": true,
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "auto",
+		"renderTemplate": "render.php"
+	}
+}

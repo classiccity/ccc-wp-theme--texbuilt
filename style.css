@@ -1,0 +1,14 @@
+/*
+Theme Name: Classic City Core
+Theme URI: https://classiccityconsulting.com/
+Author: Classic City Consulting
+Author URI: https://classiccityconsulting.com/
+Description: Parent block theme for Classic City client sites. Ships all ACF blocks, block patterns, shared CSS, and default templates. Per-client look-and-feel is driven by child themes that override only theme.json (colors, fonts, spacing, etc.). Do not activate this theme directly on production — always run through a child theme.
+Version: 0.1.0
+Requires at least: 6.4
+Tested up to: 6.8
+Requires PHP: 8.0
+License: Proprietary
+Text Domain: classic-city-core
+Tags: block-theme, full-site-editing, acf-blocks
+*/

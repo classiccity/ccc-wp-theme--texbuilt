@@ -1,0 +1,35 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/testimonial-cards",
+	"title": "Testimonial Cards",
+	"description": "Grid of testimonial cards pulled from the Testimonial CPT. Admin picks which testimonials, columns per desktop, and how they collapse on mobile.",
+	"category": "theme",
+	"icon": "format-quote",
+	"keywords": [
+		"testimonials",
+		"quotes",
+		"social proof"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"align": [
+			"wide",
+			"full"
+		],
+		"anchor": true,
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "auto",
+		"renderTemplate": "render.php"
+	}
+}

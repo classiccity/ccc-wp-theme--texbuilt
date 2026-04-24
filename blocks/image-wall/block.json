@@ -1,0 +1,40 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/image-wall",
+	"title": "Image Wall",
+	"description": "Two infinite-scroll rows of images moving in opposite directions.",
+	"category": "theme",
+	"icon": "images-alt",
+	"keywords": [
+		"marquee",
+		"scroller",
+		"images"
+	],
+	"textdomain": "classic-city-core",
+	"attributes": {
+		"align": {
+			"type": "string",
+			"default": "full"
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": [
+			"full"
+		],
+		"anchor": true,
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "auto",
+		"renderTemplate": "render.php"
+	}
+}

@@ -1,0 +1,41 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/image-overlay",
+	"title": "Image + Content Overlay",
+	"description": "Large image with a content card that overlaps it. Switch which side the content card sits on.",
+	"category": "theme",
+	"icon": "cover-image",
+	"keywords": [
+		"overlay",
+		"image",
+		"card"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"jsx": true,
+		"align": [
+			"full"
+		],
+		"anchor": true,
+		"color": {
+			"background": true,
+			"gradients": true,
+			"text": false,
+			"link": false
+		},
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}

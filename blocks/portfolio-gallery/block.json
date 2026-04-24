@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/portfolio-gallery",
+	"title": "Image Portfolio Gallery",
+	"description": "Clickable portfolio grid with a lightbox.",
+	"category": "theme",
+	"icon": "format-gallery",
+	"keywords": [
+		"portfolio",
+		"gallery",
+		"lightbox",
+		"images"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"align": [
+			"wide",
+			"full"
+		],
+		"anchor": true,
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "auto",
+		"renderTemplate": "render.php"
+	}
+}

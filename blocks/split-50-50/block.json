@@ -1,0 +1,37 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/split-50-50",
+	"title": "Split 50/50",
+	"description": "Half image, half content. Free-form InnerBlocks on the content side.",
+	"category": "theme",
+	"icon": "align-center",
+	"keywords": [
+		"split",
+		"50/50",
+		"image",
+		"columns"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"jsx": true,
+		"align": [
+			"wide",
+			"full"
+		],
+		"anchor": true,
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}
