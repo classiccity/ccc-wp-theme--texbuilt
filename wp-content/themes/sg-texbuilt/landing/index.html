@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>TexBuilt — New Site Coming Soon</title>
+	<meta name="description" content="TexBuilt — commercial construction in Texas. Our new site is under construction. Contact us for project inquiries.">
+
+	<!-- Inline SVG favicon: no separate file required, ships inside this HTML. -->
+	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23373D46' width='100' height='100' rx='18'/><text x='50' y='74' font-size='72' text-anchor='middle' fill='%23F68B1F' font-family='Arial Black, sans-serif' font-weight='900'>T</text></svg>">
+
+	<!-- Fonts: pulled from Google Fonts CDN so there are zero font files to bundle. -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+
+	<style>
+		:root {
+			--cta:          #F68B1F;
+			--cta-alt:      #D97109;
+			--primary:      #373D46;
+			--primary-alt:  #4D5663;
+			--secondary:    #C2C1B8;
+			--light:        #EDE4D5;
+			--light-alt:    #DECDB1;
+			--dark:         #202122;
+			--body-bg:      #FDF9F2;
+			--heading:      'Barlow Condensed', system-ui, -apple-system, sans-serif;
+			--body:         'Source Sans 3', system-ui, -apple-system, sans-serif;
+			--frame-pad:    1.5rem;
+			--frame-radius: 1.5rem;
+		}
+
+		*, *::before, *::after { box-sizing: border-box; }
+
+		/* Lock the viewport. The whole page is a single no-scroll "card." */
+		html, body {
+			margin: 0;
+			padding: 0;
+			height: 100%;
+			overflow: hidden;
+		}
+
+		body {
+			font-family: var(--body);
+			font-size: 16px;
+			line-height: 1.55;
+			color: var(--primary);
+			background: var(--body-bg);
+			padding: var(--frame-pad);
+			-webkit-font-smoothing: antialiased;
+			-moz-osx-font-smoothing: grayscale;
+		}
+
+		/* Stage: fills the viewport minus the body padding, carries the image
+		 * background + rounded corners. `overflow: hidden` clips the image to
+		 * the radius. `isolation: isolate` creates a stacking context so the
+		 * ::before image sits under content without bleeding outside. */
+		.stage {
+			width: 100%;
+			height: 100%;
+			border-radius: var(--frame-radius);
+			overflow: hidden;
+			position: relative;
+			isolation: isolate;
+			background-color: var(--light);
+			box-shadow: 0 10px 40px rgba(32, 33, 34, 0.08);
+		}
+		.stage::before {
+			content: "";
+			position: absolute;
+			inset: 0;
+			z-index: 0;
+			background: url('https://www.emjcorp.com/wp-content/uploads/71C857E3-AC96-4E1C-9FFC-456966085D61-1024x575.jpg')
+				center / cover no-repeat;
+			opacity: 0.1;
+		}
+
+		.stage-inner {
+			position: relative;
+			z-index: 1;
+			width: 100%;
+			height: 100%;
+			max-width: 1100px;
+			margin: 0 auto;
+			padding: clamp(24px, 4vh, 48px) clamp(28px, 4vw, 64px);
+			display: flex;
+			flex-direction: column;
+		}
+
+		.logo {
+			font-family: var(--heading);
+			font-weight: 900;
+			font-size: clamp(26px, 3vw, 36px);
+			letter-spacing: 0.04em;
+			text-transform: uppercase;
+			color: var(--primary);
+			line-height: 1;
+		}
+		.logo span { color: var(--cta); }
+
+		main {
+			display: flex;
+			flex-direction: column;
+			gap: clamp(16px, 2.2vh, 28px);
+			margin-top: auto;
+			margin-bottom: auto;
+			padding: clamp(16px, 3vh, 40px) 0;
+		}
+
+		.eyebrow {
+			font-family: var(--heading);
+			text-transform: uppercase;
+			letter-spacing: 0.14em;
+			color: var(--cta);
+			font-weight: 600;
+			font-size: clamp(12px, 1.2vw, 14px);
+		}
+
+		h1 {
+			font-family: var(--heading);
+			font-size: clamp(44px, 8vw, 104px);
+			font-weight: 900;
+			line-height: 0.95;
+			letter-spacing: -0.02em;
+			color: var(--primary);
+			text-transform: uppercase;
+			margin: 0;
+			max-width: 12ch;
+		}
+		h1 em {
+			font-style: normal;
+			color: var(--cta);
+		}
+
+		.lede {
+			font-size: clamp(15px, 1.35vw, 19px);
+			line-height: 1.55;
+			max-width: 62ch;
+			color: var(--primary-alt);
+			margin: 0;
+		}
+
+		.contact {
+			margin: 0;
+			padding: clamp(16px, 2.2vh, 24px) 0;
+			border-top: 1px solid var(--secondary);
+			border-bottom: 1px solid var(--secondary);
+			display: flex;
+			flex-wrap: wrap;
+			gap: 20px 56px;
+		}
+		.contact-row {
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+		}
+		.contact-row dt {
+			font-family: var(--heading);
+			text-transform: uppercase;
+			letter-spacing: 0.14em;
+			font-weight: 600;
+			font-size: 12px;
+			color: var(--primary-alt);
+		}
+		.contact-row dd {
+			margin: 0;
+			font-size: clamp(16px, 1.4vw, 20px);
+			font-weight: 600;
+		}
+		.contact-row a {
+			color: var(--primary);
+			text-decoration: none;
+			border-bottom: 2px solid var(--cta);
+			padding-bottom: 2px;
+			transition: color 0.15s ease, border-color 0.15s ease;
+		}
+		.contact-row a:hover {
+			color: var(--cta);
+			border-color: var(--cta-alt);
+		}
+
+		footer {
+			font-size: clamp(11px, 0.9vw, 13px);
+			color: var(--primary-alt);
+			display: flex;
+			justify-content: space-between;
+			flex-wrap: wrap;
+			gap: 8px;
+		}
+
+		/* Small screens: drop the frame padding and radius so the content can
+		 * breathe edge-to-edge. Keeps the no-scroll promise on narrow phones. */
+		@media (max-width: 600px) {
+			:root {
+				--frame-pad:    0.75rem;
+				--frame-radius: 1rem;
+			}
+			.stage-inner {
+				padding: 20px 18px;
+			}
+			h1 { max-width: 100%; }
+		}
+	</style>
+</head>
+<body>
+	<div class="stage">
+		<div class="stage-inner">
+
+			<header>
+				<div class="logo" aria-label="TexBuilt">Tex<span>Built</span></div>
+			</header>
+
+			<main>
+				<span class="eyebrow">Commercial Construction · Texas</span>
+
+				<h1>Building something <em>better.</em></h1>
+
+				<p class="lede">
+					Our new site is under construction — same crew, sharper tools.
+					For project inquiries, bid requests, or an update on work in progress,
+					reach out below and we'll be in touch shortly.
+				</p>
+
+				<dl class="contact">
+					<div class="contact-row">
+						<dt>Call</dt>
+						<dd><a href="tel:+10000000000">000-000-0000</a></dd>
+					</div>
+					<div class="contact-row">
+						<dt>Email</dt>
+						<dd><a href="mailto:hello@texbuilt.com">hello@texbuilt.com</a></dd>
+					</div>
+				</dl>
+			</main>
+
+			<footer>
+				<span>&copy; 2026 TexBuilt. All rights reserved.</span>
+				<span>New site launching soon.</span>
+			</footer>
+
+		</div>
+	</div>
+</body>
+</html>

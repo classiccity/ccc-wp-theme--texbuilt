@@ -1,0 +1,39 @@
+# ============================================================
+# Whitelist-style .gitignore: ignore everything by default,
+# then explicitly un-ignore what we version.
+#
+# Repo root is the WordPress site root. WP Engine's Git Push
+# deploys the repo contents to /sites/<install>/src/, so this
+# layout must mirror the live site's layout.
+#
+# Currently versioned:
+#   - wp-content/themes/classic-city-core  (git submodule)
+#   - wp-content/themes/sg-texbuilt        (child theme)
+#
+# Explicitly NOT versioned (live on WPE, managed elsewhere):
+#   - WordPress core (wp-admin/, wp-includes/, wp-*.php)
+#   - wp-config.php (install-specific secrets)
+#   - wp-content/uploads (user media, managed in admin)
+#   - wp-content/plugins (managed in wp-admin)
+#   - wp-content/mu-plugins (WPE drop-ins)
+#   - Any cache, object-cache, db.php drop-ins
+# ============================================================
+
+# Ignore everything at every level.
+/*
+
+# Un-ignore repo metadata.
+!/.gitignore
+!/.gitmodules
+
+# Un-ignore the path down to our versioned theme folders.
+!/wp-content/
+/wp-content/*
+!/wp-content/themes/
+/wp-content/themes/*
+!/wp-content/themes/classic-city-core
+!/wp-content/themes/sg-texbuilt
+
+# macOS cruft should never be tracked, even inside whitelisted folders.
+**/.DS_Store
+**/._*

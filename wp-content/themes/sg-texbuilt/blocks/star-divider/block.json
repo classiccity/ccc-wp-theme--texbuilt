@@ -1,0 +1,25 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "sg-texbuilt/star-divider",
+	"title": "Star Divider (TexBuilt)",
+	"description": "Three rotating stars in a row — section divider. TexBuilt-specific decoration.",
+	"category": "design",
+	"icon": "star-filled",
+	"keywords": ["divider", "stars", "texbuilt"],
+	"textdomain": "sg-texbuilt",
+	"supports": {
+		"html": false,
+		"align": ["wide", "full"],
+		"anchor": true,
+		"spacing": {
+			"padding": true,
+			"margin": ["top", "bottom"]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "auto",
+		"renderTemplate": "render.php"
+	}
+}
