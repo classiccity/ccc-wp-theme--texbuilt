@@ -541,6 +541,33 @@ The WAF rules can be relaxed via WPE support request if you need
 full REST write access, but the wp-cli path is reliable and doesn't
 require WPE-side config changes.
 
+### After deploy — cache purge
+
+WPE runs Varnish in front of WordPress. Content changes made via
+**git push** auto-purge Varnish at the end of the deploy pipeline.
+Content changes made via **wp-cli** (new pages, option updates,
+site-logo reassignment, etc.) do NOT auto-purge. `wp cache flush`
+clears WordPress's internal object cache but has no effect on
+Varnish.
+
+Three ways to flush Varnish after a wp-cli content run:
+
+1. **Trivial git push** — add any whitespace change to a file in the
+   repo and push. WPE's post-receive hook runs `purging varnish cache`
+   as a deploy step. Side-effecty but reliable.
+2. **WPE User Portal** → the install → **General** (or similar) →
+   "Purge all caches" button. Manual, one click.
+3. **WPE Cache plugin's CLI** — `wp wpe purge-all` if the plugin is
+   active. Not guaranteed on every install (wasn't on TexBuilt).
+
+For automated content deploys, option 1 (dummy push) is the only
+hands-off way. Consider putting a `.cache-bust-timestamp` file in
+the repo root that the deploy script touches and pushes before
+finishing — works as a built-in cache-bust lever.
+
+While Varnish is still serving stale content, cache-busted URLs
+(`?_cb=<timestamp>`) confirm the origin rendered correctly.
+
 ---
 
 ## Ongoing workflow
@@ -671,6 +698,7 @@ Whitelist addition in `.gitignore`:
 | REST API POST to `/wp/v2/media` returns 403 from nginx | WPE's WAF blocks REST media uploads by default | Use `wp media import <file>` via SSH Gateway instead. Pipe the file up first: `cat local.jpg \| ssh … "cat > /home/wpe-user/sites/{install}/f.jpg"`, then `wp media import f.jpg --porcelain` to get the new attachment ID. |
 | REST API POST to `/wp/v2/pages` returns 403 from nginx | Same WPE WAF category — write endpoints that accept arbitrary content are blocked | Use `wp post create <content-file> --post_type=page --post_title="…" --post_name="…" --post_status=publish --porcelain` via SSH. Reads (`GET`) still work via REST. |
 | REST API `search=something.jpg` returns 403 | WPE WAF flags `.jpg` in query strings as suspicious | Drop the query-string check, or do the listing via wp-cli: `wp post list --post_type=attachment --format=json` |
+| Content changes via wp-cli show up on cache-busted URLs but not clean URLs | WPE's Varnish cache (separate from WP's object cache) doesn't auto-purge on wp-cli changes. `wp cache flush` only clears the PHP object cache. | Either wait for Varnish TTL (minutes), click "Purge all caches" in WPE User Portal, OR do a trivial `git push wpe main` which triggers WPE's post-receive cache purge. Git pushes auto-purge; wp-cli does not. |
 
 ---
 
@@ -848,6 +876,14 @@ after two examples. A good home for the script is
   Includes a Python ID-remapping snippet for rewriting Gutenberg
   block content when moving pre-built pages between installs.
   Three new pitfalls table entries for the specific 403 scenarios.
+- **2026-04-24 (late evening)** — Added Site Logo upload to the
+  Phase 12 flow and documented WPE Varnish cache behavior: git
+  pushes auto-purge Varnish, wp-cli changes do NOT. `wp cache flush`
+  only clears WP's object cache. For automated content deploys,
+  follow the content work with a trivial git push (or a touched
+  cache-bust-timestamp file) to force Varnish purge. Cache-busted
+  URLs (`?_cb=...`) are the escape hatch for verifying origin
+  rendered correctly before the stale cache expires.
 - **2026-04-24 (late pm)** — **Converted parent theme from submodule to
   subtree** across the entire runbook. WP Engine's Git Push pipeline
   has a "checking submodules" step but does NOT actually clone
