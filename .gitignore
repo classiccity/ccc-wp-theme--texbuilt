@@ -34,6 +34,14 @@
 !/wp-content/themes/classic-city-core
 !/wp-content/themes/sg-texbuilt
 
+# Un-ignore our custom mu-plugins (platform-level fixes like REST auth
+# header restoration). Don't un-ignore the whole mu-plugins directory —
+# WP Engine drops its own infrastructure files in there that we don't
+# want to version.
+!/wp-content/mu-plugins/
+/wp-content/mu-plugins/*
+!/wp-content/mu-plugins/ccc-fix-auth-header.php
+
 # macOS cruft should never be tracked, even inside whitelisted folders.
 **/.DS_Store
 **/._*
