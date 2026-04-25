@@ -363,6 +363,14 @@ find "/Users/chris/Local Sites/{SITE_NAME}/app/public/wp-content/themes/sg-{slug
   text-domain string.
 - **`landing/index.html`** (if present) — update brand copy, contact
   details, image URLs.
+- **`CLAUDE.md`** — copy from the source child theme and update every
+  client-specific reference: install slug, WPE URL, GitHub repo URL,
+  current-state section (start empty, fill in as content gets built),
+  brand reference (palette + fonts), local mirror path. This file
+  ships with the child theme so any future Claude session opening the
+  client repo gets immediate orientation. The TexBuilt one
+  (`sg-texbuilt/CLAUDE.md`) is the model — keep its structure, swap
+  the values.
 
 Commit the child theme and the gitignore:
 
@@ -884,6 +892,21 @@ after two examples. A good home for the script is
   cache-bust-timestamp file) to force Varnish purge. Cache-busted
   URLs (`?_cb=...`) are the escape hatch for verifying origin
   rendered correctly before the stale cache expires.
+- **2026-04-24 (last)** — Added `CLAUDE.md` files at two levels:
+  - **Parent theme root** (`classic-city-core/CLAUDE.md`) — orients
+    any Claude session working on the parent theme: block
+    auto-registration system, key inc/ files, CSS conventions,
+    theme.json conventions, how parent changes propagate to clients
+    via subtree pull/push, what NOT to do.
+  - **Per-child theme** (e.g., `sg-texbuilt/CLAUDE.md`) — orients any
+    Claude session doing client-specific work: install slug, REST +
+    SSH auth, hybrid REST+wp-cli pattern, ID-remapping for moving
+    pre-built block content, current state of pages/media/plugins,
+    brand reference. Phase 8 (child theme scaffold) updated to
+    require copying this file from a source child theme and updating
+    all client-specific values.
+  These files mean a fresh Claude session in EITHER repo can pick up
+  context without re-deriving it from scratch.
 - **2026-04-24 (late pm)** — **Converted parent theme from submodule to
   subtree** across the entire runbook. WP Engine's Git Push pipeline
   has a "checking submodules" step but does NOT actually clone
