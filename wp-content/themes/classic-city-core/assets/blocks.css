@@ -2478,3 +2478,92 @@ header.wp-block-template-part
   .wp-block-navigation-item__content {
   padding-left: var(--wp--preset--spacing--30);
 }
+
+/* ==================================================================
+ * Link Pods (.sg-block-link-pods)
+ * Grid of clickable cards. Each pod is an <a>; the entire card is
+ * clickable. Background color via standard `has-{slug}-background-color`
+ * helper so opposite text colors flip automatically. Background image
+ * (if set) sits behind the content.
+ * ================================================================== */
+.sg-block-link-pods {
+  display: grid;
+  grid-template-columns: repeat(var(--block-columns, 3), minmax(0, 1fr));
+  gap: var(--wp--style--block-gap);
+}
+.sg-block-link-pod {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--wp--preset--spacing--20);
+  padding: var(--wp--preset--spacing--20);
+  border-radius: var(--wp--custom--radius--default);
+  text-decoration: none;
+  color: inherit;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.sg-block-link-pod:hover,
+.sg-block-link-pod:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: var(--wp--preset--shadow--md);
+}
+/* When a pod has a background image, its solid bg color (if set) becomes a
+ * darken/lighten overlay so text stays legible. Done with a pseudo overlay
+ * so the underlying `has-{slug}-background-color` helper still wins for the
+ * `has-{slug}-color` opposite-text-color pairing. */
+.sg-block-link-pod.has-bg-image::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: inherit;
+  opacity: 0.7;
+  z-index: 0;
+}
+.sg-block-link-pod.has-bg-image:not(.has-background)::before {
+  background-color: rgba(0, 0, 0, 0.4);
+  opacity: 1;
+}
+.sg-block-link-pod-content,
+.sg-block-link-pod-link {
+  position: relative;
+  z-index: 1;
+}
+.sg-block-link-pod-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--preset--spacing--10);
+}
+.sg-block-link-pod-title {
+  margin: 0;
+}
+.sg-block-link-pod-description {
+  font-size: var(--wp--preset--font-size--small, 0.95em);
+}
+.sg-block-link-pod-description :where(p):last-child {
+  margin-bottom: 0;
+}
+.sg-block-link-pod-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.sg-block-link-pod:hover .sg-block-link-pod-link i,
+.sg-block-link-pod:focus-visible .sg-block-link-pod-link i {
+  transform: translateX(3px);
+}
+.sg-block-link-pod-link i {
+  transition: transform 0.15s ease;
+}
+
+@media (max-width: 900px) {
+  .sg-block-link-pods { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .sg-block-link-pods { grid-template-columns: 1fr; }
+}

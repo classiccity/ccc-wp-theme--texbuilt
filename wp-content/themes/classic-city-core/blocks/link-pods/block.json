@@ -1,0 +1,37 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/link-pods",
+	"title": "Link Pods",
+	"description": "Grid of link pods. Each pod has a title, description, and a link \u2014 the entire pod is clickable. Pod-level background color and optional background image.",
+	"category": "theme",
+	"icon": "screenoptions",
+	"keywords": [
+		"pod",
+		"pods",
+		"link",
+		"grid",
+		"card"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"align": [
+			"full",
+			"wide"
+		],
+		"anchor": true,
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "auto",
+		"renderTemplate": "render.php"
+	}
+}
