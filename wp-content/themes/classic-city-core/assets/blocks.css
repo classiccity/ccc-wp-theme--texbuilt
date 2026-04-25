@@ -686,11 +686,13 @@ a { color: inherit; }
   box-shadow: var(--wp--preset--shadow--md);
 }
 .sg-block-card-image {
-  aspect-ratio: 16 / 9;
   background-size: cover;
   background-position: center;
   background-color: var(--wp--preset--color--light-alt);
 }
+.sg-block-card-image.aspect-horizontal { aspect-ratio: 16 / 9; }
+.sg-block-card-image.aspect-square     { aspect-ratio: 1 / 1; }
+.sg-block-card-image.aspect-vertical   { aspect-ratio: 3 / 4; }
 /* Card body default bg wrapped in :where() so per-card .has-*-background-color
  * helpers from the admin picker override without needing !important. */
 :where(.sg-block-card-body) {

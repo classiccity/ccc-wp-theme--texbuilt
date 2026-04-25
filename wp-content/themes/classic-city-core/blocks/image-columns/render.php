@@ -13,12 +13,16 @@
  * Button color = block-level ACF select. One value applies to every card's
  * CTA. Defaults to `cta` which matches the original hardcoded behavior.
  *
+ * Card image aspect ratio = block-level ACF button_group. One value applies
+ * to every card image. Defaults to `horizontal` (16:9).
+ *
  * @package ClassicCityCore
  */
 
 $columns_data = get_field( 'columns' );
 $col_count    = (int) ( get_field( 'desktop_columns' ) ?: 3 );
 $cta_slug     = sanitize_html_class( get_field( 'cta_color' ) ?: 'cta' ) ?: 'cta';
+$aspect       = sanitize_html_class( get_field( 'aspect_ratio' ) ?: 'horizontal' ) ?: 'horizontal';
 
 if ( ! is_array( $columns_data ) || empty( $columns_data ) ) {
 	return;
@@ -62,7 +66,7 @@ $wrapper_attrs = ccc_strip_bg_from_wrapper(
 	<div class="sg-block-card">
 		<?php if ( $img_url ) : ?>
 		<div
-			class="sg-block-card-image"
+			class="sg-block-card-image aspect-<?php echo esc_attr( $aspect ); ?>"
 			style="background-image: url('<?php echo esc_url( $img_url ); ?>')"
 			role="img"
 			aria-label="<?php echo esc_attr( $img_alt ); ?>"
