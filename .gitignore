@@ -25,6 +25,7 @@
 # Un-ignore repo metadata.
 !/.gitignore
 !/.gitmodules
+!/.cache-bust-timestamp
 
 # Un-ignore the path down to our versioned theme folders.
 !/wp-content/
