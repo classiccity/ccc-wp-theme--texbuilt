@@ -265,7 +265,13 @@ From `theme.json`:
 - **Body font:** `Source Sans 3` (Google Fonts)
 - **Accent font:** `Mitha Script` (custom self-hosted at
   `fonts/mitha-script.ttf`) — used via the "Accent Script" block
-  style on heading/paragraph/quote
+  style on heading/paragraph/quote. **The CSS class is
+  `is-style-accent-font`** (not `is-style-accent-script` — the editor
+  label and the internal class name differ; the class is what you
+  set in `className` when authoring blocks programmatically). The
+  style only swaps the typeface — font size stays at whatever the
+  block's typography setting is. Defaults are too small for cursive;
+  set an explicit `style.typography.fontSize` per use.
 - **Border default-width:** 3px
 - **Radius default:** 0 (sharp corners — TexBuilt aesthetic)
 - **Shadow style:** flat offset (e.g., `2px 2px 0 0 rgba(0,0,0,0.1)`)
