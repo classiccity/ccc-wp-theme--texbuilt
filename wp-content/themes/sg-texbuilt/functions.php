@@ -74,3 +74,18 @@ add_action( 'init', function () {
 		) );
 	}
 } );
+
+/**
+ * Register a "Large Script" block style on core paragraph. Applies the
+ * Mitha Script accent font + a fluid clamp font-size (3.037rem -> 6rem
+ * across the viewport) so the cursive renders at a usable display scale
+ * without per-block font-size overrides.
+ *
+ * CSS for the `.is-style-large-script` class lives in style.css.
+ */
+add_action( 'init', function () {
+	register_block_style( 'core/paragraph', array(
+		'name'  => 'large-script',
+		'label' => __( 'Large Script', 'sg-texbuilt' ),
+	) );
+} );

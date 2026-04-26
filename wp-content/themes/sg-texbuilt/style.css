@@ -180,3 +180,20 @@ h2.has-text-align-right::after {
 	font-family: var(--wp--preset--font-family--accent);
 }
 
+/* ==================================================================
+ * Large-script block-style variation.
+ * Registered via register_block_style() in functions.php on core/paragraph
+ * only. When an editor picks "Large Script" from the block's Styles
+ * sidebar, WP applies the `is-style-large-script` class and this rule
+ * swaps to the Mitha Script accent font AND sets a fluid display font-size
+ * (3.037rem at narrow viewports, scaling up to 6rem on wide screens).
+ *
+ * Use this for big cursive moments — brand callouts, opening pull-lines.
+ * For inline cursive at body sizes, use the "Accent Script" style instead
+ * (which only swaps font-family, leaves font-size to the editor).
+ * ================================================================== */
+.is-style-large-script {
+	font-family: var(--wp--preset--font-family--accent);
+	font-size: clamp(3.037rem, 3.037rem + ((1vw - 0.2rem) * 4.39), 6rem);
+}
+
