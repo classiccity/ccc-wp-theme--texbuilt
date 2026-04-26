@@ -2495,7 +2495,7 @@ header.wp-block-template-part
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: var(--wp--preset--spacing--20);
+  gap: var(--wp--preset--spacing--40);
   padding: var(--wp--preset--spacing--40);
   border-radius: var(--wp--custom--radius--default);
   text-decoration: none;
