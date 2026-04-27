@@ -88,6 +88,14 @@ Text Domain:    sg-texbuilt
 	}
 }
 
+/* Image Overlay — content "pot" gets the same dark frame treatment as the
+ * hero card / feature row / split block. Layout (the negative margin that
+ * pulls the card over the image, the box-shadow) is owned by the parent
+ * theme's blocks.css; this just adds the border on top. */
+.sg-block-overlay-content {
+	border: var(--wp--custom--border--default-width) solid var(--wp--preset--color--dark);
+}
+
 /* ==================================================================
  * TexBuilt H2 decorative underline.
  * Short CTA-colored bar (3rem wide, default-width tall) sits spacing--10
