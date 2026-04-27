@@ -247,3 +247,44 @@ h2.has-text-align-right::after {
 	text-shadow: var(--texbuilt-script-shadow);
 }
 
+
+/* ==================================================================
+ * Eyebrow ornament — sharp-light FA star prefix on every
+ * core/paragraph styled with `.is-style-eyebrow`.
+ *
+ * Layouts:
+ *   • Default (left-aligned eyebrow): star to the LEFT of the text,
+ *     10px gap. Eyebrow becomes a flex row.
+ *   • `.has-text-align-center`: star ABOVE the text, both centered,
+ *     10px stack gap. Eyebrow becomes a flex column.
+ *
+ * Color:
+ *   • Default star color: --wp--preset--color--cta.
+ *   • When the eyebrow lives inside a `.has-primary-background-color`
+ *     or `.has-primary-gradient-background` ancestor, the star inherits
+ *     the surrounding text color (which is set by the palette pair-helper
+ *     for primary text — usually --primary-opposite — so the star reads
+ *     correctly against the dark band without us having to know which
+ *     specific helper is active).
+ *
+ * Star uses the `--fa-font-sharp-light` shorthand variable from
+ * fontawesome/css/sharp-light.css (FA Pro 7), so the family + 300 weight
+ * + 1em sizing all flow from one source. Unicode \f005 = fa-star.
+ * ================================================================== */
+.is-style-eyebrow {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.is-style-eyebrow.has-text-align-center {
+	flex-direction: column;
+}
+.is-style-eyebrow::before {
+	content: "\f005";
+	font: var(--fa-font-sharp-light);
+	color: var(--wp--preset--color--cta);
+	flex-shrink: 0;
+}
+:where(.has-primary-background-color, .has-primary-gradient-background) .is-style-eyebrow::before {
+	color: inherit;
+}
