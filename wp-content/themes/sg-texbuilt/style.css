@@ -178,16 +178,22 @@ h2.has-text-align-right::after {
  * ================================================================== */
 .is-style-accent-font {
 	font-family: var(--wp--preset--font-family--accent);
+	text-shadow: var(--texbuilt-script-shadow);
 }
 
 /* ==================================================================
- * Large-script display sizing — single source of truth.
- * Hoisted to a custom property so any rule that needs THIS exact
- * sizing (the .is-style-large-script paragraph style + the hero h1
- * override below) references the same clamp. Tune it once, propagates.
+ * Accent-font shared tokens — single source of truth.
+ *
+ * --texbuilt-large-script-size: the fluid clamp shared by both the
+ *   .is-style-large-script paragraph style and the hero h1 override.
+ *
+ * --texbuilt-script-shadow: text-shadow applied to ALL accent-font
+ *   uses (Accent Script + Large Script + hero h1 override) so the
+ *   cursive lifts off backgrounds consistently. Tune once, propagates.
  * ================================================================== */
 :root {
 	--texbuilt-large-script-size: clamp(3.037rem, 3.037rem + ((1vw - 0.2rem) * 4.39), 6rem);
+	--texbuilt-script-shadow: 5px 5px var(--wp--preset--color--dark);
 }
 
 /* ==================================================================
@@ -206,6 +212,8 @@ h2.has-text-align-right::after {
 	font-family: var(--wp--preset--font-family--accent);
 	font-size: var(--texbuilt-large-script-size);
 	text-transform: none;
+	line-height: 1;
+	text-shadow: var(--texbuilt-script-shadow);
 }
 
 /* ==================================================================
@@ -234,7 +242,8 @@ h2.has-text-align-right::after {
 	font-family: var(--wp--preset--font-family--accent);
 	font-size: var(--texbuilt-large-script-size);
 	font-weight: 400;
-	line-height: 1.05;
+	line-height: 1;
 	text-transform: none;
+	text-shadow: var(--texbuilt-script-shadow);
 }
 
