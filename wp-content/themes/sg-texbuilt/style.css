@@ -181,6 +181,16 @@ h2.has-text-align-right::after {
 }
 
 /* ==================================================================
+ * Large-script display sizing — single source of truth.
+ * Hoisted to a custom property so any rule that needs THIS exact
+ * sizing (the .is-style-large-script paragraph style + the hero h1
+ * override below) references the same clamp. Tune it once, propagates.
+ * ================================================================== */
+:root {
+	--texbuilt-large-script-size: clamp(3.037rem, 3.037rem + ((1vw - 0.2rem) * 4.39), 6rem);
+}
+
+/* ==================================================================
  * Large-script block-style variation.
  * Registered via register_block_style() in functions.php on core/paragraph
  * only. When an editor picks "Large Script" from the block's Styles
@@ -194,6 +204,35 @@ h2.has-text-align-right::after {
  * ================================================================== */
 .is-style-large-script {
 	font-family: var(--wp--preset--font-family--accent);
-	font-size: clamp(3.037rem, 3.037rem + ((1vw - 0.2rem) * 4.39), 6rem);
+	font-size: var(--texbuilt-large-script-size);
+}
+
+/* ==================================================================
+ * Hero-full-image: Large Script treatment on the static h1.
+ *
+ * The hero-full-image block emits its title as a static <h1> from
+ * render.php (parent theme), not as a core/heading block — so the
+ * block-style picker can't apply Large Script directly. Instead, the
+ * editor adds `has-script-headline` to the block via Inspector ->
+ * Advanced -> Additional CSS class(es), and this rule applies the
+ * Large Script treatment while preserving the h1 semantic.
+ *
+ * The font-size pulls from --texbuilt-large-script-size (above), so
+ * it tracks the paragraph block style automatically.
+ *
+ * font-weight is reset to 400 because Mitha at the heading-default 700
+ * reads as chunky. line-height tightened for the cursive aesthetic.
+ *
+ * SELECTOR DEPENDENCY: relies on the parent theme keeping the
+ * .sg-block-hero-full-headline wrapper class around the inner h1. If
+ * that class is renamed in classic-city-core's hero-full-image
+ * render.php, this rule needs the new selector.
+ * ================================================================== */
+.wp-block-classic-city-core-hero-full-image.has-script-headline
+	.sg-block-hero-full-headline h1 {
+	font-family: var(--wp--preset--font-family--accent);
+	font-size: var(--texbuilt-large-script-size);
+	font-weight: 400;
+	line-height: 1.05;
 }
 
