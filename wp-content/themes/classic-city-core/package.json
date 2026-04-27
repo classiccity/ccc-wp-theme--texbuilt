@@ -1,0 +1,12 @@
+{
+  "name": "classic-city-core",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Classic City Core parent theme — npm holds the Font Awesome Pro kit only. CSS files and webfonts get copied into assets/fontawesome/ from node_modules/@awesome.me/kit-*/icons/{css,webfonts}/ after `npm install`. The kit package itself isn't loaded at runtime; WordPress reads only the copied static assets.",
+  "scripts": {
+    "fa:sync": "rm -rf assets/fontawesome/css/*.css assets/fontawesome/webfonts/*.woff2 && cp node_modules/@awesome.me/kit-*/icons/css/*.css assets/fontawesome/css/ && cp node_modules/@awesome.me/kit-*/icons/webfonts/*.woff2 assets/fontawesome/webfonts/ && rm -f assets/fontawesome/css/all.css assets/fontawesome/css/all.min.css assets/fontawesome/css/svg.css assets/fontawesome/css/svg.min.css assets/fontawesome/css/svg-with-js.css assets/fontawesome/css/svg-with-js.min.css"
+  },
+  "dependencies": {
+    "@awesome.me/kit-275b1833f8": "^1.0.6"
+  }
+}

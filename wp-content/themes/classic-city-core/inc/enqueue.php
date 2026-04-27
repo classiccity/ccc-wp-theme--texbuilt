@@ -109,11 +109,19 @@ function ccc_add_color_pair_helpers_to_editor( $settings ) {
  * Enqueue FontAwesome Pro 7 core CSS + the active site's style CSS.
  *
  * Core (fontawesome.css) ships class → glyph mappings. The per-style CSS
- * (solid/regular/light/sharp-light) declares the @font-face for that weight,
- * so only the webfont we actually use gets downloaded.
+ * (one of 17 family/weight combinations from the FA Pro 7 kit) declares
+ * the @font-face for that weight, so only the webfont we actually use
+ * gets downloaded.
  *
  * Site-wide style is driven by theme.json's settings.custom.icons.style
  * (child theme override). Defaults to 'solid' if unset.
+ *
+ * After the family CSS loads, we emit a small inline rule on the same
+ * handle that exposes `--ccc-fa-font-active` — a single CSS variable
+ * that resolves to whichever `--fa-font-{family}` is currently loaded.
+ * Child-theme CSS using FA in `::before` pseudo-elements should reference
+ * `--ccc-fa-font-active` instead of `--fa-font-sharp-light` (or whatever)
+ * so the ::before keeps working when the active style flips.
  *
  * Loaded on both frontend and block editor (so ACF block previews show
  * the right icons).
@@ -129,16 +137,46 @@ function ccc_enqueue_fontawesome() {
 
 	$style = ccc_resolve_icon_style();
 	$style_css_map = array(
-		'solid'       => 'solid.css',
-		'regular'     => 'regular.css',
-		'light'       => 'light.css',
-		'sharp-light' => 'sharp-light.css',
+		// Classic family
+		'solid'                 => 'solid.css',
+		'regular'               => 'regular.css',
+		'light'                 => 'light.css',
+		'thin'                  => 'thin.css',
+		// Sharp family
+		'sharp-solid'           => 'sharp-solid.css',
+		'sharp-regular'         => 'sharp-regular.css',
+		'sharp-light'           => 'sharp-light.css',
+		'sharp-thin'            => 'sharp-thin.css',
+		// Duotone family (default 'duotone' === 900 weight aka solid)
+		'duotone'               => 'duotone.css',
+		'duotone-regular'       => 'duotone-regular.css',
+		'duotone-light'         => 'duotone-light.css',
+		'duotone-thin'          => 'duotone-thin.css',
+		// Sharp Duotone family
+		'sharp-duotone-solid'   => 'sharp-duotone-solid.css',
+		'sharp-duotone-regular' => 'sharp-duotone-regular.css',
+		'sharp-duotone-light'   => 'sharp-duotone-light.css',
+		'sharp-duotone-thin'    => 'sharp-duotone-thin.css',
+		// Brands (single weight)
+		'brands'                => 'brands.css',
 	);
-	$style_file = $style_css_map[ $style ] ?? 'solid.css';
-	$style_path = $path_base . $style_file;
-	$style_ver  = file_exists( $style_path ) ? (string) filemtime( $style_path ) : CCC_THEME_VERSION;
+	$resolved_style = isset( $style_css_map[ $style ] ) ? $style : 'solid';
+	$style_file     = $style_css_map[ $resolved_style ];
+	$style_path     = $path_base . $style_file;
+	$style_ver      = file_exists( $style_path ) ? (string) filemtime( $style_path ) : CCC_THEME_VERSION;
 
 	wp_enqueue_style( 'ccc-fa-style', $base . $style_file, array( 'ccc-fa-core' ), $style_ver );
+
+	// Indirection variable: pseudo-elements in child themes reference
+	// `--ccc-fa-font-active` so they don't have to know which specific
+	// `--fa-font-{family}` variable was just declared by the loaded CSS.
+	wp_add_inline_style(
+		'ccc-fa-style',
+		sprintf(
+			':root { --ccc-fa-font-active: var(--fa-font-%s); }',
+			sanitize_html_class( $resolved_style )
+		)
+	);
 }
 add_action( 'wp_enqueue_scripts', 'ccc_enqueue_fontawesome' );
 add_action( 'enqueue_block_editor_assets', 'ccc_enqueue_fontawesome' );
@@ -148,7 +186,16 @@ add_action( 'enqueue_block_editor_assets', 'ccc_enqueue_fontawesome' );
  * settings.custom.icons.style (set by the child theme). Filterable via
  * `ccc_icon_style`.
  *
- * @return string One of: 'solid', 'regular', 'light', 'sharp-light'.
+ * Valid values (must match a key in $style_css_map / $style_class_map):
+ *   solid | regular | light | thin
+ *   sharp-solid | sharp-regular | sharp-light | sharp-thin
+ *   duotone | duotone-regular | duotone-light | duotone-thin
+ *   sharp-duotone-solid | sharp-duotone-regular | sharp-duotone-light | sharp-duotone-thin
+ *   brands
+ *
+ * Falls back to 'solid' if unset or unrecognized.
+ *
+ * @return string The active icon style key.
  */
 function ccc_resolve_icon_style() {
 	$settings = wp_get_global_settings();
@@ -175,10 +222,28 @@ function ccc_fa_icon_class( $name ) {
 
 	$style = ccc_resolve_icon_style();
 	$style_class_map = array(
-		'solid'       => 'fa-solid',
-		'regular'     => 'fa-regular',
-		'light'       => 'fa-light',
-		'sharp-light' => 'fa-sharp fa-light',
+		// Classic
+		'solid'                 => 'fa-solid',
+		'regular'               => 'fa-regular',
+		'light'                 => 'fa-light',
+		'thin'                  => 'fa-thin',
+		// Sharp
+		'sharp-solid'           => 'fa-sharp fa-solid',
+		'sharp-regular'         => 'fa-sharp fa-regular',
+		'sharp-light'           => 'fa-sharp fa-light',
+		'sharp-thin'            => 'fa-sharp fa-thin',
+		// Duotone (FA's default is the 900-weight, mapped here to 'duotone')
+		'duotone'               => 'fa-duotone fa-solid',
+		'duotone-regular'       => 'fa-duotone fa-regular',
+		'duotone-light'         => 'fa-duotone fa-light',
+		'duotone-thin'          => 'fa-duotone fa-thin',
+		// Sharp Duotone
+		'sharp-duotone-solid'   => 'fa-sharp-duotone fa-solid',
+		'sharp-duotone-regular' => 'fa-sharp-duotone fa-regular',
+		'sharp-duotone-light'   => 'fa-sharp-duotone fa-light',
+		'sharp-duotone-thin'    => 'fa-sharp-duotone fa-thin',
+		// Brands
+		'brands'                => 'fa-brands',
 	);
 	$style_class = $style_class_map[ $style ] ?? 'fa-solid';
 
