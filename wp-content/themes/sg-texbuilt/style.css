@@ -272,3 +272,36 @@ h2.has-text-align-right::after {
 :where(.has-primary-background-color, .has-primary-gradient-background) .is-style-eyebrow::before {
 	color: inherit;
 }
+
+/* ==================================================================
+ * Gravity Forms — text color inheritance.
+ *
+ * GF's default stylesheet hardcodes label/description colors that
+ * don't track our palette pair-helpers. When a form sits inside a
+ * `has-{slug}-background-color` container, the parent's auto-emitted
+ * pair-helpers set `has-{slug}-color` on the container so descendants
+ * read correctly — but only IF those descendants inherit color.
+ *
+ * Reset the color cascade on form text elements so the pair-helper
+ * does its job. The required-field asterisk (`.gfield_required`) is
+ * intentionally NOT included — that should stay its accent color so
+ * the visual signal is preserved.
+ *
+ * Submit buttons get their styling from the gform_submit_button PHP
+ * filter (functions.php), which reuses WP block button classes, so
+ * no separate CSS needed there.
+ * ================================================================== */
+.gform_wrapper {
+	color: inherit;
+}
+.gform_wrapper :is(
+	label,
+	.gfield_label,
+	.gfield_description,
+	.gsection_title,
+	.gsection_description,
+	.gform_required_legend,
+	legend
+) {
+	color: inherit;
+}

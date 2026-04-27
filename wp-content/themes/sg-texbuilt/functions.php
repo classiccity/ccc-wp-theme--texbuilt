@@ -89,3 +89,28 @@ add_action( 'init', function () {
 		'label' => __( 'Large Script', 'sg-texbuilt' ),
 	) );
 } );
+
+/**
+ * Gravity Forms: render submit buttons with the same classes a WP core
+ * Button block uses, so they pick up theme.json's `elements.button`
+ * styling AND the parent theme's palette pair-helpers automatically.
+ *
+ * Filter signature: `gform_submit_button( $button_html, $form )` — we
+ * replace the entire <input>/<button> markup. Keeping the `gform_button`
+ * class so any GF-specific JS hooks (validation submit-handlers, etc.)
+ * still find the element. Adding `has-cta-background-color has-background`
+ * applies the CTA palette pair (bg + opposite text), and
+ * `wp-block-button__link wp-element-button` pulls in WP's button typography,
+ * radius, padding, and hover transitions from theme.json.
+ */
+add_filter( 'gform_submit_button', function ( $button, $form ) {
+	$form_id = absint( $form['id'] ?? 0 );
+	$text    = $form['button']['text'] ?? __( 'Submit', 'sg-texbuilt' );
+	$classes = 'gform_button wp-block-button__link wp-element-button has-cta-background-color has-background';
+	return sprintf(
+		'<button type="submit" id="gform_submit_button_%1$d" class="%2$s">%3$s</button>',
+		$form_id,
+		esc_attr( $classes ),
+		esc_html( $text )
+	);
+}, 10, 2 );
