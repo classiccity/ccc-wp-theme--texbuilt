@@ -46,3 +46,13 @@
 # macOS cruft should never be tracked, even inside whitelisted folders.
 **/.DS_Store
 **/._*
+
+# Inside the classic-city-core parent theme: npm artifacts.
+# package.json IS tracked (captures the FA Pro kit dependency for
+# reproducibility; `npm install && npm run fa:sync` rebuilds the
+# assets/fontawesome/ folder from the kit). Everything else is
+# generated and shouldn't be versioned — including .npmrc which
+# carries the FA Pro auth token.
+/wp-content/themes/classic-city-core/node_modules
+/wp-content/themes/classic-city-core/package-lock.json
+/wp-content/themes/classic-city-core/.npmrc

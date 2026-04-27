@@ -238,7 +238,7 @@
                 "narrow-size": "800px"
             },
             "icons": {
-                "style": "sharp-light"
+                "style": "sharp-solid"
             }
         }
     }

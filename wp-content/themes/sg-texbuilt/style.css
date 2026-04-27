@@ -281,7 +281,10 @@ h2.has-text-align-right::after {
 }
 .is-style-eyebrow::before {
 	content: "\f005";
-	font: var(--fa-font-sharp-light);
+	/* --ccc-fa-font-active is emitted by the parent theme's enqueue.php
+	 * and resolves to whichever --fa-font-{family} is currently loaded.
+	 * Lets us flip icons.style in theme.json without touching this CSS. */
+	font: var(--ccc-fa-font-active);
 	color: var(--wp--preset--color--cta);
 	flex-shrink: 0;
 }
