@@ -1969,8 +1969,9 @@ a { color: inherit; }
   aspect-ratio: 3 / 4;
   border-radius: var(--wp--custom--radius--default);
   overflow: hidden;
-  box-shadow: var(--wp--preset--shadow--md);
   text-decoration: none;
+  /* No default box-shadow — tile sits flat. Shadow is a hover affordance only;
+   * see .sg-block-image-tile:hover below. Transition stays so the shadow eases in. */
   transition: box-shadow 0.3s ease;
 }
 /* Aspect variants chosen via ACF. Default is vertical (3:4); horizontal
