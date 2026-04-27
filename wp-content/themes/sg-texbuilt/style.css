@@ -31,37 +31,10 @@ Text Domain:    sg-texbuilt
 }
 .sg-texbuilt-star-divider-star {
 	display: inline-block;
-	animation-name: sg-texbuilt-star-spin;
-	animation-timing-function: linear;
-	animation-iteration-count: infinite;
-	/* `transform-origin: center` is the default for display: inline-block,
-	 * but FA icons render as inline — make origin explicit so rotation
-	 * pivots around each glyph's own center, not the text baseline. */
-	transform-origin: center center;
-	/* Small GPU hint so the spin doesn't pixel-crawl on some browsers. */
-	will-change: transform;
 }
-.sg-texbuilt-star-divider-star.is-left {
-	font-size: 2.5rem;
-	animation-duration: 48s;
-}
-.sg-texbuilt-star-divider-star.is-center {
-	font-size: 5rem;
-	animation-duration: 40s;
-	animation-direction: reverse;
-}
-.sg-texbuilt-star-divider-star.is-right {
-	font-size: 2.5rem;
-	animation-duration: 36s;
-}
-@keyframes sg-texbuilt-star-spin {
-	from { transform: rotate(0deg); }
-	to   { transform: rotate(360deg); }
-}
-/* Respect reduced-motion preferences — freeze the spin. */
-@media (prefers-reduced-motion: reduce) {
-	.sg-texbuilt-star-divider-star { animation: none; }
-}
+.sg-texbuilt-star-divider-star.is-left   { font-size: 2.5rem; }
+.sg-texbuilt-star-divider-star.is-center { font-size: 5rem; }
+.sg-texbuilt-star-divider-star.is-right  { font-size: 2.5rem; }
 
 /* ==================================================================
  * TexBuilt bordered-block treatments.
