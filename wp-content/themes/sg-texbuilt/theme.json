@@ -1,6 +1,13 @@
 {
     "$schema": "https://schemas.wp.org/trunk/theme.json",
     "version": 3,
+    "customTemplates": [
+        {
+            "name": "coming-soon",
+            "title": "Coming Soon (no chrome)",
+            "postTypes": [ "page" ]
+        }
+    ],
     "settings": {
         "color": {
             "palette": [
