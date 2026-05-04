@@ -333,3 +333,22 @@ h2.has-text-align-right::after {
 	border: none;
 	object-fit: cover;
 }
+
+/* ==================================================================
+ * Coming Soon page — drone video crop.
+ *
+ * The HEB-Plano drone footage has cinematic letterbox bars baked into
+ * the source MP4 (~12% black bar at top and bottom of every frame), so
+ * object-fit:cover can't remove them — they're picture content, not
+ * letterboxing from the player. Scale the video element up inside the
+ * cover so the bars overflow past the cover's clipped bounds.
+ *
+ * Scoped to .page-template-coming-soon (= page using the chrome-less
+ * "Coming Soon (no chrome)" template) so other Cover blocks elsewhere
+ * on the site stay 1:1 with their source. One-off page — don't promote
+ * to a reusable utility unless another video lands with the same baked-
+ * in bars.
+ * ================================================================== */
+.page-template-coming-soon .wp-block-cover__video-background {
+	transform: scale(1.3);
+}
