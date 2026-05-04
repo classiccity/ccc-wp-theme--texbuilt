@@ -305,3 +305,31 @@ h2.has-text-align-right::after {
 ) {
 	color: inherit;
 }
+
+/* ==================================================================
+ * core/cover — video & image background sizing.
+ *
+ * The parent theme dequeues WP core's wp-block-library stylesheet in
+ * favor of its own slimmer blocks.css, which doesn't include the
+ * positioning rules for .wp-block-cover__video-background or
+ * .wp-block-cover__image-background. Without these, a <video> inside
+ * a Cover block flows in normal layout at its native intrinsic size,
+ * leaving the cover's overlay color visible above and below it
+ * (looks like letterboxing). Restore the four rules core ships so
+ * the video/image actually fills the cover.
+ *
+ * In use on the Coming Soon page (drone footage behind the logo).
+ * ================================================================== */
+.wp-block-cover__video-background,
+.wp-block-cover__image-background {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	max-height: none;
+	margin: 0;
+	padding: 0;
+	border: none;
+	object-fit: cover;
+}
