@@ -45,10 +45,58 @@ Text Domain:    sg-texbuilt
  * the language stays consistent.
  * ================================================================== */
 
-/* Hero: Full Image — bordered content card + large drop shadow. */
+/* Hero: Full Image — CHILD-THEME OVERRIDES.
+ *
+ * Parent theme's blocks.css renders the inner content inside a white
+ * "card" (bg, border-radius, shadow, transform: translateY) sitting
+ * below a headline that's been pushed to the bottom of the hero via
+ * `margin-top: auto`. Client wanted the card look dropped and the
+ * headline + content centered together as a single group, so:
+ *
+ *   1. Strip the card chrome (transparent bg, no border, no radius,
+ *      no shadow, no translate).
+ *   2. Drop the headline's auto-margin so flex `justify-content: center`
+ *      on .sg-block-hero-full takes over and centers the stack.
+ *   3. Pull the outer block's bottom margin in (was reserving 80px for
+ *      the now-removed translateY card float).
+ *   4. Light cream paragraph text + a soft text-shadow so the inner
+ *      copy reads cleanly against the video background.
+ *   5. Heavier gradient overlay than the parent's eased fade — paragraph
+ *      text now sits in the middle of the hero (not below a white card)
+ *      and needs more contrast to stay legible.
+ *
+ * All scoped to the parent's `.sg-block-hero-full-*` classes; no parent
+ * theme files were touched. If the parent renames any of these classes
+ * in render.php, this whole stack of rules needs the new selectors.
+ * ================================================================== */
+.sg-block-hero-full {
+	margin-bottom: var(--wp--preset--spacing--40);
+}
+.sg-block-hero-full-headline {
+	margin-top: 0;
+	margin-bottom: var(--wp--preset--spacing--20);
+}
 .sg-block-hero-full-card {
-	border: var(--wp--custom--border--default-width) solid var(--wp--preset--color--dark);
-	box-shadow: var(--wp--preset--shadow--lg);
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	transform: none;
+	padding: 0 var(--wp--preset--spacing--30);
+	color: var(--wp--preset--color--light);
+}
+.sg-block-hero-full-card p {
+	color: var(--wp--preset--color--light);
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.sg-block-hero-full-gradient {
+	background: linear-gradient(
+		to bottom,
+		rgba(0, 0, 0, 0.40) 0%,
+		rgba(0, 0, 0, 0.55) 50%,
+		color-mix(in srgb, var(--hero-grad, var(--wp--preset--color--primary)) 90%, transparent) 80%,
+		var(--hero-grad, var(--wp--preset--color--primary)) 100%
+	);
 }
 
 /* Icon Feature Row — outer border around the whole grid, with each item's
