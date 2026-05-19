@@ -114,3 +114,31 @@ add_filter( 'gform_submit_button', function ( $button, $form ) {
 		esc_html( $text )
 	);
 }, 10, 2 );
+
+/**
+ * Hard-coded 301 redirects for legacy URLs. WP core's wp_old_slug_redirect
+ * only handles posts (not pages), so renamed pages need this helper.
+ *
+ * Format: '<old request path with trailing slash>' => '<new path>'.
+ * Match is exact on the path portion of REQUEST_URI; query strings preserved.
+ */
+add_action( 'template_redirect', function () {
+	if ( is_admin() || wp_doing_ajax() || wp_doing_cron() ) return;
+
+	$redirects = array(
+		'/become-a-subcontractor/'                  => '/become-a-trade-partner/',
+		'/become-a-subcontractor/prequalification/' => '/become-a-trade-partner/prequalification/',
+	);
+
+	$request_path = wp_parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH );
+	if ( ! $request_path ) return;
+	$request_path = trailingslashit( $request_path );
+
+	if ( isset( $redirects[ $request_path ] ) ) {
+		$target = $redirects[ $request_path ];
+		$query  = wp_parse_url( $_SERVER['REQUEST_URI'], PHP_URL_QUERY );
+		if ( $query ) $target .= '?' . $query;
+		wp_safe_redirect( home_url( $target ), 301 );
+		exit;
+	}
+}, 1 );
