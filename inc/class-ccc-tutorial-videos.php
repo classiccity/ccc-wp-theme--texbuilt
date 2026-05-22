@@ -67,6 +67,15 @@ class CCC_Tutorial_Videos {
 			self::redirect_back( array( 'ccc_tv_error' => rawurlencode( __( 'Title and video URL are required.', 'classic-city-core' ) ) ) );
 		}
 
+		// Idempotency: if the same user POSTs identical title+URL within 10s,
+		// treat the second submission as a no-op. Guards against double-clicks
+		// and browser-level resubmits before the PRG redirect lands.
+		$dedupe_key = 'ccc_tv_add_' . md5( get_current_user_id() . '|' . $title . '|' . $embed_url );
+		if ( get_transient( $dedupe_key ) ) {
+			self::redirect_back( array( 'ccc_tv_added' => 1 ) );
+		}
+		set_transient( $dedupe_key, 1, 10 );
+
 		$videos   = self::get_videos();
 		$videos[] = array(
 			'id'          => wp_generate_uuid4(),
@@ -149,6 +158,19 @@ class CCC_Tutorial_Videos {
 		</style>';
 	}
 
+	/**
+	 * Fetch the oEmbed HTML without WP's `wp_filter_oembed_result()` sandbox
+	 * wrapping (which strips cookie/storage access and breaks Loom/YouTube/
+	 * Vimeo players inside this admin context). We trust admin-pasted URLs
+	 * here, so the provider's own iframe is exactly what we want.
+	 */
+	private static function fetch_embed_html( $url ) {
+		remove_filter( 'oembed_result', 'wp_filter_oembed_result', 10 );
+		$html = wp_oembed_get( $url );
+		add_filter( 'oembed_result', 'wp_filter_oembed_result', 10, 3 );
+		return $html;
+	}
+
 	private static function render_grid( $videos ) {
 		if ( empty( $videos ) ) {
 			echo '<div class="ccc-tv-empty">' . esc_html__( 'No tutorial videos yet. Add one below.', 'classic-city-core' ) . '</div>';
@@ -162,7 +184,7 @@ class CCC_Tutorial_Videos {
 			$description = $v['description'] ?? '';
 			$embed_url   = $v['embed_url']   ?? '';
 
-			$embed_html = $embed_url !== '' ? wp_oembed_get( $embed_url ) : '';
+			$embed_html = $embed_url !== '' ? self::fetch_embed_html( $embed_url ) : '';
 			if ( ! $embed_html ) {
 				$embed_html = '<div class="ccc-tv-embed-fallback">' . sprintf(
 					/* translators: %s: video URL */
@@ -201,7 +223,9 @@ class CCC_Tutorial_Videos {
 	private static function render_add_form() {
 		echo '<div class="ccc-tv-form">';
 		echo '<h2>' . esc_html__( 'Add a video', 'classic-city-core' ) . '</h2>';
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		// Disable submit on first click so a slow round-trip can't be turned
+		// into a duplicate row by an impatient second click.
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" onsubmit="var s=this.querySelector(\'#submit\');if(s.disabled){return false;}s.disabled=true;s.value=\'Adding\\u2026\';">';
 		echo '<input type="hidden" name="action" value="ccc_tv_add" />';
 		wp_nonce_field( 'ccc_tv_add' );
 
