@@ -3,9 +3,9 @@
  * Tools → Tutorial Videos admin page.
  *
  * Lightweight CMS-side video library for client onboarding/training content.
- * Stores a flat list of { title, description, embed_url } in the
- * `ccc_tutorial_videos` option and renders each via WP's oEmbed for any
- * supported provider (YouTube, Vimeo, Loom, Wistia, etc.).
+ * Stores a flat list of { title, description, embed_code } in the
+ * `ccc_tutorial_videos` option and renders each provider's pasted embed
+ * code as-is. Legacy entries with `embed_url` fall back to wp_oembed_get().
  *
  * @package ClassicCityCore
  */
@@ -59,18 +59,18 @@ class CCC_Tutorial_Videos {
 		}
 		check_admin_referer( 'ccc_tv_add' );
 
-		$title       = isset( $_POST['title'] )       ? sanitize_text_field( wp_unslash( $_POST['title'] ) )       : '';
-		$embed_url   = isset( $_POST['embed_url'] )   ? esc_url_raw( wp_unslash( $_POST['embed_url'] ) )            : '';
+		$title       = isset( $_POST['title'] )       ? sanitize_text_field( wp_unslash( $_POST['title'] ) )           : '';
+		$embed_code  = isset( $_POST['embed_code'] )  ? trim( wp_unslash( $_POST['embed_code'] ) )                    : '';
 		$description = isset( $_POST['description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['description'] ) ) : '';
 
-		if ( $title === '' || $embed_url === '' ) {
-			self::redirect_back( array( 'ccc_tv_error' => rawurlencode( __( 'Title and video URL are required.', 'classic-city-core' ) ) ) );
+		if ( $title === '' || $embed_code === '' ) {
+			self::redirect_back( array( 'ccc_tv_error' => rawurlencode( __( 'Title and embed code are required.', 'classic-city-core' ) ) ) );
 		}
 
-		// Idempotency: if the same user POSTs identical title+URL within 10s,
-		// treat the second submission as a no-op. Guards against double-clicks
-		// and browser-level resubmits before the PRG redirect lands.
-		$dedupe_key = 'ccc_tv_add_' . md5( get_current_user_id() . '|' . $title . '|' . $embed_url );
+		// Idempotency: if the same user POSTs an identical title+embed within
+		// 10s, treat the second submission as a no-op. Guards against double-
+		// clicks and browser resubmits before the PRG redirect lands.
+		$dedupe_key = 'ccc_tv_add_' . md5( get_current_user_id() . '|' . $title . '|' . $embed_code );
 		if ( get_transient( $dedupe_key ) ) {
 			self::redirect_back( array( 'ccc_tv_added' => 1 ) );
 		}
@@ -80,7 +80,7 @@ class CCC_Tutorial_Videos {
 		$videos[] = array(
 			'id'          => wp_generate_uuid4(),
 			'title'       => $title,
-			'embed_url'   => $embed_url,
+			'embed_code'  => $embed_code,
 			'description' => $description,
 		);
 		self::save_videos( $videos );
@@ -113,7 +113,7 @@ class CCC_Tutorial_Videos {
 
 		echo '<div class="wrap">';
 		echo '<h1>' . esc_html__( 'Tutorial Videos', 'classic-city-core' ) . '</h1>';
-		echo '<p style="margin:0 0 1.5em;color:#555;">' . esc_html__( 'Add training and how-to videos for site editors. Any YouTube, Vimeo, Loom, or Wistia URL will embed automatically.', 'classic-city-core' ) . '</p>';
+		echo '<p style="margin:0 0 1.5em;color:#555;">' . esc_html__( 'Add training and how-to videos for site editors. Paste the embed code (the full <iframe>… or <script>… HTML) from YouTube, Vimeo, Loom, Wistia, or any other provider\'s "Share → Embed" dialog.', 'classic-city-core' ) . '</p>';
 
 		if ( isset( $_GET['ccc_tv_added'] ) ) {
 			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Video added.', 'classic-city-core' ) . '</p></div>';
@@ -182,15 +182,22 @@ class CCC_Tutorial_Videos {
 			$id          = $v['id']          ?? '';
 			$title       = $v['title']       ?? '';
 			$description = $v['description'] ?? '';
-			$embed_url   = $v['embed_url']   ?? '';
+			$embed_code  = $v['embed_code']  ?? '';
+			$embed_url   = $v['embed_url']   ?? ''; // Legacy field — render via oEmbed for back-compat.
 
-			$embed_html = $embed_url !== '' ? self::fetch_embed_html( $embed_url ) : '';
-			if ( ! $embed_html ) {
-				$embed_html = '<div class="ccc-tv-embed-fallback">' . sprintf(
-					/* translators: %s: video URL */
-					esc_html__( 'Could not embed: %s', 'classic-city-core' ),
-					'<a href="' . esc_url( $embed_url ) . '" style="color:#fff;text-decoration:underline;" target="_blank" rel="noopener">' . esc_html( $embed_url ) . '</a>'
-				) . '</div>';
+			if ( $embed_code !== '' ) {
+				$embed_html = $embed_code;
+			} elseif ( $embed_url !== '' ) {
+				$embed_html = self::fetch_embed_html( $embed_url );
+				if ( ! $embed_html ) {
+					$embed_html = '<div class="ccc-tv-embed-fallback">' . sprintf(
+						/* translators: %s: video URL */
+						esc_html__( 'Could not embed: %s', 'classic-city-core' ),
+						'<a href="' . esc_url( $embed_url ) . '" style="color:#fff;text-decoration:underline;" target="_blank" rel="noopener">' . esc_html( $embed_url ) . '</a>'
+					) . '</div>';
+				}
+			} else {
+				$embed_html = '<div class="ccc-tv-embed-fallback">' . esc_html__( 'No embed code on this entry.', 'classic-city-core' ) . '</div>';
 			}
 
 			$delete_url = wp_nonce_url(
@@ -205,7 +212,7 @@ class CCC_Tutorial_Videos {
 			);
 
 			echo '<div class="ccc-tv-card">';
-			echo '<div class="ccc-tv-embed">' . $embed_html . '</div>'; // oEmbed HTML is trusted WP output.
+			echo '<div class="ccc-tv-embed">' . $embed_html . '</div>'; // Trusted: pasted by an admin (manage_options).
 			if ( $title !== '' ) {
 				echo '<h2>' . esc_html( $title ) . '</h2>';
 			}
@@ -235,8 +242,9 @@ class CCC_Tutorial_Videos {
 		echo '</div>';
 
 		echo '<div class="form-row">';
-		echo '<label for="ccc_tv_embed_url">' . esc_html__( 'Video URL', 'classic-city-core' ) . '</label>';
-		echo '<input type="url" id="ccc_tv_embed_url" name="embed_url" placeholder="https://www.youtube.com/watch?v=..." required />';
+		echo '<label for="ccc_tv_embed_code">' . esc_html__( 'Embed code', 'classic-city-core' ) . '</label>';
+		echo '<textarea id="ccc_tv_embed_code" name="embed_code" rows="5" placeholder="' . esc_attr__( 'Paste the full embed code — e.g. <iframe src=\"https://www.loom.com/embed/...\"></iframe>', 'classic-city-core' ) . '" required></textarea>';
+		echo '<p class="description" style="margin-top:4px;font-size:12px;color:#777;">' . esc_html__( 'On Loom: Share → Embed → Copy embed code. On YouTube: Share → Embed → Copy.', 'classic-city-core' ) . '</p>';
 		echo '</div>';
 
 		echo '<div class="form-row">';
