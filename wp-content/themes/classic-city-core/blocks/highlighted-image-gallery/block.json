@@ -1,0 +1,37 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/highlighted-image-gallery",
+	"title": "Highlighted Image Gallery",
+	"description": "Featured image above a thumbnail row. Click any thumbnail to make it the primary image. Default 5 columns of thumbnails; configurable per instance. Uses the site default border-radius and block gap.",
+	"category": "media",
+	"icon": "format-gallery",
+	"keywords": [
+		"gallery",
+		"images",
+		"product",
+		"thumbnails"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"align": [
+			"wide",
+			"full"
+		],
+		"anchor": true,
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "auto",
+		"renderTemplate": "render.php"
+	},
+	"viewScript": "file:./view.js"
+}

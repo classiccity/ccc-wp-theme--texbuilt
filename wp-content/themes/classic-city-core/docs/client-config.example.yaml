@@ -1,0 +1,93 @@
+# Chief of Stuff → Classic City Core handoff config
+# Worked example for a fictional client.
+# Schema reference: docs/CHIEF_OF_STUFF_HANDOFF.md
+
+schema_version: 1.0
+generated_at: 2026-05-18T14:30:00Z
+generated_by: chief-of-stuff
+
+client:
+  display_name: "Acme Roofing"
+  slug: "acmeroofing"                 # lowercase, no hyphens, ≤14 chars
+  industry: "construction"            # drives demo seed selection
+  primary_contact:
+    name: "Jane Doe"
+    email: "jane@acmeroofing.com"
+    phone: "+1-555-0100"
+  notes_doc: "/Users/chris/Chief of Stuff/Brain/Chief of Stuff/Classic City/Clients/Acme Roofing/notes.md"
+
+infrastructure:
+  wpe:
+    account_name: "classiccity"
+    site_name: "Acme Roofing"         # WPE Site name (human-readable, what Local kebab-cases)
+    install_name: "acmeroofing"       # MUST equal client.slug
+    environment: "production"         # WPE environment label on the install itself —
+                                      # NOT the same as `deployment.initial_deploy_target`
+                                      # which controls where the first code push goes
+  github:
+    org: "classiccity"
+    repo_name: "ccc-wp-theme--acmeroofing"
+    visibility: "private"
+  local:
+    expected_folder: "acme-roofing"   # kebab-case of wpe.site_name —
+                                      # what Local creates when it pulls from WPE
+
+brand:
+  palette:
+    # Use the agent's best read from transcripts / brand-docs. "auto" lets the
+    # parent theme's palette-helper compute the paired text color rather than
+    # locking it in here.
+    cta: "#FF6B35"
+    cta-alt: "auto"
+    primary: "#2E86AB"
+    primary-alt: "auto"
+    secondary: "#A23B72"
+    secondary-alt: "auto"
+    tertiary: "#F18F01"
+    tertiary-alt: "auto"
+    light: "#F5F5F5"
+    light-alt: "auto"
+    dark: "#1A1A1A"
+    dark-alt: "auto"
+  typography:
+    heading:
+      family: "Inter"
+      type: "google"
+      weights: [600, 700, 800]
+    body:
+      family: "Inter"
+      type: "google"
+      weights: [400, 500]
+  custom_tokens:
+    radius: "6px"
+    border_default_width: "1px"
+    icon_style: "solid"               # solid | regular | light | sharp-light
+    button_padding:
+      x: "1.5em"
+      y: "0.75em"
+
+source_material:
+  # Pointers back to the CoS-side material the agent can re-read if any brand
+  # field above is ambiguous. Don't guess — go back to source.
+  transcripts:
+    - id: "fireflies://meeting/abc123"
+      label: "Discovery call 2026-04-12"
+    - id: "fireflies://meeting/def456"
+      label: "Brand alignment 2026-04-19"
+  brand_docs:
+    - path: "/Users/chris/Chief of Stuff/Brain/Chief of Stuff/Classic City/Clients/Acme Roofing/brand-guide.pdf"
+  figma:
+    - url: "https://figma.com/file/xyz"
+      note: "Reference site they liked — vibe target, not pixel target"
+
+overrides_json_path: null             # optional: absolute path to a JSON file with extra
+                                      # theme.json overrides (typeScale, spacing, shadows,
+                                      # layout.contentSize, etc.) passed to
+                                      # `wp style-guide new-client --overrides=...`
+
+deployment:
+  initial_deploy_target: "staging"    # ALWAYS "staging" unless Chris has explicitly
+                                      # authorized production-first. "production" is a
+                                      # stop condition in CHIEF_OF_STUFF_HANDOFF.md.
+  auto_activate_child_theme: true
+  seed_demo_content: true

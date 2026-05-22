@@ -34,27 +34,65 @@ Step-by-step for spinning up a new client site. Target state at the end:
   # GitHub → Settings → SSH keys → paste
   ssh -T git@github.com   # should say "Hi <username>!"
   ```
-- **Same SSH key registered on WP Engine** (per-install, see Phase 9).
-  WPE uses SSH keys for Git Push, separately keyed from the SSH
-  Gateway. **Note:** WPE SSH Gateway access (for `ssh texbuilt1@…`
-  shell access) uses a DIFFERENT key registration than Git Push. Adding
-  a key to Git Push alone does not grant shell access to the install.
+- **Same SSH key registered on WP Engine.** Two separate registrations:
+  1. **SSH Gateway (shell access)** — register the key once at the
+     **User Portal → User Profile → SSH Keys** level. This propagates to
+     every install in every account you own. **No per-install step
+     required.** (The WPE UI also exposes a per-install SSH Gateway tab,
+     but it's redundant once the user-level key is in place.)
+  2. **Git Push (deploys)** — registered per-install on the install's
+     Git Push tab, see Phase 9. This is a different system from SSH
+     Gateway. Adding a key to one does not grant access via the other.
 
 ---
 
-## Phase 1 — Create the WP Engine install
+## Phase 1 — Create the WP Engine site + install
 
-_(If you've already done this manually, skip to Phase 3.)_
+This phase is automated by the `onboard-client` script (see
+`scripts/onboard-client/`). It creates the WPE Site and Install via the
+[WPE Public API](https://wpengineapi.com), polls until provisioning
+completes, and writes a state record for downstream phases. Run it from
+the parent theme repo:
 
-1. Log into [my.wpengine.com](https://my.wpengine.com).
-2. **Add Install** → short lowercase install name like `{slug}1`
-   (e.g., `texbuilt1`, `blackwood1`). The `1` suffix leaves room for
-   staging/experimental installs later.
-3. Pick the environment (Production).
-4. Wait for WP Engine to provision (2–5 minutes).
-5. The install's temp URL is `https://{install}.wpengine.com`.
+```bash
+cd "/Users/chris/Local Sites/the-style-guide-wp/app/public/wp-content/themes/classic-city-core/scripts/onboard-client"
+npm install   # first time only
+npm run phase1
+```
 
-**Verification:** you can log into the install's wp-admin.
+The script edits its target client config inline at the top of
+`phases/01-wpe-install.ts`. Future iteration: move config to a
+per-client JSON or interactive prompts.
+
+**API model — Account → Site → Install:**
+
+- An **Account** is the billing/team boundary (e.g., `classiccity`).
+- A **Site** groups 1+ Installs across `production`/`staging`/`development`.
+  Has a human-readable name (e.g., "Georgia State Election Board").
+- An **Install** is the actual WP install. Short name (≤14 chars,
+  the WPE limit), tied to one Site, one environment.
+
+The script creates the Site (if not already present) then the Install
+under it. `POST /installs` requires **both** `site_id` AND `account_id`
+even though the site implies the account — undocumented quirk.
+
+**Naming convention:**
+
+| Field | Convention | Example |
+|---|---|---|
+| Site name | Client display name (human-readable) | `Georgia State Election Board` |
+| Install name | Short acronym of the client name, **no `1` suffix** | `georgiaseb` |
+| Slug (used everywhere downstream) | Same as install name | `georgiaseb` |
+
+The earlier `{slug}1` convention used on `texbuilt1` was a one-off; no-suffix
+acronyms are the prevailing pattern across the `classiccity` fleet.
+
+**Manual fallback** (if the script can't run): WPE User Portal →
+**Add Install** → enter the install name and environment. Wait 2–5
+minutes for provisioning.
+
+**Verification:** `https://{install}.wpenginepowered.com` (or
+`{install}.wpengine.com`) returns HTTP 200.
 
 ---
 
@@ -94,9 +132,10 @@ Plugins aren't committed to any git repo:
   `.gitignore` explicitly. Consider `chmod 600 keys.txt` to restrict
   read access to your user.
 
-- **SSH Gateway key registered on the install** — different tab from
-  Git Push. Per-install, manual ~30s: WPE User Portal → install →
-  SSH Gateway → paste `~/.ssh/id_ed25519.pub`. Verify with
+- **SSH Gateway key registered at the User level** — see the
+  Prerequisites section above. Once your key is registered at
+  **User Portal → User Profile → SSH Keys**, it works on every install
+  in every account you own — no per-install step needed. Verify with
   `ssh {install}@{install}.ssh.wpengine.net "echo ok"`.
 
 ### 1b-script
@@ -155,12 +194,17 @@ wp rewrite flush
 
 # Remove WPE default plugins we don't want. Conditional so we don't
 # error when they're not there (some WPE install templates don't
-# ship them).
+# ship them). Note: `wp plugin delete` does NOT auto-deactivate, and
+# does NOT accept `--deactivate` (an older flag — wp-cli rejects it
+# now). Deactivate first, then delete; tolerate failures on the
+# deactivate step in case the plugin was already inactive.
 if wp plugin is-installed genesis-blocks 2>/dev/null; then
-  wp plugin delete genesis-blocks --deactivate
+  wp plugin deactivate genesis-blocks 2>/dev/null || true
+  wp plugin delete genesis-blocks
 fi
 if wp plugin is-installed akismet 2>/dev/null; then
-  wp plugin delete akismet --deactivate
+  wp plugin deactivate akismet 2>/dev/null || true
+  wp plugin delete akismet
 fi
 
 # Done — remove the uploaded zips so they don't clutter the install.
@@ -270,10 +314,11 @@ git remote add origin git@github.com:classiccity/ccc-wp-theme--{slug}.git
 
 ---
 
-## Phase 6 — Write the whitelist `.gitignore`
+## Phase 6 — Write the whitelist `.gitignore` (and commit it)
 
 At the site root, create `.gitignore` that ignores everything by default
-and un-ignores only the paths we version:
+and un-ignores only the paths we version, then commit it as the **initial
+commit**:
 
 ```gitignore
 # Ignore everything at every level.
@@ -281,6 +326,7 @@ and un-ignores only the paths we version:
 
 # Un-ignore repo metadata.
 !/.gitignore
+!/.cache-bust-timestamp
 
 # Un-ignore the path down to our versioned theme folders.
 !/wp-content/
@@ -290,15 +336,39 @@ and un-ignores only the paths we version:
 !/wp-content/themes/classic-city-core
 !/wp-content/themes/sg-{slug}
 
+# Un-ignore our custom mu-plugins (platform-level fixes like REST auth
+# header restoration). Don't un-ignore the whole mu-plugins directory —
+# WP Engine drops its own infrastructure files in there that we don't
+# want to version.
+!/wp-content/mu-plugins/
+/wp-content/mu-plugins/*
+!/wp-content/mu-plugins/ccc-fix-auth-header.php
+
 # macOS cruft should never be tracked, even inside whitelisted folders.
 **/.DS_Store
 **/._*
+
+# Inside the classic-city-core parent theme: npm artifacts.
+/wp-content/themes/classic-city-core/node_modules
+/wp-content/themes/classic-city-core/package-lock.json
+/wp-content/themes/classic-city-core/.npmrc
 ```
 
-After saving it, `git status` from the site root should list only the
-.gitignore and the two theme paths as untracked. Everything else (WP
-core, wp-config.php, uploads, plugins, mu-plugins, cache) stays invisible
-to git.
+```bash
+git add .gitignore
+git commit -m "Initial commit: whitelist .gitignore"
+```
+
+**Why commit now?** `git subtree add` (Phase 7) checks the working tree
+against `HEAD` as a precondition. Without an existing commit, it errors
+out: `fatal: working tree has modifications. Cannot add.` (misleading —
+the real cause is that `HEAD` doesn't exist yet). An initial commit of
+the .gitignore is the cleanest fix and gives a tidy starting point in
+the git log.
+
+After saving + committing, `git status` from the site root should be
+clean. Everything else (WP core, wp-config.php, uploads, plugins,
+mu-plugins, cache) stays invisible to git.
 
 ---
 
@@ -372,19 +442,20 @@ find "/Users/chris/Local Sites/{SITE_NAME}/app/public/wp-content/themes/sg-{slug
   (`sg-texbuilt/CLAUDE.md`) is the model — keep its structure, swap
   the values.
 
-Commit the child theme and the gitignore:
+Commit the new files:
 
 ```bash
 cd "/Users/chris/Local Sites/{SITE_NAME}/app/public"
-git add .gitignore wp-content/themes/sg-{slug}
-git commit -m "Add sg-{slug} child theme"
+git add wp-content/themes/sg-{slug} wp-content/mu-plugins/ccc-fix-auth-header.php
+git commit -m "Initial scaffold: sg-{slug} child + .gitignore + mu-plugin"
 ```
 
-(The parent-theme subtree was already committed in Phase 7, so we
-don't need to re-add it here.)
+(The parent-theme subtree was already committed in Phase 7. The
+`.gitignore` was committed in Phase 6 as the initial commit. So this
+commit only carries the child theme + mu-plugin.)
 
-**Verification:** `git log --oneline` shows three commits: the
-subtree-squash, the subtree merge, and the child theme add.
+**Verification:** `git log --oneline` shows four commits: initial
+.gitignore, the subtree squash, the subtree merge, and the scaffold add.
 
 ---
 
@@ -392,12 +463,27 @@ subtree-squash, the subtree merge, and the child theme add.
 
 ### 9a. Add your SSH key to the WP Engine install's Git Push
 
-1. In the WP Engine User Portal → the install → **Git Push** tab.
+**This is per-install and there is no API path.** Unlike SSH Gateway
+keys (which are user-level and propagate to every install — see the
+Prerequisites section), Git Push uses gitolite with per-install key
+registration. The WPE Public API does NOT expose endpoints for
+managing Git Push keys (`/installs/{id}/ssh_keys` and
+`/git_push_keys` both 404; the account-level `/ssh_keys` manages SSH
+Gateway only). Verified empirically during georgiaseb onboarding.
+
+1. In the WP Engine User Portal → Sites → the install → **Git Push** tab.
 2. Paste the public key (`~/.ssh/id_ed25519.pub`) — same one registered
-   with GitHub.
+   with GitHub. Tip: `pbcopy < ~/.ssh/id_ed25519.pub` puts it on the
+   clipboard.
 3. Fill in developer name + email (email needs to match your WP Engine
    account email on some installs).
 4. Save.
+
+**Symptom if you skip this:** `git push wpe main` fails with
+`FATAL: W any production/{install} {prior-install}-{user} DENIED by
+fallthru`. Gitolite recognizes the key but it's authorized for a
+different install. The script's Phase 9 catches this error pattern and
+prints the fix steps inline.
 
 **Verification:**
 ```bash
@@ -781,44 +867,42 @@ reverting.
 
 ---
 
-## Automation roadmap
+## Automation status
 
-Most of Phases 3–9 are scriptable. A command like:
+The onboarding script lives at `scripts/onboard-client/` in this repo
+and is being built **incrementally** — one phase at a time, run on a real
+client, validated, then committed before moving on. Each phase is its
+own importable module under `phases/`, with persistent per-client state
+in `state/{slug}.json` so phases are resumable.
 
-```
-onboard-client --slug=blackwood \
-               --name="Blackwood Construction" \
-               --wpe-install=blackwood1 \
-               --template=construction \
-               --brand-color=#B45E10
-```
+| Phase | Module | Status |
+|---|---|---|
+| 1 — WPE site + install | `phases/01-wpe-install.ts` | ✅ implemented (Apr 30) |
+| 1b — Plugins + site meta | `phases/1b-plugins-meta.ts` | ✅ implemented (Apr 30) |
+| 3 — `gh repo create` | `phases/03-github-repo.ts` | ✅ implemented (Apr 30) |
+| 4 — Verify Local pull | `phases/04-local-pull.ts` | ✅ implemented (Apr 30) |
+| 5 — `git init` at site root | `phases/05-git-init.ts` | ✅ implemented (Apr 30) |
+| 6 — whitelist `.gitignore` | `phases/06-gitignore.ts` | ✅ implemented (Apr 30) |
+| 7 — parent theme subtree | `phases/07-parent-subtree.ts` | ✅ implemented (Apr 30) |
+| 7b — mu-plugins | `phases/07b-mu-plugins.ts` | ✅ implemented (Apr 30) |
+| 8 — child theme scaffold | `phases/08-child-theme.ts` | ✅ implemented (Apr 30) |
+| 9 — WPE Git Push deploy | `phases/09-wpe-deploy.ts` | ✅ implemented (Apr 30) |
+| 10 — activate child theme | (TBD) | ⏳ next |
+| 4 — WPE → Local pull | (manual) | ⏳ Local CLI is experimental |
+| 5 — `git init` at site root | (TBD) | ⏳ |
+| 6 — whitelist `.gitignore` | (TBD) | ⏳ |
+| 7 — parent theme subtree | (TBD) | ⏳ |
+| 7b — mu-plugins | (TBD) | ⏳ |
+| 8 — child theme scaffold | (TBD) | ⏳ |
+| 9 — WPE Git Push deploy | (TBD) | ⏳ |
+| 10 — activate child theme | (TBD) | ⏳ over SSH+wp-cli |
 
-could run the automatable phases with pause points where the user needs
-to click something in Local or the WPE portal. Realistic scope:
+**Genuinely manual (no API path):**
+- Pulling WPE → Local (Local's CLI is experimental — GUI step today).
 
-**Fully automatable:**
-- `gh repo create` for the client repo
-- `git init` at site root
-- Writing the `.gitignore` with substituted slug
-- `git subtree add --squash` the parent theme (named remote pre-added)
-- Copy child theme template, substitute placeholders (slug, name,
-  colors, font stack)
-- Commit + push to GitHub
-- Add WPE remote (URL from `--wpe-install` arg)
-- Push to WPE
-
-**Semi-automatable (WP Engine API):**
-- Creating the install itself (plan-tier-gated)
-- Activating the child theme via `wp theme activate` over SSH Gateway
-
-**Manual today:**
-- Pulling from WPE → Local (Local's CLI is experimental)
-- Registering SSH keys on WPE's Git Push and SSH Gateway tabs (UI-only)
-
-Build this after the **second** real client — you'll have seen what
-actually varies across clients (and what doesn't need a flag) only
-after two examples. A good home for the script is
-`scripts/onboard-client.sh` in the parent theme repo.
+**Credentials:** WPE API username/password live at
+`~/.config/wpe/credentials.env` (chmod 600), shared across repos.
+See `scripts/onboard-client/.env.example`.
 
 ---
 
@@ -917,3 +1001,95 @@ after two examples. A good home for the script is
   Submodule-to-subtree migration appendix for any future client repos
   set up the old way; ARCHITECTURE.md "Why submodule" section rewritten
   as "Why subtree" with the WPE limitation explained.
+- **2026-04-30** — Began building the `scripts/onboard-client/` script
+  during onboarding for **Georgia State Election Board** (slug
+  `georgiaseb`, classiccity account). Phase 1 (WPE site + install
+  creation via API) implemented, run, and verified. Several runbook
+  corrections made along the way:
+    1. **WPE API model:** the `Account → Site → Install` hierarchy
+       isn't obvious from the portal. `POST /installs` requires BOTH
+       `site_id` AND `account_id` in the body — sending only one
+       returns 400 with a misleading "field is required" error. The
+       script now creates the Site first, then the Install under it.
+    2. **API gateway 504s** are common and transient. The script
+       retries up to 2× on any 5xx with backoff before failing.
+    3. **SSH Gateway key registration is User-level**, not per-install.
+       The runbook previously claimed each install required its own
+       SSH Gateway key registration; that's wrong — registering the
+       key once at User Portal → User Profile → SSH Keys propagates
+       to every install in every account you own. Phase 1b prereqs
+       and the Prerequisites section corrected.
+    4. **Install naming convention:** the `{slug}1` recommendation
+       (used on `texbuilt1`) was a one-off — the prevailing pattern
+       across `classiccity` is no-suffix acronyms (`annistown`,
+       `aacap`, `donateforgood`, `pooldefence`, etc.). Phase 1
+       updated to recommend short acronyms, no suffix.
+    5. **Credentials live at user scope** (`~/.config/wpe/credentials.env`,
+       chmod 600) so multiple repos and sessions share one source of
+       truth. The script reads from there via dotenv. Never commit
+       per-repo `.env` files containing WPE creds.
+    6. **Automation roadmap** section reframed from "future scope"
+       to a per-phase status table the script's progress lives in.
+- **2026-04-30 (continued, late)** — Phases 3, 4, 5, 6, 7, 7b, 8, 9
+  implemented and ran end-to-end on georgiaseb. The full pipeline now
+  takes a fresh client from "no infrastructure" to "deployed sg-theme on
+  WPE temp URL" in roughly 6 minutes (most of it WPE provisioning wait
+  time). New findings worth runbook updates:
+    1. **Phase 6 must commit the `.gitignore` as an initial commit.**
+       Without HEAD, `git subtree add` (Phase 7) errors with
+       `fatal: working tree has modifications. Cannot add.` — misleading
+       message for what's actually a missing-HEAD prerequisite check.
+       Phase 6 section + script updated.
+    2. **Local site folder name comes from the WPE Site name, not the
+       install slug.** When you click "Pull from WPE" in Local, it
+       kebab-cases the **Site** name (e.g., "Georgia State Election
+       Board" → `georgia-state-election-board/`). The `{slug}` variable
+       (install name) is `georgiaseb`. So the runbook's `{SITE_NAME}`
+       placeholder is *kebab(client name)*, not slug. The script's
+       Phase 4 derives this and records it in state for Phases 5–9 to
+       use as the working directory.
+    3. **Git Push SSH keys are per-install AND not API-accessible.**
+       Confirmed: `/installs/{id}/ssh_keys` and `/git_push_keys` both
+       return 404 from the WPE API; the only `/ssh_keys` endpoint is
+       account-level and manages SSH Gateway only. So Phase 9a (key
+       registration on the install's Git Push tab) is genuinely manual
+       per-install. Symptom if skipped:
+       `FATAL: W any production/{install} {other-install}-{user} DENIED by fallthru`.
+       Phase 9 script catches the gitolite refusal pattern (`DENIED by
+       fallthru`, `Permission denied`, `Could not read from remote`) and
+       prints the portal-step fix inline.
+    4. **Phase 8 brand substitution is mechanical.** When copying
+       `sg-texbuilt` as the child-theme template, recursively substituting
+       `sg-texbuilt`/`texbuilt1`/`TexBuilt` covers ~all client-identifying
+       references. Brand work (palette, fonts, hero copy) is still a
+       manual review pass — the substitution doesn't try to be smart
+       about per-section brand alignment.
+    5. **Phase 9 verification:** after `git push wpe main` reports
+       success, fetch the child theme's `style.css` via the temp URL.
+       HTTP 200 confirms (a) the repo is at the right scope (site root,
+       not themes folder — see the Restructure appendix), (b) the
+       parent theme subtree pushed, and (c) WPE finished its post-receive
+       hook. All three were green for georgiaseb on first try after the
+       Git Push key was registered.
+- **2026-04-30 (continued)** — Phase 1b (`scripts/onboard-client/phases/1b-plugins-meta.ts`)
+  implemented and verified end-to-end on georgiaseb. Two new findings:
+    1. **`wp plugin delete --deactivate` is no longer a valid flag.**
+       The Phase 1b bash block in this runbook used to include
+       `wp plugin delete genesis-blocks --deactivate` (and the same for
+       akismet). Modern wp-cli rejects this with "unknown --deactivate
+       parameter" and `wp plugin delete` does NOT auto-deactivate
+       active plugins. The corrected pattern is two commands:
+       `wp plugin deactivate <slug> 2>/dev/null || true` followed by
+       `wp plugin delete <slug>`. Phase 1b script + the runbook's
+       `1b-script` block are both updated.
+    2. **`isDirectRun` check in TS modules must compare resolved paths,
+       not URL strings.** When the project lives under a path with
+       spaces ("Local Sites"), `import.meta.url` URL-encodes the spaces
+       (`Local%20Sites`) but `process.argv[1]` does not — so the
+       string comparison silently fails and the module imports without
+       its `if (isDirectRun)` block executing. Use
+       `process.argv[1] === fileURLToPath(import.meta.url)` to compare.
+  Verification on georgiaseb: ACF Pro 6.7.0.2, Gravity Forms 2.10.0,
+  Yoast SEO 27.5 all active and licensed; blogname/blogdescription/
+  permalinks set; akismet removed (genesis-blocks wasn't in this
+  install template, so it skipped its branch cleanly).

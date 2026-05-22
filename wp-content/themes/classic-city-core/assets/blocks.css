@@ -550,22 +550,86 @@ a { color: inherit; }
   line-height: 1;
 }
 
-/* Logo strip */
+/* ==================================================================
+ * Logo strip — two layouts: static grid + marquee scroller.
+ *
+ * Child themes can tweak any of these without forking the block, via
+ * the CSS variables declared on .sg-block-logos:
+ *   --sg-logo-max-height   image cap (default unset = native size)
+ *   --sg-logo-gap          space between logos (default spacing--50)
+ *   --sg-logo-scroll-dur   marquee cycle duration (default 40s; the
+ *                          speed modifier classes set this, but child
+ *                          themes can pin it explicitly too)
+ * ================================================================== */
 .sg-block-logos {
+  --sg-logo-gap: var(--wp--preset--spacing--50);
+  --sg-logo-scroll-dur: 40s;
   text-align: center;
   padding: var(--wp--preset--spacing--30) 0;
   display: flex;
   flex-direction: column;
   gap: var(--wp--style--block-gap);
 }
+.sg-block-logos img {
+  /* max-height only applies when child theme sets the var (or
+   * scroller mode below pins it). Grid mode otherwise behaves as
+   * before — native logo sizes. */
+  max-height: var(--sg-logo-max-height, none);
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
 .sg-block-logos-row {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: var(--wp--preset--spacing--50);
+  gap: var(--sg-logo-gap);
   filter: grayscale(1);
   /* Opacity dimming is a per-site decision — not applied by default. */
+}
+
+/* Scroller layout — single nowrap row, CSS marquee. The .row contains
+ * the logo set rendered twice (the duplicate is aria-hidden); the
+ * animation translates -50% so the second set lands exactly where the
+ * first started, producing an infinite loop. */
+.sg-block-logos--scroller {
+  --sg-logo-max-height: 60px;
+  overflow: hidden;
+  width: 100%;
+}
+.sg-block-logos--scroller .sg-block-logos-row {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  width: max-content;
+  animation: sg-logo-scroll var(--sg-logo-scroll-dur) linear infinite;
+}
+.sg-block-logos--speed-slow   { --sg-logo-scroll-dur: 60s; }
+.sg-block-logos--speed-medium { --sg-logo-scroll-dur: 40s; }
+.sg-block-logos--speed-fast   { --sg-logo-scroll-dur: 25s; }
+.sg-block-logos--dir-right .sg-block-logos-row {
+  animation-direction: reverse;
+}
+.sg-block-logos--pause-on-hover:hover .sg-block-logos-row {
+  animation-play-state: paused;
+}
+@keyframes sg-logo-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* Accessibility: respect prefers-reduced-motion by halting the
+ * animation entirely and falling back to wrapped layout. */
+@media (prefers-reduced-motion: reduce) {
+  .sg-block-logos--scroller {
+    overflow: visible;
+  }
+  .sg-block-logos--scroller .sg-block-logos-row {
+    animation: none;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: auto;
+  }
 }
 
 /* Block-quote (matches WP core .wp-block-quote markup).
@@ -2128,8 +2192,10 @@ a { color: inherit; }
     grid-row: 1;
   }
 
-  /* Logos row — collapses into a 2-column grid with standard block gap. */
-  .sg-block-logos-row {
+  /* Logos row (grid mode) — collapses into a 2-column grid with
+   * standard block gap. Scroller mode keeps its nowrap marquee on
+   * mobile — a continuous strip is the whole point of the variant. */
+  .sg-block-logos:not(.sg-block-logos--scroller) .sg-block-logos-row {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: var(--wp--style--block-gap);
@@ -2567,4 +2633,69 @@ header.wp-block-template-part
 }
 @media (max-width: 600px) {
   .sg-block-link-pods { grid-template-columns: 1fr; }
+}
+
+/* ==================================================================
+ * Highlighted Image Gallery (classic-city-core/highlighted-image-gallery).
+ * Featured image above a thumbnail row. Click a thumbnail to make it
+ * primary. Column count comes from the inline `--ccc-gallery-cols`
+ * custom prop set on the block root. Border radius + block gap pull
+ * from the site defaults so this looks native to whatever palette
+ * + radius the active child theme ships.
+ * ================================================================== */
+.sg-block-highlighted-image-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--style--block-gap, 20px);
+}
+.sg-block-highlighted-image-gallery__primary {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--wp--custom--radius--default, 0);
+  object-fit: cover;
+}
+.sg-block-highlighted-image-gallery__thumbs {
+  display: grid;
+  grid-template-columns: repeat(var(--ccc-gallery-cols, 5), minmax(0, 1fr));
+  gap: var(--wp--style--block-gap, 20px);
+}
+.sg-block-highlighted-image-gallery__thumb {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: block;
+  border-radius: var(--wp--custom--radius--default, 0);
+  overflow: hidden;
+  outline: 0;
+  outline-offset: 2px;
+}
+.sg-block-highlighted-image-gallery__thumb img {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+  border-radius: var(--wp--custom--radius--default, 0);
+}
+.sg-block-highlighted-image-gallery__thumb.is-active,
+.sg-block-highlighted-image-gallery__thumb:focus-visible {
+  outline: 2px solid var(--wp--preset--color--primary, currentColor);
+}
+
+@media (max-width: 900px) {
+  /* Step down to 3 columns on tablets so thumbnails stay tappable even
+     when the admin configured a higher column count for desktop. */
+  .sg-block-highlighted-image-gallery__thumbs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  /* Two columns on phones. */
+  .sg-block-highlighted-image-gallery__thumbs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

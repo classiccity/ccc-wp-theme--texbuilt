@@ -1,0 +1,28 @@
+{
+  "name": "ccc-onboard-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Automation script for spinning up a new Classic City client. See ../../docs/CLIENT_ONBOARDING.md for the runbook this implements.",
+  "scripts": {
+    "start": "tsx onboard-client.ts",
+    "phase1": "tsx phases/01-wpe-install.ts",
+    "phase1b": "tsx phases/1b-plugins-meta.ts",
+    "phase3": "tsx phases/03-github-repo.ts",
+    "phase4": "tsx phases/04-local-pull.ts",
+    "phase5": "tsx phases/05-git-init.ts",
+    "phase6": "tsx phases/06-gitignore.ts",
+    "phase7": "tsx phases/07-parent-subtree.ts",
+    "phase7b": "tsx phases/07b-mu-plugins.ts",
+    "phase8": "tsx phases/08-child-theme.ts",
+    "phase9": "tsx phases/09-wpe-deploy.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
