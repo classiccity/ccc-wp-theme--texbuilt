@@ -27,7 +27,23 @@ acf_add_local_field_group(
 				'type'          => 'select',
 				'choices'       => array( 2 => '2', 3 => '3', 4 => '4', 5 => '5' ),
 				'default_value' => 3,
-				'wrapper'       => array( 'width' => '40' ),
+				'wrapper'       => array( 'width' => '33' ),
+			),
+			array(
+				'key'           => 'field_image_columns_aspect_ratio',
+				'label'         => __( 'Image Aspect Ratio', 'classic-city-core' ),
+				'name'          => 'aspect_ratio',
+				'type'          => 'button_group',
+				'choices'       => array(
+					'horizontal' => __( 'Horizontal', 'classic-city-core' ),
+					'square'     => __( 'Square', 'classic-city-core' ),
+					'vertical'   => __( 'Vertical', 'classic-city-core' ),
+				),
+				'default_value' => 'horizontal',
+				'allow_null'    => 0,
+				'layout'        => 'horizontal',
+				'instructions'  => __( 'Applied to every card image. Horizontal = 16:9, Square = 1:1, Vertical = 3:4.', 'classic-city-core' ),
+				'wrapper'       => array( 'width' => '33' ),
 			),
 			array(
 				'key'           => 'field_image_columns_cta_color',
@@ -39,7 +55,7 @@ acf_add_local_field_group(
 				'allow_null'    => 0,
 				'ui'            => 1,
 				'instructions'  => __( 'Applied to every card\'s CTA button.', 'classic-city-core' ),
-				'wrapper'       => array( 'width' => '40' ),
+				'wrapper'       => array( 'width' => '33' ),
 			),
 			array(
 				'key'          => 'field_image_columns_items',

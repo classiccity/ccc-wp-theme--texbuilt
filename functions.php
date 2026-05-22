@@ -54,6 +54,11 @@ if ( is_admin() ) {
 	require_once CCC_THEME_DIR . 'inc/class-ccc-style-guide-admin.php';
 }
 
+// Admin page: Tools → Tutorial Videos. Lightweight editor-training video library.
+if ( is_admin() ) {
+	require_once CCC_THEME_DIR . 'inc/class-ccc-tutorial-videos.php';
+}
+
 // B4: /style-guide demo page + admin-bar shortcut.
 require_once CCC_THEME_DIR . 'inc/class-ccc-demo-page.php';
 
