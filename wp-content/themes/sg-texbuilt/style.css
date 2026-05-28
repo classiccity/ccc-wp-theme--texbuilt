@@ -485,3 +485,8 @@ h2.has-text-align-right::after {
 		column-count: 3;
 	}
 }
+
+/* Leadership pod image alignment — opt-in per block via className. */
+.image-align-top .sg-block-card-image {
+	background-position: top;
+}
