@@ -156,6 +156,13 @@ Text Domain:    sg-texbuilt
 	border-bottom: var(--wp--custom--border--default-width) solid var(--wp--preset--color--dark);
 }
 
+/* Header/nav bar — same dark frame, applied as a bottom border so the
+ * white nav is separated from the page below. Targets the header template
+ * part wrapper (direct child of .wp-site-blocks). Same width + color. */
+.wp-site-blocks > header {
+	border-bottom: var(--wp--custom--border--default-width) solid var(--wp--preset--color--dark);
+}
+
 /* ==================================================================
  * TexBuilt H2 decorative underline.
  * Short CTA-colored bar (3rem wide, default-width tall) sits spacing--10
