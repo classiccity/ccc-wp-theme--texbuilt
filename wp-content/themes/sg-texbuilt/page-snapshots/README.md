@@ -36,6 +36,16 @@ they're embedded in, so they're worth preserving alongside.
 | `page-76-coming-soon.html` | /coming-soon/ holding page |
 | `page-80-become-a-trade-partner_thank-you.html` | /become-a-trade-partner/thank-you/ post-submit landing |
 | `page-62-contact-us.html` | /contact-us/ |
+| `page-269-projects.html` | /projects/ landing (category grid) |
+| `page-260-projects_medical.html` | /projects/medical/ |
+| `page-261-projects_entertainment.html` | /projects/entertainment/ |
+| `page-262-projects_fuel.html` | /projects/fuel/ |
+| `page-263-projects_grocery.html` | /projects/grocery/ |
+| `page-264-projects_hospitality-multifamily.html` | /projects/hospitality-multifamily/ |
+| `page-265-projects_industrial.html` | /projects/industrial/ |
+| `page-266-projects_municipal.html` | /projects/municipal/ |
+| `page-267-projects_office.html` | /projects/office/ |
+| `page-268-projects_retail.html` | /projects/retail/ |
 | `page-54-...basic-cta` etc. | Reusable blocks referenced by multiple pages |
 
 ## How to refresh the snapshots
@@ -57,6 +67,16 @@ SPECS="21|home
 76|coming-soon
 80|become-a-trade-partner_thank-you
 62|contact-us
+260|projects_medical
+261|projects_entertainment
+262|projects_fuel
+263|projects_grocery
+264|projects_hospitality-multifamily
+265|projects_industrial
+266|projects_municipal
+267|projects_office
+268|projects_retail
+269|projects
 54|_reusable-block_54_project-gallery
 55|_reusable-block_55_basic-cta
 56|_reusable-block_56_section-heading"
