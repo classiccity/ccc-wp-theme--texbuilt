@@ -144,6 +144,18 @@ Text Domain:    sg-texbuilt
 	border: var(--wp--custom--border--default-width) solid var(--wp--preset--color--dark);
 }
 
+/* Image Columns "card" — same dark frame as the other bordered blocks.
+ * Parent blocks.css gives the card a white bg + shadow but no border. Add
+ * the standard outer border around all edges, and repeat it as a bottom
+ * border on the image div so the image and body read as two framed halves
+ * (matching the split block's media/content divider). Same width + color. */
+.sg-block-card {
+	border: var(--wp--custom--border--default-width) solid var(--wp--preset--color--dark);
+}
+.sg-block-card-image {
+	border-bottom: var(--wp--custom--border--default-width) solid var(--wp--preset--color--dark);
+}
+
 /* ==================================================================
  * TexBuilt H2 decorative underline.
  * Short CTA-colored bar (3rem wide, default-width tall) sits spacing--10
