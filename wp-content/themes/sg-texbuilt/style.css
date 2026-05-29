@@ -273,6 +273,7 @@ h2.has-text-align-right::after {
 	font-weight: 400;
 	line-height: 1;
 	text-transform: none;
+	color: var(--wp--preset--color--cta);
 	text-shadow: var(--texbuilt-script-shadow);
 }
 
