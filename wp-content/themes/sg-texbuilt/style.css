@@ -8,6 +8,39 @@ Text Domain:    sg-texbuilt
 */
 
 /* ==================================================================
+ * CCC parent color bridge — legacy light/dark -> canvas/panel/ink.
+ * ------------------------------------------------------------------
+ * Core (classic-city-core) removed the legacy light/dark neutral slugs:
+ * its block CSS now uses canvas/panel/ink/ink-soft + gray-40, and its
+ * pair-helper no longer emits the has-light/has-dark paired text color.
+ * TexBuilt's palette is still light/dark (warm cream/charcoal) and 5
+ * published pages use has-light/has-dark. This bridge keeps TexBuilt
+ * rendering correctly once it pulls the migrated Core:
+ *   (a) map the new neutral tokens onto TexBuilt's warm palette, and
+ *   (b) re-assert the has-light/has-dark text pairing Core used to emit.
+ * Harmless on the current (pre-migration) Core: the mapped vars are
+ * unused there and the pairing rules just match Core's pair-helper.
+ * Remove this block only if TexBuilt's content is migrated to
+ * has-canvas/has-ink and its theme.json adopts canvas/panel/ink.
+ * ================================================================== */
+:root {
+	--wp--preset--color--canvas:   var(--wp--preset--color--light);
+	--wp--preset--color--panel:    #ffffff;
+	--wp--preset--color--ink:      var(--wp--preset--color--dark);
+	--wp--preset--color--ink-soft: var(--wp--preset--color--dark-alt);
+	--wp--custom--gray--40:        var(--wp--preset--color--light-alt);
+
+	--wp--custom--color--canvas-opposite:   var(--wp--custom--color--light-opposite);
+	--wp--custom--color--panel-opposite:    #000000;
+	--wp--custom--color--ink-opposite:      var(--wp--custom--color--dark-opposite);
+	--wp--custom--color--ink-soft-opposite: var(--wp--custom--color--dark-alt-opposite);
+}
+.has-light-background-color     { color: var(--wp--custom--color--light-opposite,     #000) !important; }
+.has-light-alt-background-color { color: var(--wp--custom--color--light-alt-opposite, #000) !important; }
+.has-dark-background-color      { color: var(--wp--custom--color--dark-opposite,      #fff) !important; }
+.has-dark-alt-background-color  { color: var(--wp--custom--color--dark-alt-opposite,  #fff) !important; }
+
+/* ==================================================================
  * Star Divider block (sg-texbuilt/star-divider).
  * Three Font Awesome stars centered in a row: medium / large / medium.
  * Each rotates at a slightly different speed so the group feels alive
