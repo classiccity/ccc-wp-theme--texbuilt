@@ -24,7 +24,7 @@ Text Domain:    sg-texbuilt
  * has-canvas/has-ink and its theme.json adopts canvas/panel/ink.
  * ================================================================== */
 :root {
-	--wp--preset--color--canvas:   var(--wp--preset--color--light);
+	--wp--preset--color--canvas:   var(--wp--custom--body--bg); /* page bg #FDF9F2 (Core binds body bg -> canvas) */
 	--wp--preset--color--panel:    #ffffff;
 	--wp--preset--color--ink:      var(--wp--preset--color--dark);
 	--wp--preset--color--ink-soft: var(--wp--preset--color--dark-alt);
