@@ -24,6 +24,10 @@
 
 # Un-ignore repo metadata.
 !/.gitignore
+# Pins the client/repo name for cos-update. Without it the script falls back
+# to the directory basename, which for a Local WP site is "public" — build
+# updates then land in the Chief of Stuff inbox as client "Public".
+!/.cos.json
 !/.gitmodules
 !/.cache-bust-timestamp
 
