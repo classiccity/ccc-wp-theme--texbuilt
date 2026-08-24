@@ -543,3 +543,77 @@ h2.has-text-align-right::after {
 .image-align-top .sg-block-card-image {
 	background-position: top;
 }
+
+/* ==================================================================
+ * News archive — Latest Posts block as standard TexBuilt cards.
+ * Core's is-grid layout floats each li to width: calc(...) per its
+ * columns-N class; replace it wholesale with a 3-col grid and give
+ * each post the house card treatment (white bg, dark default-width
+ * border, md shadow, image/body divider — same language as
+ * .sg-block-card). Images crop to 4:3 via aspect-ratio + object-fit;
+ * the inline max-width:300px WP stamps on the img needs the
+ * !important to lose.
+ * ================================================================== */
+.wp-block-latest-posts.is-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: var(--wp--style--block-gap, var(--wp--preset--spacing--30));
+	padding: 0;
+	margin: 0;
+}
+.wp-block-latest-posts.is-grid > li {
+	width: auto;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	background: #FFFFFF;
+	border: var(--wp--custom--border--default-width) solid var(--wp--preset--color--dark);
+	box-shadow: var(--wp--preset--shadow--md);
+}
+.wp-block-latest-posts.is-grid .wp-block-latest-posts__featured-image {
+	margin: 0;
+	border-bottom: var(--wp--custom--border--default-width) solid var(--wp--preset--color--dark);
+}
+.wp-block-latest-posts.is-grid .wp-block-latest-posts__featured-image a {
+	display: block;
+}
+.wp-block-latest-posts.is-grid .wp-block-latest-posts__featured-image img {
+	display: block;
+	width: 100%;
+	max-width: 100% !important;
+	height: auto;
+	aspect-ratio: 4 / 3;
+	object-fit: cover;
+}
+/* Title = the linked H3 of the card. Mirrors the theme.json h3 element
+ * styles (family/weight/case/clamp) since this is an <a>, not a heading. */
+.wp-block-latest-posts.is-grid .wp-block-latest-posts__post-title {
+	display: block;
+	padding: var(--wp--preset--spacing--30) var(--wp--preset--spacing--30) 0;
+	font-family: var(--wp--preset--font-family--heading);
+	font-size: clamp(var(--wp--custom--fs--h-3-min), calc(var(--wp--custom--heading--base-font-size) * 1.4 + 1.2vw), var(--wp--custom--fs--h-3));
+	font-weight: 700;
+	line-height: 0.9em;
+	letter-spacing: var(--wp--custom--heading--letter-spacing);
+	text-transform: uppercase;
+	text-decoration: none;
+	color: var(--wp--preset--color--dark);
+}
+.wp-block-latest-posts.is-grid .wp-block-latest-posts__post-title:hover {
+	color: var(--wp--preset--color--primary);
+}
+.wp-block-latest-posts.is-grid .wp-block-latest-posts__post-excerpt {
+	padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--30) var(--wp--preset--spacing--30);
+	margin: 0;
+	flex: 1;
+}
+@media (max-width: 1024px) {
+	.wp-block-latest-posts.is-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+@media (max-width: 640px) {
+	.wp-block-latest-posts.is-grid {
+		grid-template-columns: 1fr;
+	}
+}
