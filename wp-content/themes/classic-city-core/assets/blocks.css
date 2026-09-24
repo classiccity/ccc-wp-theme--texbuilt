@@ -1715,7 +1715,7 @@ a { color: inherit; }
  * layout stacks and Mobile Image Ratio takes over.
  *
  * `height: auto` releases the grid's default stretch so aspect-ratio can
- * actually set a height, and `align-self: center` then centres the panel
+ * actually set a height, and `align-self: center` then centers the panel
  * against the text column instead of letting it grow to match. Only emitted
  * when a ratio is chosen — "Hug text" adds no class, so the historic
  * text-driven height stays the single uncontested rule. */
