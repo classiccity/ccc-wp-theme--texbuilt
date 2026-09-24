@@ -1,0 +1,644 @@
+{
+  "_comment": "EXAMPLE DATA — a fictional client, so every field is demonstrated with realistic copy you can pattern-match against. Copy this file into your child theme, delete this key, and replace the content. Field-by-field reference: README.md.",
+
+  "schema_version": 2,
+
+  "project": {
+    "client": "Sandhill Animal Hospital",
+    "slug": "sandhill",
+    "title": "Website Build Tracker",
+    "updated": "2026-07-31",
+    "author": "Chris LaFay",
+    "contact": "Chris LaFay, chris@classiccity.com",
+    "brand": {
+      "accent": "#2f6f5e",
+      "accent_2": "#c07a2c"
+    }
+  },
+
+  "current_round": 2,
+
+  "sitewide_label": "Site-wide",
+
+  "pages": [
+    { "id": "home",        "label": "Homepage",                 "url": "https://example.com/preview/" },
+    { "id": "wellness",    "label": "Wellness & Preventive Care", "url": "https://example.com/preview/wellness" },
+    { "id": "surgery",     "label": "Surgery & Dentistry",      "url": "https://example.com/preview/surgery" },
+    { "id": "boarding",    "label": "Boarding & Daycare",       "url": "https://example.com/preview/boarding" },
+    { "id": "team",        "label": "Our Team",                 "url": "https://example.com/preview/team" },
+    { "id": "new-clients", "label": "New Client Info",          "url": "https://example.com/preview/new-clients" },
+    { "id": "emergency",   "label": "Emergency & After Hours",  "url": "https://example.com/preview/emergency" }
+  ],
+
+  "rounds": [
+    {
+      "number": 1,
+      "label": "Foundations, homepage and the two service pages",
+      "state": "closed",
+      "opened": "2026-05-19",
+      "closed": "2026-06-27",
+      "summary": "This first round was about getting the foundations right so everything after it goes faster. Your colours and typefaces are now built into the site itself rather than applied page by page, the header and footer are done once and inherited everywhere, and the homepage is finished end to end. We also built the two service pages that bring you the most search traffic. You signed off on the homepage on 27 June and we closed the round there. The only thing that slowed us down was the logo — no vector original existed, so we redrew it, and you now own clean files you can use for signage and print as well.",
+      "note_by": "Chris LaFay",
+      "note_on": "2026-06-27",
+      "internal_note": "Round scoped off the intake call. Ran ~4 days long because the logo files arrived as JPEGs and had to be redrawn.",
+
+      "blockers": [
+        {
+          "id": "b1-logo",
+          "title": "Vector logo files",
+          "awaiting": "client",
+          "severity": "high",
+          "raised_on": "2026-05-21",
+          "resolved_on": "2026-06-02",
+          "impact": "Held up the header, the footer and the favicon — every page template needed the mark before it could be finished.",
+          "ask": "The original .ai or .eps from whoever designed the logo.",
+          "resolution": "No vector original existed. We redrew the mark from the clinic sign photo and you approved the redraw on 2 June. You now own the vector files; they are in the shared folder.",
+          "internal_note": "Redraw took ~3h in Illustrator, absorbed. Flag this at intake on every build from now on — 'do you have the .ai file' before kickoff, not after."
+        },
+        {
+          "id": "b1-hours",
+          "title": "Saturday and holiday hours",
+          "awaiting": "client",
+          "severity": "normal",
+          "raised_on": "2026-06-04",
+          "resolved_on": "2026-06-09",
+          "impact": "The header, the footer and the contact page all print your hours. They cannot go live wrong.",
+          "ask": "Confirm the Saturday close time and whether you are open on federal holidays.",
+          "resolution": "Confirmed: Saturdays 8am to 1pm, closed on federal holidays. Live on all three."
+        }
+      ],
+
+      "sections": [
+        {
+          "id": "s1-brand",
+          "title": "Brand and site foundations",
+          "summary": "Colours, typefaces, buttons, spacing and the header and footer that every page inherits.",
+          "internal_note": "Child theme sg-sandhill; palette on canvas/panel/ink per THEME_TOKENS.md.",
+          "tasks": [
+            {
+              "id": "F-01",
+              "title": "Colour palette and typefaces set up site-wide",
+              "status": "done",
+              "owner": "agency",
+              "effort": "m",
+              "created": "2026-05-19",
+              "summary": "Your greens and the warm accent are now the site's colour system, so every new page uses them automatically rather than being styled one at a time.",
+              "internal_note": "theme.json palette + fontFamilies REPLACE the parent arrays. Body Source Sans, headings Fraunces from the licensed library."
+            },
+            {
+              "id": "F-02",
+              "title": "Header, navigation and footer",
+              "status": "done",
+              "owner": "agency",
+              "effort": "m",
+              "created": "2026-05-19",
+              "summary": "Built once and used on every page, including the phone number and hours in the header on mobile."
+            },
+            {
+              "id": "F-03",
+              "title": "Accessibility pass on colour contrast",
+              "status": "done",
+              "owner": "agency",
+              "effort": "s",
+              "created": "2026-05-26",
+              "summary": "Checked every text-on-colour combination against the WCAG AA standard. The mid-green needed to go two shades darker for body text; the original green is still used for large headings and buttons.",
+              "internal_note": "Mid-green #4a9b7f failed at 3.1:1 on white. Darkened to #2f6f5e (5.4:1). Documented in AUTHORING_PATTERNS.md."
+            }
+          ]
+        },
+        {
+          "id": "s1-home",
+          "title": "Homepage",
+          "page": "home",
+          "summary": "The page most of your visitors see first.",
+          "tasks": [
+            {
+              "id": "H-01",
+              "title": "Homepage layout and copy",
+              "status": "done",
+              "owner": "agency",
+              "effort": "l",
+              "created": "2026-05-22",
+              "summary": "Built from the outline we agreed on the kickoff call: who you are, the three things people most often come looking for, your team, and a clear way to book."
+            },
+            {
+              "id": "H-02",
+              "title": "Clinic photography placed",
+              "status": "done",
+              "owner": "agency",
+              "effort": "s",
+              "created": "2026-06-01",
+              "summary": "Your existing photos are in and cropped for both desktop and phone.",
+              "internal_note": "Client photos are 2019-era and low-res on the hero. Reshoot raised as a round-3 item."
+            },
+            {
+              "id": "H-03",
+              "title": "Review the homepage and send changes",
+              "status": "done",
+              "owner": "client",
+              "effort": "s",
+              "created": "2026-06-20",
+              "summary": "You reviewed on 24 June and signed off on 27 June with three copy tweaks, all applied."
+            }
+          ]
+        },
+        {
+          "id": "s1-services",
+          "title": "Service pages",
+          "summary": "Two pages, one per service line — each carries its own page tag below.",
+          "tasks": [
+            {
+              "id": "SV-01",
+              "title": "Wellness and preventive care page",
+              "status": "done",
+              "page": "wellness",
+              "owner": "agency",
+              "effort": "m",
+              "created": "2026-06-10",
+              "summary": "Live, with the vaccination schedule table and the pricing you supplied.",
+              "links": [
+                { "label": "Preview the page", "url": "https://example.com/preview/wellness" }
+              ]
+            },
+            {
+              "id": "SV-02",
+              "title": "Surgery and dentistry page",
+              "status": "done",
+              "page": "surgery",
+              "owner": "agency",
+              "effort": "m",
+              "created": "2026-06-12",
+              "summary": "Live, including the pre-op instructions as a downloadable PDF.",
+              "links": [
+                { "label": "Preview the page", "url": "https://example.com/preview/surgery" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "number": 2,
+      "label": "Remaining pages, booking and launch prep",
+      "state": "open",
+      "opened": "2026-07-06",
+      "summary": "This round is everything left before we can point sandhillvet.com at the new site. Boarding and daycare is built and live on the preview with the price list you sent, the emergency page is finished and ready for you to read, and the new-client intake is going in as a real web form rather than a PDF so people can fill it in on a phone. Booking buttons are on every page and currently dial your main number as a fallback. Two things are genuinely waiting on you — the team bios and photos, and the booking system login — and both are called out at the top of this page. Everything else is ours.",
+      "note_by": "Chris LaFay",
+      "note_on": "2026-07-30",
+      "internal_note": "Target launch 2026-08-22. Real risk is the booking embed — see b2-booking.",
+
+      "blockers": [
+        {
+          "id": "b2-bios",
+          "title": "Team bios and headshots",
+          "awaiting": "client",
+          "page": "team",
+          "severity": "high",
+          "raised_on": "2026-07-08",
+          "impact": "The Our Team page is built and empty. It is the second most-visited page on your current site, so we would rather not launch without it.",
+          "ask": "A short paragraph for each of the seven staff members and a photo of each. A phone photo against a plain wall is genuinely fine — we will edit them to match.",
+          "internal_note": "Chased 8 Jul, 17 Jul, 28 Jul. Sarah says Dr. Whitfield is the hold-up. If nothing by 8 Aug, propose launching with names and roles only and adding bios post-launch.",
+          "links": [
+            { "label": "Upload folder", "url": "https://example.com/upload/sandhill-team" }
+          ]
+        },
+        {
+          "id": "b2-booking",
+          "title": "Login for your booking system",
+          "awaiting": "client",
+          "severity": "high",
+          "raised_on": "2026-07-15",
+          "impact": "Blocks online booking on every page. Until this is connected, the buttons fall back to the phone number.",
+          "ask": "Either an admin login for the practice-management portal, or ask your account rep for the website booking widget code and forward it to us.",
+          "internal_note": "Vendor is PetDesk. Their embed needs a per-clinic key from the admin panel; support will not issue it to a third party."
+        },
+        {
+          "id": "b2-dns",
+          "title": "Domain access for launch day",
+          "awaiting": "agency",
+          "severity": "normal",
+          "raised_on": "2026-07-22",
+          "impact": "We need this in place before launch day, not on it. Nothing for you to do yet — we are working it out with your registrar.",
+          "internal_note": "Domain is at a reseller through the old web guy. Transfer auth code requested 22 Jul, 5-day window. If it stalls, fall back to a nameserver change, which the client CAN authorise directly."
+        },
+        {
+          "id": "b2-prices",
+          "title": "Boarding price list",
+          "awaiting": "client",
+          "page": "boarding",
+          "severity": "normal",
+          "raised_on": "2026-07-10",
+          "resolved_on": "2026-07-24",
+          "impact": "Held the boarding page.",
+          "resolution": "Received 24 July and live on the page. We have written it as a table so you can update the numbers yourself later."
+        },
+        {
+          "id": "b2-erhospital",
+          "title": "After-hours referral hospital details",
+          "awaiting": "client",
+          "page": "emergency",
+          "severity": "high",
+          "raised_on": "2026-07-12",
+          "resolved_on": "2026-07-29",
+          "impact": "The after-hours page sends people somewhere at 11pm. It cannot be wrong.",
+          "resolution": "Confirmed on the phone on 29 July: Piedmont Veterinary Emergency, number unchanged. Live on the page.",
+          "links": [
+            { "label": "See it on the page", "url": "https://example.com/preview/emergency" }
+          ]
+        },
+        {
+          "id": "b2-favicon",
+          "title": "Browser tab icon and social share image",
+          "awaiting": "agency",
+          "raised_on": "2026-07-07",
+          "resolved_on": "2026-07-16",
+          "impact": "Small, but it is what shows when somebody shares a link to you.",
+          "resolution": "Both generated from the redrawn logo and applied across every page.",
+          "internal_note": "512px source in the child theme; og:image is 1200x630."
+        }
+      ],
+
+      "sections": [
+        {
+          "id": "s2-pages",
+          "title": "Remaining pages",
+          "summary": "The rest of the site map we agreed at kickoff. Each item is tagged with the page it belongs to.",
+          "tasks": [
+            {
+              "id": "P-01",
+              "title": "Boarding and daycare",
+              "status": "done",
+              "page": "boarding",
+              "owner": "agency",
+              "effort": "m",
+              "created": "2026-07-06",
+              "summary": "Built and live on the preview site, with the price table you sent on 24 July.",
+              "links": [
+                { "label": "Preview the page", "url": "https://example.com/preview/boarding" }
+              ]
+            },
+            {
+              "id": "P-02",
+              "title": "Our team",
+              "status": "blocked",
+              "page": "team",
+              "owner": "agency",
+              "effort": "m",
+              "created": "2026-07-06",
+              "blocked_by": "b2-bios",
+              "summary": "The page layout is finished and waiting on the bios and photos. Once they arrive this is about half a day's work.",
+              "internal_note": "Uses the team-grid block; testimonial CPT not involved."
+            },
+            {
+              "id": "P-03",
+              "title": "New client information and forms",
+              "status": "in_progress",
+              "page": "new-clients",
+              "owner": "agency",
+              "effort": "m",
+              "created": "2026-07-09",
+              "summary": "Being built now. Your intake form is going in as a real web form rather than a PDF download, so people can fill it in on a phone."
+            },
+            {
+              "id": "P-04",
+              "title": "Emergency and after hours",
+              "status": "review",
+              "page": "emergency",
+              "owner": "agency",
+              "effort": "s",
+              "created": "2026-07-11",
+              "summary": "Built and ready for you to read. This is the page people land on at 11pm, so we have kept it to the phone number, the address and the nearest 24-hour hospital, with nothing else competing for attention.",
+              "links": [
+                { "label": "Preview the page", "url": "https://example.com/preview/emergency" }
+              ]
+            },
+            {
+              "id": "P-05",
+              "title": "Confirm the wording on the emergency banner",
+              "status": "needs_client",
+              "page": "emergency",
+              "owner": "client",
+              "effort": "xs",
+              "created": "2026-07-28",
+              "summary": "We have written the red banner as \"If this is an emergency, call us first — do not drive over unannounced.\" Tell us if you would rather it said something else."
+            },
+            {
+              "id": "P-06",
+              "title": "Online pharmacy page",
+              "status": "deferred",
+              "owner": "agency",
+              "effort": "m",
+              "created": "2026-07-06",
+              "summary": "Parked until after launch by agreement on the 15 July call — the pharmacy vendor changes in September and building it twice makes no sense.",
+              "internal_note": "Re-scope in round 3. Vendor switch to Vetsource confirmed for Sept."
+            }
+          ]
+        },
+        {
+          "id": "s2-booking",
+          "title": "Online booking",
+          "summary": "Letting people request an appointment from the site instead of calling. This one is genuinely site-wide, so it carries no page tag.",
+          "tasks": [
+            {
+              "id": "B-01",
+              "title": "Book buttons placed across the site",
+              "status": "done",
+              "owner": "agency",
+              "effort": "s",
+              "created": "2026-07-13",
+              "summary": "Every page now has a clear way to book, in the header and at the end of the main content."
+            },
+            {
+              "id": "B-02",
+              "title": "Connect the booking system",
+              "status": "blocked",
+              "owner": "agency",
+              "effort": "m",
+              "created": "2026-07-13",
+              "blocked_by": "b2-booking",
+              "summary": "Waiting on the login. Until then the buttons dial your main number, which is a working fallback rather than a broken link."
+            },
+            {
+              "id": "B-03",
+              "title": "Get the booking widget key from PetDesk",
+              "status": "needs_client",
+              "owner": "client",
+              "effort": "xs",
+              "created": "2026-07-15",
+              "blocked_by": "b2-booking",
+              "summary": "PetDesk will only issue the website key to the account holder, so this one has to come from your side. Ten minutes with your rep should do it."
+            }
+          ]
+        },
+        {
+          "id": "s2-launch",
+          "title": "Pre-launch checks",
+          "summary": "The work that makes launch day uneventful.",
+          "open": false,
+          "tasks": [
+            {
+              "id": "L-01",
+              "title": "Redirects from every old page",
+              "status": "in_progress",
+              "owner": "agency",
+              "effort": "m",
+              "created": "2026-07-20",
+              "summary": "Anyone who has an old page bookmarked, or finds one in Google, will land on the matching new page instead of an error. We have mapped 41 of your 47 old pages so far.",
+              "internal_note": "6 unmapped are old blog posts with no equivalent. Proposing they redirect to the blog index rather than 404."
+            },
+            {
+              "id": "L-02",
+              "title": "Speed and mobile testing",
+              "status": "queued",
+              "owner": "agency",
+              "effort": "s",
+              "summary": "A full pass on real phones once the last page is built."
+            },
+            {
+              "id": "L-03",
+              "title": "Accessibility review",
+              "status": "queued",
+              "owner": "agency",
+              "effort": "m",
+              "summary": "Keyboard navigation, screen-reader labels and colour contrast checked across the finished site."
+            },
+            {
+              "id": "L-04",
+              "title": "Sign off the finished site",
+              "status": "queued",
+              "owner": "client",
+              "effort": "s",
+              "summary": "A final read-through by you before we point the domain. We will send a checklist so it is a quick job rather than an open-ended one."
+            },
+            {
+              "id": "L-05",
+              "title": "Analytics and search console handover",
+              "status": "queued",
+              "owner": "agency",
+              "effort": "s",
+              "summary": "Set up in your name, not ours, so the data is yours if you ever move on."
+            },
+            {
+              "id": "L-06",
+              "title": "Retire the old hosting account",
+              "status": "queued",
+              "owner": "client",
+              "effort": "xs",
+              "summary": "After launch, and only once we have confirmed the new site is serving. We will tell you when it is safe to cancel."
+            }
+          ]
+        },
+        {
+          "id": "s2-internal",
+          "title": "Build tooling",
+          "internal_only": true,
+          "summary": "Internal-only section — never rendered in the client build.",
+          "tasks": [
+            {
+              "id": "X-01",
+              "title": "Subtree-pull the parent theme to pick up the stats block fix",
+              "status": "queued",
+              "owner": "agency",
+              "effort": "xs",
+              "internal_note": "git subtree pull --prefix=wp-content/themes/classic-city-core upstream-parent main --squash"
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "number": 3,
+      "label": "Post-launch: blog, pharmacy and the review flow",
+      "state": "planned",
+      "summary": "Nothing here is underway yet — this is sketched out so you can see where things are heading after launch, and so anything we agreed to park has somewhere to sit rather than being quietly forgotten. We will scope it properly once you are live. Nothing in this round is tied to a page yet, which is what a round with no page associations looks like. This round also has no `note_by` or `note_on`, so the signature falls back to the project author and the round's own dates.",
+      "sections": [
+        {
+          "id": "s3-plan",
+          "title": "On the list",
+          "tasks": [
+            {
+              "id": "N-01",
+              "title": "Online pharmacy page, on the new vendor",
+              "status": "queued",
+              "owner": "agency",
+              "effort": "m",
+              "summary": "Carried over from round 2 deliberately — see P-06."
+            },
+            {
+              "id": "N-02",
+              "title": "Blog and clinic news",
+              "status": "queued",
+              "owner": "agency",
+              "effort": "l",
+              "summary": "So you can post seasonal advice without calling us."
+            },
+            {
+              "id": "N-03",
+              "title": "Reshoot the homepage photography",
+              "status": "queued",
+              "owner": "client",
+              "effort": "m",
+              "summary": "Your current photos are from 2019 and go soft on large screens. Worth a half-day with a photographer once the site is live."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+
+  "changelog": [
+    {
+      "date": "2026-07-30",
+      "ref": "C-18",
+      "round": 2,
+      "page": "emergency",
+      "state": "shipped",
+      "what": "Stripped the after-hours page back to the phone number, address and referral hospital.",
+      "why": "It was carrying the full services menu and a booking button. Somebody reading that page at 11pm with a sick animal needs one number, not a menu.",
+      "links": [
+        { "label": "See the page", "url": "https://example.com/preview/emergency" }
+      ]
+    },
+    {
+      "date": "2026-07-29",
+      "ref": "C-18b",
+      "round": 2,
+      "page": "emergency",
+      "state": "shipped",
+      "what": "Confirmed and published the referral hospital name and number.",
+      "why": "You confirmed on the phone. This was the last unknown on the page."
+    },
+    {
+      "date": "2026-07-28",
+      "ref": "C-17",
+      "round": 2,
+      "state": "shipped",
+      "what": "Phone number in the header is now tappable on mobile.",
+      "why": "Roughly two thirds of your current traffic is on a phone, and the number was plain text. This one is site-wide, so it sits in the site-wide group.",
+      "internal_note": "tel: link; ACF url validation already permits tel: per inc/acf-validations.php."
+    },
+    {
+      "date": "2026-07-24",
+      "ref": "C-16",
+      "round": 2,
+      "page": "boarding",
+      "state": "shipped",
+      "what": "Boarding prices added as an editable table.",
+      "why": "You said prices move every year. A table you can edit beats a graphic you have to ask us to change.",
+      "links": [
+        { "label": "See the page", "url": "https://example.com/preview/boarding" }
+      ]
+    },
+    {
+      "date": "2026-07-22",
+      "ref": "C-15",
+      "round": 2,
+      "state": "partial",
+      "what": "Mapped 41 of 47 old pages to their new equivalents.",
+      "why": "So existing links and Google results keep working after launch.",
+      "internal_note": "6 orphan blog posts outstanding — proposing blog-index redirect."
+    },
+    {
+      "date": "2026-07-16",
+      "ref": "C-14b",
+      "round": 2,
+      "state": "shipped",
+      "what": "Browser tab icon and social share image applied everywhere.",
+      "why": "Links to you were showing a blank page icon when shared."
+    },
+    {
+      "date": "2026-07-15",
+      "ref": "C-14",
+      "round": 2,
+      "state": "shipped",
+      "what": "Book buttons fall back to the phone number until the booking system is connected.",
+      "why": "A button that does nothing is worse than no button. This way the page is useful today and gets better later."
+    },
+    {
+      "date": "2026-07-11",
+      "ref": "C-13",
+      "round": 2,
+      "page": "new-clients",
+      "state": "shipped",
+      "what": "New-client intake is a web form rather than a PDF download.",
+      "why": "The PDF version could not be filled in on a phone, which is where most people were opening it."
+    },
+    {
+      "date": "2026-07-09",
+      "ref": "C-12",
+      "round": 2,
+      "state": "deferred",
+      "what": "Pharmacy page pulled out of this round.",
+      "why": "Your pharmacy vendor changes in September. Building it now means building it twice."
+    },
+    {
+      "date": "2026-06-27",
+      "ref": "C-11",
+      "round": 1,
+      "page": "home",
+      "state": "shipped",
+      "what": "Applied your three copy changes and closed round 1.",
+      "why": "Sign-off received."
+    },
+    {
+      "date": "2026-06-18",
+      "ref": "C-10",
+      "round": 1,
+      "page": "home",
+      "state": "reverted",
+      "what": "Removed the auto-rotating photo slider from the top of the homepage.",
+      "why": "We tried it and it hurt: it pushed your opening line below the fold on phones and slowed the page down. Replaced with a single strong photo."
+    },
+    {
+      "date": "2026-06-14",
+      "ref": "C-10b",
+      "round": 1,
+      "page": "wellness",
+      "state": "shipped",
+      "what": "Vaccination schedule published as a table.",
+      "why": "It was three paragraphs of prose. People scan this page looking for one row."
+    },
+    {
+      "date": "2026-06-09",
+      "ref": "C-09",
+      "round": 1,
+      "state": "shipped",
+      "what": "Hours corrected everywhere after your confirmation.",
+      "why": "Saturday close and holiday closure were wrong on the old site."
+    },
+    {
+      "date": "2026-06-02",
+      "ref": "C-08",
+      "round": 1,
+      "state": "shipped",
+      "what": "Logo redrawn as a vector and used site-wide.",
+      "why": "The only files that existed were low-resolution JPEGs, which go fuzzy on modern screens. You now own clean files you can use for signage and print too."
+    },
+    {
+      "date": "2026-05-28",
+      "ref": "C-07",
+      "round": 1,
+      "state": "shipped",
+      "what": "Darkened the mid-green used for body text.",
+      "why": "The original green did not have enough contrast against white to be comfortably readable, and would have failed an accessibility audit. The original green is still used at large sizes, where it passes.",
+      "internal_note": "3.1:1 → 5.4:1. Rule mirrored into AUTHORING_PATTERNS.md."
+    },
+    {
+      "date": "2026-07-31",
+      "ref": "C-19",
+      "round": 3,
+      "state": "shipped",
+      "what": "Round 3 sketched out and shared with you.",
+      "why": "So you can see what is coming after launch without it competing with what is live now."
+    },
+    {
+      "date": "2026-05-19",
+      "state": "shipped",
+      "area": "Process",
+      "what": "Build started.",
+      "why": "Kickoff call, site map agreed. This entry has no round, so it appears under 'Not tied to a specific round' in every round's history."
+    }
+  ]
+}

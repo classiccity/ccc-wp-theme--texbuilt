@@ -2,7 +2,7 @@
 /**
  * Process Steps block render template.
  *
- * Markup contract: BLOCK_MARKUP_CONTRACT.md § Process Steps.
+ * Field keys: docs/BLOCKS.md (generated registry). This render.php is the canonical markup contract.
  *
  * Step numbers are rendered by the `::before` pseudo-element in blocks.css
  * using `counter-increment` on `.sg-block-process-step`.

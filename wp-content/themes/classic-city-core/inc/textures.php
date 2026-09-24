@@ -61,7 +61,16 @@ function ccc_get_registered_textures() {
 		if ( is_numeric( $image ) && (int) $image > 0 ) {
 			$url = (string) wp_get_attachment_url( (int) $image );
 		} elseif ( is_string( $image ) && $image !== '' ) {
-			$url = $image; // allow direct URL strings (less common)
+			// `file:./relative-path` resolves against the active stylesheet
+			// (child theme) directory. Lets theme.json declare textures with
+			// portable theme-relative paths instead of hardcoded per-
+			// environment URLs. Same syntax WP already accepts for
+			// fontFace.src; we mirror it here for consistency.
+			if ( strpos( $image, 'file:./' ) === 0 ) {
+				$url = trailingslashit( get_stylesheet_directory_uri() ) . substr( $image, strlen( 'file:./' ) );
+			} else {
+				$url = $image; // direct absolute URL string
+			}
 		}
 		if ( ! $url ) continue;
 

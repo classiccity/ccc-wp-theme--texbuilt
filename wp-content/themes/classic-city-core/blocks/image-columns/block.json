@@ -3,7 +3,7 @@
 	"apiVersion": 3,
 	"name": "classic-city-core/image-columns",
 	"title": "Image Columns",
-	"description": "Three-up card grid. Each card has an image, heading, body, and a full-width CTA button.",
+	"description": "Card grid with 2-5 desktop columns. Each card has an image, heading, body, and a full-width CTA button.",
 	"category": "theme",
 	"icon": "grid-view",
 	"keywords": [
@@ -36,7 +36,7 @@
 		"mode": true
 	},
 	"acf": {
-		"mode": "auto",
+		"mode": "preview",
 		"renderTemplate": "render.php"
 	}
 }

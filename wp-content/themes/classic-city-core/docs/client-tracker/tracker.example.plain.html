@@ -1,0 +1,470 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sandhill Animal Hospital &mdash; Website Build Tracker</title><meta name="robots" content="noindex,nofollow"><style>
+:root{
+  /* Surfaces + text. Light-first: this page is printed to PDF by clients,
+     and a dark page prints as a black rectangle or a washed-out mess. */
+  --canvas:#f5f6f8; --surface:#fff; --surface-2:#f0f2f5;
+  --ink:#1b2230; --ink-2:#5a6474; --line:#dde2e9;
+  --radius:10px; --shadow:0 1px 2px rgba(20,28,44,.06),0 4px 14px rgba(20,28,44,.05);
+  /* Deep-link landing offset. Must clear the sticky banner INCLUDING the round
+     nav, or #p-04 lands underneath it. RE-MEASURE THESE if the banner grows a
+     row: `document.querySelector('.banner').getBoundingClientRect().height`
+     at 1280 and at 375. Currently 135 / 184, rounded up. Err HIGH: landing a
+     little low is invisible, landing under the banner hides the thing you
+     linked to. */
+  --banner-h:145px;
+
+  /* Brand hook — overridden from JSON, never by editing this template. */
+  --accent:#1f5f9e; --accent-2:#1f7a4d;
+
+  /* THE COLOUR LANGUAGE. Each state gets ink / tint / border.
+     Nothing in the markup may use a literal colour.
+     FOUR COLOURS AND A GREY — green done, purple review, amber your-move,
+     red blocked, grey everything else. The old blue `progress` tone was
+     deleted, not merely unused: "in progress" and "queued" say the same thing
+     to a client as "waiting on us", and three greys reading as three states
+     is exactly the noise this revision set out to remove. */
+  --t-done:#1a6f47;      --t-done-bg:#e6f4ed;      --t-done-br:#bfe0d0;
+  --t-review:#63489f;    --t-review-bg:#efeafa;    --t-review-br:#d5c9ee;
+  --t-client:#9a5a00;    --t-client-bg:#fdf1dd;    --t-client-br:#f0d3a3;
+  --t-blocked:#a82f2a;   --t-blocked-bg:#fbe9e7;   --t-blocked-br:#f0c4c0;
+  --t-queued:#4d5768;    --t-queued-bg:#eceff3;    --t-queued-br:#d3d9e2;
+  --t-deferred:#78828f;  --t-deferred-bg:#f2f4f7;  --t-deferred-br:#dfe3e9;
+}
+.t-done{--tone:var(--t-done);--tone-bg:var(--t-done-bg);--tone-br:var(--t-done-br)}
+.t-review{--tone:var(--t-review);--tone-bg:var(--t-review-bg);--tone-br:var(--t-review-br)}
+.t-client{--tone:var(--t-client);--tone-bg:var(--t-client-bg);--tone-br:var(--t-client-br)}
+.t-blocked{--tone:var(--t-blocked);--tone-bg:var(--t-blocked-bg);--tone-br:var(--t-blocked-br)}
+.t-queued{--tone:var(--t-queued);--tone-bg:var(--t-queued-bg);--tone-br:var(--t-queued-br)}
+.t-deferred{--tone:var(--t-deferred);--tone-bg:var(--t-deferred-bg);--tone-br:var(--t-deferred-br)}
+
+@media (prefers-color-scheme:dark){
+  :root{
+    --canvas:#14171d; --surface:#1b1f27; --surface-2:#22272f;
+    --ink:#e8ebf0; --ink-2:#9aa4b4; --line:#2c323c;
+    --shadow:0 1px 2px rgba(0,0,0,.4);
+    --t-done:#5fc796;      --t-done-bg:#12291f;      --t-done-br:#26523c;
+    --t-review:#b096e8;    --t-review-bg:#1f1a2e;    --t-review-br:#3d3159;
+    --t-client:#ecac52;    --t-client-bg:#2b2113;    --t-client-br:#5c4520;
+    --t-blocked:#ef8c86;   --t-blocked-bg:#2c1817;   --t-blocked-br:#5c2f2b;
+    --t-queued:#9aa4b4;    --t-queued-bg:#22272f;    --t-queued-br:#39404b;
+    --t-deferred:#7c8695;  --t-deferred-bg:#1e232a;  --t-deferred-br:#333a44;
+  }
+}
+
+*,*::before,*::after{box-sizing:border-box}
+/* The round switcher toggles the `hidden` attribute, and half the things it
+   toggles are flex containers — whose `display` would otherwise beat `hidden`
+   and leave every round's counters on screen at once. This one line is what
+   makes "one round at a time" true. */
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--canvas);color:var(--ink);overflow-x:hidden;
+  font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+h1,h2,h3,h4{margin:0;font-weight:650;line-height:1.25}
+p{margin:0}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+.wrap{max-width:1080px;margin:0 auto;padding:1.4rem 1.1rem 4rem}
+.prose{color:var(--ink-2);font-size:.9rem;margin-top:.3rem;max-width:76ch}
+.empty{color:var(--ink-2);font-size:.92rem;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--radius);padding:.8rem .95rem}
+.ref{font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;
+  color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);
+  border-radius:4px;padding:1px 5px;white-space:nowrap}
+a.reflink{text-decoration:none}
+a.reflink:hover{color:var(--accent);border-color:var(--accent)}
+.stamp{display:inline-flex;align-items:center;gap:.3rem;font-size:11.5px;color:var(--ink-2)}
+a{color:var(--accent)}
+/* Links read as BOLD BODY TEXT WITH AN UNDERLINE, not as a brand colour.
+   The accent is a client's own brand green, chosen to look right on their
+   site — and "Upload folder" set in it, at 13px, against a white card, was
+   the hardest-to-read string on the page. Weight plus an underline is a
+   stronger link affordance than hue anyway, and it survives whatever accent
+   the next child theme brings. */
+.lnk{display:inline-flex;align-items:center;gap:.3rem;font-size:.82rem;
+  font-weight:700;color:var(--ink);text-decoration:underline;
+  text-underline-offset:2px;text-decoration-thickness:1px}
+.lnk:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+/* ---- icons. Decorative, always beside a text label. ---- */
+.ic{width:1em;height:1em;fill:currentColor;flex:0 0 auto;vertical-align:-.125em}
+.lm-ic{width:.86em;height:.86em;color:var(--accent);opacity:.85}
+.stat-ic{width:.8em;height:.8em;color:var(--tone);opacity:.8}
+.grow-ic{color:var(--ink-2)}
+.sw-ic{width:.72em;height:.72em;color:var(--tone)}
+
+/* ---- banner (sticky) + the round nav that lives inside it ---- */
+.banner{position:sticky;top:0;z-index:20;background:var(--surface);
+  border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
+.banner-in{max-width:1080px;margin:0 auto;padding:.7rem 1.1rem;
+  display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+.banner-id h1{font-size:1.05rem}
+.banner-id{min-width:0;flex:1 1 15rem}
+.banner-id p{font-size:.79rem;color:var(--ink-2);margin-top:.1rem}
+.banner-sub{font-weight:600;color:var(--ink)}
+.banner-stats{display:flex;gap:.35rem;flex-wrap:wrap;margin-left:auto}
+.stat{background:var(--tone-bg);border:1px solid var(--tone-br);border-radius:8px;
+  padding:.25rem .55rem;min-width:66px;text-align:center;line-height:1.15}
+.stat b{display:block;font-size:1.02rem;color:var(--tone)}
+/* Icon on the same baseline as the label — it used to sit alone above the
+   number, which read as a third row of the pod rather than as part of it. */
+.stat-l{display:inline-flex;align-items:center;justify-content:center;gap:.25rem;
+  font-size:10.5px;color:var(--ink-2);white-space:nowrap}
+.meter{height:3px;background:var(--surface-2)}
+.meter i{display:block;height:100%;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+.roundnav{background:var(--surface-2);border-top:1px solid var(--line)}
+.tabs{max-width:1080px;margin:0 auto;padding:.35rem 1.1rem;display:flex;gap:.3rem;
+  overflow-x:auto;scrollbar-width:thin}
+.tab{font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;color:var(--ink-2);
+  background:transparent;border:1px solid transparent;border-radius:8px;
+  padding:.32rem .75rem;display:inline-flex;align-items:center;gap:.35rem;
+  white-space:nowrap;flex:0 0 auto}
+.tab:hover{color:var(--ink);background:var(--surface)}
+.tab[aria-selected=true]{background:var(--surface);color:var(--ink);
+  border-color:var(--line);box-shadow:var(--shadow)}
+.tab-badge{background:var(--tone-bg);color:var(--tone);border:1px solid var(--tone-br);
+  border-radius:999px;font-size:10.5px;font-weight:700;padding:0 5px;min-width:17px;
+  text-align:center}
+
+/* ---- the h2 landmarks. These are the page's signposts: big, spaced, and
+       ruled off, because the old small-caps labels read as captions. ---- */
+.lm-h{display:flex;align-items:center;gap:.55rem;
+  font-size:clamp(1.32rem,1.05rem + 1.1vw,1.72rem);letter-spacing:-.01em;
+  margin:3.6rem 0 1.05rem;padding-bottom:.5rem;border-bottom:1px solid var(--line)}
+.lm:first-of-type>.lm-h{margin-top:2rem}
+.lm-sub{color:var(--ink-2);font-size:.88rem;margin:-.6rem 0 .8rem}
+.h2-count{font-size:.68em;font-weight:700;line-height:1.7;color:var(--tone);
+  background:var(--tone-bg);border:1px solid var(--tone-br);border-radius:999px;
+  padding:0 .55em;margin-left:.1em}
+
+/* ---- the round letter (what this round is, under the tabs) ----
+       A pod, not a status row. Narrower than full width on purpose: it reads
+       as prose, and prose past ~76ch stops being read. */
+.letter{background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:1rem 1.15rem;margin-top:1.6rem;max-width:46rem}
+.letter .prose{font-size:.95rem;color:var(--ink);margin-top:0;max-width:none}
+.letter .prose+.prose{margin-top:.5rem}
+.letter-sig{margin-top:.7rem;font-size:.84rem;color:var(--ink-2)}
+.letter-sig b{color:var(--ink);font-weight:650}
+
+/* ---- chips ---- */
+.chip{display:inline-flex;align-items:center;gap:.28rem;background:var(--tone-bg);
+  color:var(--tone);border:1px solid var(--tone-br);border-radius:999px;
+  padding:1px 8px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.swatch{display:inline-flex;align-items:center;justify-content:center;width:18px;
+  height:18px;border-radius:4px;background:var(--tone-bg);border:1px solid var(--tone);
+  flex:0 0 auto}
+.tally{font:600 11.5px ui-monospace,Menlo,monospace;color:var(--ink-2);
+  margin-left:auto;white-space:nowrap}
+
+/* ---- cards. NEAR-NEUTRAL BY DESIGN: the <h2> above already says which
+       state these are in, so painting them repeats it. ---- */
+.cards{display:grid;gap:.7rem;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:.85rem .95rem;box-shadow:var(--shadow);display:flex;flex-direction:column}
+/* flex-start, not center: a centred ref chip floats mid-height beside a
+   two-line card title. */
+.card-head{display:flex;gap:.45rem;align-items:flex-start;flex-wrap:wrap}
+.card-title{font-size:1rem;flex:1 1 12rem}
+.ptags{margin-top:.4rem}
+.ptag{display:inline-flex;align-items:center;gap:.3rem;font-size:11.5px;
+  color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);
+  border-radius:5px;padding:1px 6px;text-decoration:none}
+a.ptag:hover{color:var(--accent)}
+/* The one place amber still lands inside a card — the actual ask. A rule,
+   not a filled panel: enough to find, not enough to shout. */
+.ask{margin-top:.55rem;font-size:.88rem;padding:.1rem 0 .1rem .65rem;
+  border-left:3px solid var(--t-client);color:var(--ink)}
+.card-foot{margin-top:auto;padding-top:.55rem;border-top:1px solid var(--line);
+  display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.card-foot .cf-l{margin-right:auto}
+.card-foot .cf-r{display:flex;gap:.7rem;flex-wrap:wrap;justify-content:flex-end}
+.card>.prose,.card>.ask,.card>.ptags{margin-bottom:.45rem}
+
+/* ---- accordions ---- */
+details{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.logwrap{margin-bottom:.6rem;box-shadow:var(--shadow);overflow:hidden}
+summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:.55rem;
+  padding:.7rem .9rem;font-weight:600;user-select:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"";flex:0 0 auto;width:8px;height:8px;border-right:2px solid var(--ink-2);
+  border-bottom:2px solid var(--ink-2);transform:rotate(-45deg);margin-right:.15rem;
+  transition:transform .15s ease}
+details[open]>summary::before{transform:rotate(45deg)}
+summary:hover{background:var(--surface-2)}
+.rlabel{font-size:.95rem;font-weight:600}
+.round-body{padding:.2rem .9rem 1rem;border-top:1px solid var(--line)}
+/* overflow:hidden (here and on .fold): the <summary> hover background is a
+   full-width rectangle, and without clipping its corners paint square over
+   the container's rounded ones. An element's own box-shadow is outside its
+   own overflow clip, so skins that shadow these are unaffected. */
+.sect{margin-top:.6rem;border-radius:8px;background:var(--surface-2);
+  overflow:hidden}
+.sect>summary{padding:.55rem .7rem}
+.sect-title{font-size:.95rem;flex:0 1 auto}
+.sect-body{padding:.1rem .7rem .7rem;border-top:1px solid var(--line)}
+/* The right-hand end of a section header: flag, page link, count. Pinned
+   right as one unit so the count stays in the same place on every row of
+   headers no matter how long the title is. */
+.sect-meta{margin-left:auto;display:inline-flex;align-items:center;gap:.55rem}
+.sect-meta .tally{margin-left:0}
+.flag{display:inline-flex;color:var(--tone);font-size:1rem;line-height:1}
+.pagelink{display:inline-flex;color:var(--ink-2);font-size:.85rem;line-height:1;
+  text-decoration:none;padding:2px}
+.pagelink:hover{color:var(--accent)}
+.folds{display:grid;gap:.5rem}
+.fold{background:var(--surface-2);border-radius:8px;overflow:hidden}
+.folds>.fold{background:var(--surface);box-shadow:var(--shadow)}
+.fold>summary{padding:.55rem .8rem;font-size:.92rem}
+.fold>summary+*{padding:0 .7rem .7rem}
+.grow-lbl{display:inline-flex;align-items:center;gap:.4rem}
+.fold.loose>summary{color:var(--ink-2);font-weight:500}
+
+/* ---- the work table ----
+   One row per item, one fact per column, so reading twelve items is one
+   learned layout rather than twelve separate hunts around a card. */
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);
+  border-radius:8px;margin-top:.55rem}
+.wtable{border-collapse:collapse;width:100%;min-width:40rem;font-size:.86rem}
+.wtable th,.wtable td{text-align:left;padding:.5rem .7rem;vertical-align:top;
+  border-bottom:1px solid var(--line)}
+.wtable thead th{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-2);background:var(--surface-2);white-space:nowrap}
+.wtable tr:last-child th,.wtable tr:last-child td{border-bottom:0}
+.wtable tr.s-done,.wtable tr.s-deferred{opacity:.72}
+/* Plain muted text, not a chip — see task_row(). */
+.c-ref{width:1%;white-space:nowrap;font-size:11px;color:var(--ink-2)}
+.c-item{font-weight:650;width:22%;min-width:9rem}
+.c-detail{color:var(--ink-2);min-width:16rem}
+.c-detail .prose{margin-top:0;font-size:.86rem}
+.c-held{width:1%;min-width:9rem}
+.held{display:block;color:var(--tone);font-weight:650;font-size:11.5px}
+.held-t{display:block;color:var(--ink-2);font-size:.82rem;margin-top:.1rem}
+.c-date{width:1%;white-space:nowrap;color:var(--ink-2);
+  font:11.5px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}
+/* Page labels wrap ("Emergency & After Hours"), and a centred flex icon then
+   floats between the two lines. Pin it to the first line instead. */
+/* "Link", not the page's full name — see anchor_compact(). */
+.c-page{width:1%;white-space:nowrap}
+/* Status: first column, glyph only, no visible column heading. */
+.c-status{width:1%;padding-right:.25rem}
+.st{display:inline-flex;color:var(--tone);font-size:1.05rem;line-height:1}
+.c-status{width:1%;white-space:nowrap}
+/* A deep link lands on a row, and a box-shadow round a <tr> renders as a
+   floating rectangle in most engines. Outline-inset instead. */
+:target{scroll-margin-top:var(--banner-h);box-shadow:0 0 0 3px var(--accent)}
+.wtable tr:target{box-shadow:none;background:var(--surface-2);
+  outline:2px solid var(--accent);outline-offset:-2px}
+
+/* ---- changelog: none. History renders as a work-style table (see
+        changelog_row) — the old .chg card styles went with the cards. ---- */
+.legend{list-style:none;margin:.4rem 0 0;padding:0;display:grid;gap:.5rem}
+.legend li{display:flex;gap:.55rem;align-items:center;font-size:.88rem}
+.legend b{flex:0 0 11rem}
+.legend span:last-child{color:var(--ink-2)}
+.foot{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--line);
+  color:var(--ink-2);font-size:.8rem}
+
+@media (max-width:860px){
+  :root{--banner-h:195px}
+  .banner-in{padding:.55rem .9rem;gap:.5rem}
+  .banner-stats{margin-left:0;width:100%;gap:.3rem}
+  .stat{flex:1 1 auto;min-width:0}
+  .stat-l{font-size:9.5px}
+  .letter{padding:.85rem .95rem;margin-top:1.2rem}
+  .cards{grid-template-columns:1fr}
+  .legend b{flex:0 0 100%}
+  .legend li{display:block}
+  .tabs{padding:.35rem .9rem}
+}
+@media (max-width:420px){
+  .lm-h{gap:.4rem}
+  .card,.task{padding-left:.7rem;padding-right:.7rem}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition:none!important;animation:none!important;
+    scroll-behavior:auto!important}
+}
+
+/* ---- print / save-as-PDF ----
+   Clients print this. Force the light palette, open every accordion, and
+   reveal every round panel — a printed page cannot be clicked. Each panel
+   prints its own round heading, because the tab strip is gone. */
+@media print{
+  :root{--canvas:#fff;--surface:#fff;--surface-2:#fff;--ink:#000;--ink-2:#444;
+    --line:#bbb;--shadow:none}
+  body{background:#fff;font-size:11pt}
+  .banner{position:static;box-shadow:none}
+  .roundnav{display:none!important}
+  .tabpanel[hidden]{display:block!important}
+  .tabpanel{break-before:page}
+  .tabpanel::before{content:attr(data-round-label);font-weight:700;font-size:1.3em;
+    display:block;margin:1rem 0 .3rem}
+  .lm-h{margin-top:1.6rem;break-after:avoid}
+  details{border:1px solid #bbb;break-inside:avoid}
+  /* FORCE EVERY ACCORDION OPEN ON PAPER — a printed page cannot be clicked.
+     Two mechanisms, because browsers changed under us: the old UA rule was
+     `details:not([open]) > *:not(summary){display:none}`, which `display:block`
+     beat; current Chrome instead hides a `::details-content` pseudo-element
+     with `content-visibility`, which `display` cannot touch at all. Keep both
+     — dropping the first breaks older engines, dropping the second silently
+     prints a page of collapsed headers. */
+  details>summary+*,.round-body,.sect-body{display:block!important}
+  details::details-content{content-visibility:visible!important;
+    display:block!important;block-size:auto!important;height:auto!important}
+  .card,.wtable tr{break-inside:avoid}
+  /* On screen the work table scrolls inside its wrapper; on paper there is
+     nothing to scroll, so `overflow-x:auto` just guillotines the last column.
+     Let it reflow to the page width instead. */
+  .tablewrap{overflow:visible}
+  /* Seven columns on a portrait page is tight — the screen min-widths and
+     padding push it past the printable width and clip the Status column.
+     Drop both for print; the type is still readable at 8.5pt. */
+  .wtable{min-width:0;font-size:8.5pt}
+  .wtable th,.wtable td{padding:.32rem .4rem}
+  .c-page,.c-held,.c-detail,.c-item{min-width:0}
+  /* And DO NOT print the href after a link inside the table. A 45-character
+     URL in a column the table has already decided is narrow prints as a
+     one-character-per-line ladder, and every fix for that (break-all,
+     table-layout:fixed, hard column percentages) buys it by crushing the
+     Detail column, which is the one people actually read. The link label
+     names the page; the URL still prints on the section header, on cards and
+     in the changelog, where there is a full-width line to put it on. */
+  .wtable a[href^="http"]::after{content:none}
+  a[href^="http"]::after{content:" (" attr(href) ")";font-size:9pt;color:#555;
+    margin-left:.3em}
+  .lnk .ic,.ptag .ic{display:none}
+  /* Paper has no hover and no tooltip, so every control whose meaning lives
+     in a title attribute has to spell itself out: the section page link, the
+     status glyph, and the table's "Link" (whose real label is the .sr-only
+     one — swap the two round). */
+  .pagelink .sr-only,.c-status .sr-only,.c-page .lnk .sr-only{
+    position:static;width:auto;height:auto;clip:auto;margin:0;
+    white-space:normal}
+  .c-page .lnk [aria-hidden="true"]{display:none}
+  /* Word only, no glyph, no wrapping. Keeping both put "In progress" on two
+     lines in a column narrow enough to make every row taller than it needs
+     to be, and the ink the glyph costs is better spent on Detail. */
+  .c-status .ic{display:none}
+  .c-status .sr-only{white-space:nowrap;font-weight:600}
+}
+:root{--accent:#2f6f5e;--accent-2:#c07a2c}</style></head><body><svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><defs><symbol id="i-arrow-up-right-from-square" viewBox="0 0 512 512"><path d="M320 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l82.7 0-201.4 201.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L448 109.3 448 192c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160c0-17.7-14.3-32-32-32L320 0zM80 96C35.8 96 0 131.8 0 176L0 432c0 44.2 35.8 80 80 80l256 0c44.2 0 80-35.8 80-80l0-80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 80c0 8.8-7.2 16-16 16L80 448c-8.8 0-16-7.2-16-16l0-256c0-8.8 7.2-16 16-16l80 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L80 96z"/></symbol><symbol id="i-calendar" viewBox="0 0 448 512"><path d="M128 0C110.3 0 96 14.3 96 32l0 32-32 0C28.7 64 0 92.7 0 128l0 48 448 0 0-48c0-35.3-28.7-64-64-64l-32 0 0-32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 32-128 0 0-32c0-17.7-14.3-32-32-32zM0 224L0 416c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-192-448 0z"/></symbol><symbol id="i-circle-check" viewBox="0 0 512 512"><path d="M256 512a256 256 0 1 1 0-512 256 256 0 1 1 0 512zM374 145.7c-10.7-7.8-25.7-5.4-33.5 5.3L221.1 315.2 169 263.1c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l72 72c5 5 11.8 7.5 18.8 7s13.4-4.1 17.5-9.8L379.3 179.2c7.8-10.7 5.4-25.7-5.3-33.5z"/></symbol><symbol id="i-circle-exclamation" viewBox="0 0 512 512"><path d="M256 512a256 256 0 1 1 0-512 256 256 0 1 1 0 512zm0-192a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0-192c-18.2 0-32.7 15.5-31.4 33.7l7.4 104c.9 12.6 11.4 22.3 23.9 22.3 12.6 0 23-9.7 23.9-22.3l7.4-104c1.3-18.2-13.1-33.7-31.4-33.7z"/></symbol><symbol id="i-circle-half-stroke" viewBox="0 0 512 512"><path d="M448 256c0-106-86-192-192-192l0 384c106 0 192-86 192-192zM0 256a256 256 0 1 1 512 0 256 256 0 1 1 -512 0z"/></symbol><symbol id="i-circle-minus" viewBox="0 0 512 512"><path d="M256 512a256 256 0 1 0 0-512 256 256 0 1 0 0 512zM168 232l176 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-176 0c-13.3 0-24-10.7-24-24s10.7-24 24-24z"/></symbol><symbol id="i-circle-pause" viewBox="0 0 512 512"><path d="M256 512a256 256 0 1 0 0-512 256 256 0 1 0 0 512zM224 192l0 128c0 17.7-14.3 32-32 32s-32-14.3-32-32l0-128c0-17.7 14.3-32 32-32s32 14.3 32 32zm128 0l0 128c0 17.7-14.3 32-32 32s-32-14.3-32-32l0-128c0-17.7 14.3-32 32-32s32 14.3 32 32z"/></symbol><symbol id="i-clock" viewBox="0 0 512 512"><path d="M256 0a256 256 0 1 1 0 512 256 256 0 1 1 0-512zM232 120l0 136c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2 280 120c0-13.3-10.7-24-24-24s-24 10.7-24 24z"/></symbol><symbol id="i-clock-rotate-left" viewBox="0 0 576 512"><path d="M288 64c106 0 192 86 192 192S394 448 288 448c-65.2 0-122.9-32.5-157.6-82.3-10.1-14.5-30.1-18-44.6-7.9s-18 30.1-7.9 44.6C124.1 468.6 201 512 288 512 429.4 512 544 397.4 544 256S429.4 0 288 0C202.3 0 126.5 42.1 80 106.7L80 80c0-17.7-14.3-32-32-32S16 62.3 16 80l0 112c0 17.7 14.3 32 32 32l24.6 0c.5 0 1 0 1.5 0l86 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-38.3 0C154.9 102.6 217 64 288 64zm24 88c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 104c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65 0-94.1z"/></symbol><symbol id="i-eye" viewBox="0 0 576 512"><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z"/></symbol><symbol id="i-file-lines" viewBox="0 0 384 512"><path d="M0 64C0 28.7 28.7 0 64 0L213.5 0c17 0 33.3 6.7 45.3 18.7L365.3 125.3c12 12 18.7 28.3 18.7 45.3L384 448c0 35.3-28.7 64-64 64L64 512c-35.3 0-64-28.7-64-64L0 64zm208-5.5l0 93.5c0 13.3 10.7 24 24 24L325.5 176 208 58.5zM120 256c-13.3 0-24 10.7-24 24s10.7 24 24 24l144 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-144 0zm0 96c-13.3 0-24 10.7-24 24s10.7 24 24 24l144 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-144 0z"/></symbol><symbol id="i-globe" viewBox="0 0 512 512"><path d="M351.9 280l-190.9 0c2.9 64.5 17.2 123.9 37.5 167.4 11.4 24.5 23.7 41.8 35.1 52.4 11.2 10.5 18.9 12.2 22.9 12.2s11.7-1.7 22.9-12.2c11.4-10.6 23.7-28 35.1-52.4 20.3-43.5 34.6-102.9 37.5-167.4zM160.9 232l190.9 0C349 167.5 334.7 108.1 314.4 64.6 303 40.2 290.7 22.8 279.3 12.2 268.1 1.7 260.4 0 256.4 0s-11.7 1.7-22.9 12.2c-11.4 10.6-23.7 28-35.1 52.4-20.3 43.5-34.6 102.9-37.5 167.4zm-48 0C116.4 146.4 138.5 66.9 170.8 14.7 78.7 47.3 10.9 131.2 1.5 232l111.4 0zM1.5 280c9.4 100.8 77.2 184.7 169.3 217.3-32.3-52.2-54.4-131.7-57.9-217.3L1.5 280zm398.4 0c-3.5 85.6-25.6 165.1-57.9 217.3 92.1-32.7 159.9-116.5 169.3-217.3l-111.4 0zm111.4-48C501.9 131.2 434.1 47.3 342 14.7 374.3 66.9 396.4 146.4 399.9 232l111.4 0z"/></symbol><symbol id="i-hand" viewBox="0 0 512 512"><path d="M288 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 208c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-176c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 272c0 1.5 0 3.1 .1 4.6L67.6 283c-16-15.2-41.3-14.6-56.6 1.4S-3.6 325.7 12.4 341L124.8 448c43.1 41.1 100.4 64 160 64l19.2 0c97.2 0 176-78.8 176-176l0-208c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 112c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-176c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 176c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-208z"/></symbol><symbol id="i-list-check" viewBox="0 0 512 512"><path d="M133.8 36.3c10.9 7.6 13.5 22.6 5.9 33.4l-56 80c-4.1 5.8-10.5 9.5-17.6 10.1S52 158 47 153L7 113C-2.3 103.6-2.3 88.4 7 79S31.6 69.7 41 79l19.8 19.8 39.6-56.6c7.6-10.9 22.6-13.5 33.4-5.9zm0 160c10.9 7.6 13.5 22.6 5.9 33.4l-56 80c-4.1 5.8-10.5 9.5-17.6 10.1S52 318 47 313L7 273c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l19.8 19.8 39.6-56.6c7.6-10.9 22.6-13.5 33.4-5.9zM224 96c0-17.7 14.3-32 32-32l224 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-224 0c-17.7 0-32-14.3-32-32zm0 160c0-17.7 14.3-32 32-32l224 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-224 0c-17.7 0-32-14.3-32-32zM160 416c0-17.7 14.3-32 32-32l288 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-288 0c-17.7 0-32-14.3-32-32zM64 376a40 40 0 1 1 0 80 40 40 0 1 1 0-80z"/></symbol><symbol id="i-palette" viewBox="0 0 512 512"><path d="M512 256c0 .9 0 1.8 0 2.7-.4 36.5-33.6 61.3-70.1 61.3L344 320c-26.5 0-48 21.5-48 48 0 3.4 .4 6.7 1 9.9 2.1 10.2 6.5 20 10.8 29.9 6.1 13.8 12.1 27.5 12.1 42 0 31.8-21.6 60.7-53.4 62-3.5 .1-7 .2-10.6 .2-141.4 0-256-114.6-256-256S114.6 0 256 0 512 114.6 512 256zM128 288a32 32 0 1 0 -64 0 32 32 0 1 0 64 0zm0-96a32 32 0 1 0 0-64 32 32 0 1 0 0 64zM288 96a32 32 0 1 0 -64 0 32 32 0 1 0 64 0zm96 96a32 32 0 1 0 0-64 32 32 0 1 0 0 64z"/></symbol><symbol id="i-screwdriver-wrench" viewBox="0 0 576 512"><path d="M70.8-6.7c5.4-5.4 13.8-6.2 20.2-2L209.9 70.5c8.9 5.9 14.2 15.9 14.2 26.6l0 49.6 90.8 90.8c33.3-15 73.9-8.9 101.2 18.5L542.2 382.1c18.7 18.7 18.7 49.1 0 67.9l-60.1 60.1c-18.7 18.7-49.1 18.7-67.9 0L288.1 384c-27.4-27.4-33.5-67.9-18.5-101.2l-90.8-90.8-49.6 0c-10.7 0-20.7-5.3-26.6-14.2L23.4 58.9c-4.2-6.3-3.4-14.8 2-20.2L70.8-6.7zm145 303.5c-6.3 36.9 2.3 75.9 26.2 107.2l-94.9 95c-28.1 28.1-73.7 28.1-101.8 0s-28.1-73.7 0-101.8l135.4-135.5 35.2 35.1zM384.1 0c20.1 0 39.4 3.7 57.1 10.5 10 3.8 11.8 16.5 4.3 24.1L388.8 91.3c-3 3-4.7 7.1-4.7 11.3l0 41.4c0 8.8 7.2 16 16 16l41.4 0c4.2 0 8.3-1.7 11.3-4.7l56.7-56.7c7.6-7.5 20.3-5.7 24.1 4.3 6.8 17.7 10.5 37 10.5 57.1 0 43.2-17.2 82.3-45 111.1l-49.1-49.1c-33.1-33-78.5-45.7-121.1-38.4l-56.8-56.8 0-29.7-.2-5c-.8-12.4-4.4-24.3-10.5-34.9 29.4-35 73.4-57.2 122.7-57.3z"/></symbol></defs></svg><header class="banner" role="banner">
+  <div class="banner-in">
+    <div class="banner-id">
+      <h1>Sandhill Animal Hospital</h1>
+      <p><span class="proj-title">Website Build Tracker &middot; </span><span
+        class="proj-updated">updated 2026-07-31</span></p>
+      <p><span class="banner-sub" data-round="1" hidden>Round 1 &middot; Foundations, homepage and the two service pages</span><span class="banner-sub" data-round="2">Round 2 &middot; Remaining pages, booking and launch prep</span><span class="banner-sub" data-round="3" hidden>Round 3 &middot; Post-launch: blog, pharmacy and the review flow</span></p>
+    </div>
+    <div class="banner-stats" data-round="1" hidden><div class="stat t-done"><b>8</b><span class="stat-l"><svg class="ic stat-ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg>Done</span></div><div class="stat t-review"><b>0</b><span class="stat-l"><svg class="ic stat-ic" aria-hidden="true" focusable="false"><use href="#i-eye"></use></svg>Review</span></div><div class="stat t-blocked"><b>0</b><span class="stat-l"><svg class="ic stat-ic" aria-hidden="true" focusable="false"><use href="#i-circle-minus"></use></svg>Blocked</span></div></div><div class="banner-stats" data-round="2"><div class="stat t-done"><b>2</b><span class="stat-l"><svg class="ic stat-ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg>Done</span></div><div class="stat t-review"><b>1</b><span class="stat-l"><svg class="ic stat-ic" aria-hidden="true" focusable="false"><use href="#i-eye"></use></svg>Review</span></div><div class="stat t-blocked"><b>2</b><span class="stat-l"><svg class="ic stat-ic" aria-hidden="true" focusable="false"><use href="#i-circle-minus"></use></svg>Blocked</span></div></div><div class="banner-stats" data-round="3" hidden><div class="stat t-done"><b>0</b><span class="stat-l"><svg class="ic stat-ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg>Done</span></div><div class="stat t-review"><b>0</b><span class="stat-l"><svg class="ic stat-ic" aria-hidden="true" focusable="false"><use href="#i-eye"></use></svg>Review</span></div><div class="stat t-blocked"><b>0</b><span class="stat-l"><svg class="ic stat-ic" aria-hidden="true" focusable="false"><use href="#i-circle-minus"></use></svg>Blocked</span></div></div>
+  </div>
+  <div class="meter" data-round="1" hidden role="img" aria-label="Round 1: 100 percent of items complete"><i style="width:100%"></i></div><div class="meter" data-round="2" role="img" aria-label="Round 2: 13 percent of items complete"><i style="width:13%"></i></div><div class="meter" data-round="3" hidden role="img" aria-label="Round 3: 0 percent of items complete"><i style="width:0%"></i></div>
+  <nav class="roundnav" aria-label="Rounds">
+    <div class="tabs" role="tablist" aria-label="Select a round"><button type="button" role="tab" id="tab-r1" class="tab" data-round="1" aria-controls="panel-r1" aria-selected="false" tabindex="-1">Round 1</button><button type="button" role="tab" id="tab-r2" class="tab" data-round="2" aria-controls="panel-r2" aria-selected="true" tabindex="0">Round 2<span class="tab-badge t-client" aria-hidden="true">4</span><span class="sr-only">, 4 waiting on you</span></button><button type="button" role="tab" id="tab-r3" class="tab" data-round="3" aria-controls="panel-r3" aria-selected="false" tabindex="-1">Round 3</button></div>
+  </nav>
+</header><main class="wrap"><div role="tabpanel" id="panel-r1" class="tabpanel" data-round="1" data-round-label="Round 1 &mdash; Foundations, homepage and the two service pages" aria-labelledby="tab-r1" hidden><section class="letter"><p class="prose">This first round was about getting the foundations right so everything after it goes faster. Your colours and typefaces are now built into the site itself rather than applied page by page, the header and footer are done once and inherited everywhere, and the homepage is finished end to end. We also built the two service pages that bring you the most search traffic. You signed off on the homepage on 27 June and we closed the round there. The only thing that slowed us down was the logo — no vector original existed, so we redrew it, and you now own clean files you can use for signage and print as well.</p><p class="letter-sig">&mdash; <b>Chris LaFay</b> &middot; <time datetime="2026-06-27">June 27, 2026</time></p></section><section class="lm" aria-labelledby="h-client-1"><h2 class="lm-h" id="h-client-1"><svg class="ic lm-ic" aria-hidden="true" focusable="false"><use href="#i-hand"></use></svg><span>Waiting on you</span></h2><p class="empty">Nothing is waiting on you in this round.</p></section><section class="lm" aria-labelledby="h-agency-1"><h2 class="lm-h" id="h-agency-1"><svg class="ic lm-ic" aria-hidden="true" focusable="false"><use href="#i-screwdriver-wrench"></use></svg><span>Waiting on us</span></h2><p class="empty">Nothing is outstanding on our side in this round.</p></section><section class="lm" aria-labelledby="h-work-1"><h2 class="lm-h" id="h-work-1"><svg class="ic lm-ic" aria-hidden="true" focusable="false"><use href="#i-list-check"></use></svg><span>The work in this round</span></h2><details class="sect" id="sect-s1-brand"><summary><h3 class="sect-title">Brand and site foundations</h3><span class="sect-meta"><span class="tally"><span aria-hidden="true">3/3</span><span class="sr-only">3 of 3 done</span></span></span></summary><div class="sect-body"><p class="prose">Colours, typefaces, buttons, spacing and the header and footer that every page inherits.</p><div class="tablewrap"><table class="wtable"><caption class="sr-only">Items in Brand and site foundations</caption><thead><tr><th scope="col" class="c-status"><span class="sr-only">Status</span></th><th scope="col">Ref</th><th scope="col">Item</th><th scope="col">Detail</th><th scope="col">Added</th></tr></thead><tbody><tr id="f-01" class="s-done"><td class="c-status"><span class="st t-done" title="Done"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Done</span></span></td><td class="c-ref">F-01</td><th scope="row" class="c-item">Colour palette and typefaces set up site-wide</th><td class="c-detail"><p class="prose">Your greens and the warm accent are now the site&#x27;s colour system, so every new page uses them automatically rather than being styled one at a time.</p></td><td class="c-date"><time datetime="2026-05-19" title="2026-05-19">MAY 19</time></td></tr><tr id="f-02" class="s-done"><td class="c-status"><span class="st t-done" title="Done"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Done</span></span></td><td class="c-ref">F-02</td><th scope="row" class="c-item">Header, navigation and footer</th><td class="c-detail"><p class="prose">Built once and used on every page, including the phone number and hours in the header on mobile.</p></td><td class="c-date"><time datetime="2026-05-19" title="2026-05-19">MAY 19</time></td></tr><tr id="f-03" class="s-done"><td class="c-status"><span class="st t-done" title="Done"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Done</span></span></td><td class="c-ref">F-03</td><th scope="row" class="c-item">Accessibility pass on colour contrast</th><td class="c-detail"><p class="prose">Checked every text-on-colour combination against the WCAG AA standard. The mid-green needed to go two shades darker for body text; the original green is still used for large headings and buttons.</p></td><td class="c-date"><time datetime="2026-05-26" title="2026-05-26">MAY 26</time></td></tr></tbody></table></div></div></details><details class="sect" id="sect-s1-home"><summary><h3 class="sect-title">Homepage</h3><span class="sect-meta"><a class="pagelink" href="https://example.com/preview/" rel="noopener" title="Open Homepage"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrow-up-right-from-square"></use></svg><span class="sr-only">Open Homepage</span></a><span class="tally"><span aria-hidden="true">3/3</span><span class="sr-only">3 of 3 done</span></span></span></summary><div class="sect-body"><p class="prose">The page most of your visitors see first.</p><div class="tablewrap"><table class="wtable"><caption class="sr-only">Items in Homepage</caption><thead><tr><th scope="col" class="c-status"><span class="sr-only">Status</span></th><th scope="col">Ref</th><th scope="col">Item</th><th scope="col">Detail</th><th scope="col">Added</th></tr></thead><tbody><tr id="h-01" class="s-done"><td class="c-status"><span class="st t-done" title="Done"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Done</span></span></td><td class="c-ref">H-01</td><th scope="row" class="c-item">Homepage layout and copy</th><td class="c-detail"><p class="prose">Built from the outline we agreed on the kickoff call: who you are, the three things people most often come looking for, your team, and a clear way to book.</p></td><td class="c-date"><time datetime="2026-05-22" title="2026-05-22">MAY 22</time></td></tr><tr id="h-02" class="s-done"><td class="c-status"><span class="st t-done" title="Done"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Done</span></span></td><td class="c-ref">H-02</td><th scope="row" class="c-item">Clinic photography placed</th><td class="c-detail"><p class="prose">Your existing photos are in and cropped for both desktop and phone.</p></td><td class="c-date"><time datetime="2026-06-01" title="2026-06-01">JUN 1</time></td></tr><tr id="h-03" class="s-done"><td class="c-status"><span class="st t-done" title="Done"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Done</span></span></td><td class="c-ref">H-03</td><th scope="row" class="c-item">Review the homepage and send changes</th><td class="c-detail"><p class="prose">You reviewed on 24 June and signed off on 27 June with three copy tweaks, all applied.</p></td><td class="c-date"><time datetime="2026-06-20" title="2026-06-20">JUN 20</time></td></tr></tbody></table></div></div></details><details class="sect" id="sect-s1-services"><summary><h3 class="sect-title">Service pages</h3><span class="sect-meta"><span class="tally"><span aria-hidden="true">2/2</span><span class="sr-only">2 of 2 done</span></span></span></summary><div class="sect-body"><p class="prose">Two pages, one per service line — each carries its own page tag below.</p><div class="tablewrap"><table class="wtable"><caption class="sr-only">Items in Service pages</caption><thead><tr><th scope="col" class="c-status"><span class="sr-only">Status</span></th><th scope="col">Ref</th><th scope="col">Item</th><th scope="col">Detail</th><th scope="col">Added</th><th scope="col">Page</th></tr></thead><tbody><tr id="sv-01" class="s-done"><td class="c-status"><span class="st t-done" title="Done"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Done</span></span></td><td class="c-ref">SV-01</td><th scope="row" class="c-item">Wellness and preventive care page</th><td class="c-detail"><p class="prose">Live, with the vaccination schedule table and the pricing you supplied.</p></td><td class="c-date"><time datetime="2026-06-10" title="2026-06-10">JUN 10</time></td><td class="c-page"><a class="lnk" href="https://example.com/preview/wellness" rel="noopener" title="Preview the page"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrow-up-right-from-square"></use></svg><span aria-hidden="true">Link</span><span class="sr-only">Preview the page</span></a></td></tr><tr id="sv-02" class="s-done"><td class="c-status"><span class="st t-done" title="Done"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Done</span></span></td><td class="c-ref">SV-02</td><th scope="row" class="c-item">Surgery and dentistry page</th><td class="c-detail"><p class="prose">Live, including the pre-op instructions as a downloadable PDF.</p></td><td class="c-date"><time datetime="2026-06-12" title="2026-06-12">JUN 12</time></td><td class="c-page"><a class="lnk" href="https://example.com/preview/surgery" rel="noopener" title="Preview the page"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrow-up-right-from-square"></use></svg><span aria-hidden="true">Link</span><span class="sr-only">Preview the page</span></a></td></tr></tbody></table></div></div></details></section><section class="lm" aria-labelledby="h-log-1"><h2 class="lm-h" id="h-log-1"><svg class="ic lm-ic" aria-hidden="true" focusable="false"><use href="#i-clock-rotate-left"></use></svg><span>History</span><span class="h2-count t-queued" aria-hidden="true">6</span><span class="sr-only">, 6 entries</span></h2><p class="lm-sub">Every change we made in round 1, and why.</p><div class="folds"><details class="fold"><summary><span class="grow-lbl"><svg class="ic grow-ic" aria-hidden="true" focusable="false"><use href="#i-globe"></use></svg>Site-wide</span><span class="tally">3</span></summary><div><div class="tablewrap"><table class="wtable"><caption class="sr-only">Changes for Site-wide</caption><thead><tr><th scope="col" class="c-status"><span class="sr-only">State</span></th><th scope="col">Ref</th><th scope="col">What</th><th scope="col">Why</th><th scope="col">Date</th></tr></thead><tbody><tr class="s-shipped"><td class="c-status"><span class="st t-done" title="Shipped"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Shipped</span></span></td><td class="c-ref">C-09</td><th scope="row" class="c-item">Hours corrected everywhere after your confirmation.</th><td class="c-detail"><p class="prose">Saturday close and holiday closure were wrong on the old site.</p></td><td class="c-date"><time datetime="2026-06-09" title="2026-06-09">JUN 9</time></td></tr><tr class="s-shipped"><td class="c-status"><span class="st t-done" title="Shipped"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Shipped</span></span></td><td class="c-ref">C-08</td><th scope="row" class="c-item">Logo redrawn as a vector and used site-wide.</th><td class="c-detail"><p class="prose">The only files that existed were low-resolution JPEGs, which go fuzzy on modern screens. You now own clean files you can use for signage and print too.</p></td><td class="c-date"><time datetime="2026-06-02" title="2026-06-02">JUN 2</time></td></tr><tr class="s-shipped"><td class="c-status"><span class="st t-done" title="Shipped"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Shipped</span></span></td><td class="c-ref">C-07</td><th scope="row" class="c-item">Darkened the mid-green used for body text.</th><td class="c-detail"><p class="prose">The original green did not have enough contrast against white to be comfortably readable, and would have failed an accessibility audit. The original green is still used at large sizes, where it passes.</p></td><td class="c-date"><time datetime="2026-05-28" title="2026-05-28">MAY 28</time></td></tr></tbody></table></div></div></details><details class="fold"><summary><span class="grow-lbl"><svg class="ic grow-ic" aria-hidden="true" focusable="false"><use href="#i-file-lines"></use></svg>Homepage</span><span class="tally">2</span></summary><div><div class="tablewrap"><table class="wtable"><caption class="sr-only">Changes for Homepage</caption><thead><tr><th scope="col" class="c-status"><span class="sr-only">State</span></th><th scope="col">Ref</th><th scope="col">What</th><th scope="col">Why</th><th scope="col">Date</th></tr></thead><tbody><tr class="s-shipped"><td class="c-status"><span class="st t-done" title="Shipped"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Shipped</span></span></td><td class="c-ref">C-11</td><th scope="row" class="c-item">Applied your three copy changes and closed round 1.</th><td class="c-detail"><p class="prose">Sign-off received.</p></td><td class="c-date"><time datetime="2026-06-27" title="2026-06-27">JUN 27</time></td></tr><tr class="s-reverted"><td class="c-status"><span class="st t-blocked" title="Reverted"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-minus"></use></svg><span class="sr-only">Reverted</span></span></td><td class="c-ref">C-10</td><th scope="row" class="c-item">Removed the auto-rotating photo slider from the top of the homepage.</th><td class="c-detail"><p class="prose">We tried it and it hurt: it pushed your opening line below the fold on phones and slowed the page down. Replaced with a single strong photo.</p></td><td class="c-date"><time datetime="2026-06-18" title="2026-06-18">JUN 18</time></td></tr></tbody></table></div></div></details><details class="fold"><summary><span class="grow-lbl"><svg class="ic grow-ic" aria-hidden="true" focusable="false"><use href="#i-file-lines"></use></svg>Wellness &amp; Preventive Care</span><span class="tally">1</span></summary><div><div class="tablewrap"><table class="wtable"><caption class="sr-only">Changes for Wellness &amp; Preventive Care</caption><thead><tr><th scope="col" class="c-status"><span class="sr-only">State</span></th><th scope="col">Ref</th><th scope="col">What</th><th scope="col">Why</th><th scope="col">Date</th></tr></thead><tbody><tr class="s-shipped"><td class="c-status"><span class="st t-done" title="Shipped"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Shipped</span></span></td><td class="c-ref">C-10b</td><th scope="row" class="c-item">Vaccination schedule published as a table.</th><td class="c-detail"><p class="prose">It was three paragraphs of prose. People scan this page looking for one row.</p></td><td class="c-date"><time datetime="2026-06-14" title="2026-06-14">JUN 14</time></td></tr></tbody></table></div></div></details><details class="fold loose"><summary><span class="grow-lbl"><svg class="ic grow-ic" aria-hidden="true" focusable="false"><use href="#i-globe"></use></svg>Not tied to a specific round</span><span class="tally">1</span></summary><div><div class="tablewrap"><table class="wtable"><caption class="sr-only">Changes for Not tied to a specific round</caption><thead><tr><th scope="col" class="c-status"><span class="sr-only">State</span></th><th scope="col">Ref</th><th scope="col">What</th><th scope="col">Why</th><th scope="col">Date</th></tr></thead><tbody><tr class="s-shipped"><td class="c-status"><span class="st t-done" title="Shipped"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Shipped</span></span></td><td class="c-ref">&mdash;</td><th scope="row" class="c-item">Build started.</th><td class="c-detail"><p class="prose">Kickoff call, site map agreed. This entry has no round, so it appears under &#x27;Not tied to a specific round&#x27; in every round&#x27;s history.</p></td><td class="c-date"><time datetime="2026-05-19" title="2026-05-19">MAY 19</time></td></tr></tbody></table></div></div></details></div></section></div><div role="tabpanel" id="panel-r2" class="tabpanel" data-round="2" data-round-label="Round 2 &mdash; Remaining pages, booking and launch prep" aria-labelledby="tab-r2"><section class="letter"><p class="prose">This round is everything left before we can point sandhillvet.com at the new site. Boarding and daycare is built and live on the preview with the price list you sent, the emergency page is finished and ready for you to read, and the new-client intake is going in as a real web form rather than a PDF so people can fill it in on a phone. Booking buttons are on every page and currently dial your main number as a fallback. Two things are genuinely waiting on you — the team bios and photos, and the booking system login — and both are called out at the top of this page. Everything else is ours.</p><p class="letter-sig">&mdash; <b>Chris LaFay</b> &middot; <time datetime="2026-07-30">July 30, 2026</time></p></section><section class="lm" aria-labelledby="h-client-2"><h2 class="lm-h" id="h-client-2"><svg class="ic lm-ic" aria-hidden="true" focusable="false"><use href="#i-hand"></use></svg><span>Waiting on you</span><span class="h2-count t-client" aria-hidden="true">4</span><span class="sr-only">, 4 items</span></h2><div class="cards"><article class="card blocker" id="b2-bios"><div class="card-head"><h3 class="card-title">Team bios and headshots</h3></div><div class="ptags"><a class="ptag" href="https://example.com/preview/team" rel="noopener"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-file-lines"></use></svg>Our Team</a></div><p class="prose">The Our Team page is built and empty. It is the second most-visited page on your current site, so we would rather not launch without it.</p><div class="ask"><b>What we need:</b> A short paragraph for each of the seven staff members and a photo of each. A phone photo against a plain wall is genuinely fine — we will edit them to match.</div><footer class="card-foot"><div class="cf-l"><span class="stamp" aria-label="Raised 2026-07-08"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-calendar"></use></svg>2026-07-08</span></div><div class="cf-r"><a class="lnk" href="https://example.com/upload/sandhill-team" rel="noopener"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrow-up-right-from-square"></use></svg>Upload folder</a></div></footer></article><article class="card blocker" id="b2-booking"><div class="card-head"><h3 class="card-title">Login for your booking system</h3></div><p class="prose">Blocks online booking on every page. Until this is connected, the buttons fall back to the phone number.</p><div class="ask"><b>What we need:</b> Either an admin login for the practice-management portal, or ask your account rep for the website booking widget code and forward it to us.</div><footer class="card-foot"><div class="cf-l"><span class="stamp" aria-label="Raised 2026-07-15"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-calendar"></use></svg>2026-07-15</span></div><div class="cf-r"></div></footer></article><article class="card"><div class="card-head"><h3 class="card-title">Confirm the wording on the emergency banner</h3><a class="ref reflink" href="#p-05">P-05</a></div><div class="ptags"><a class="ptag" href="https://example.com/preview/emergency" rel="noopener"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-file-lines"></use></svg>Emergency &amp; After Hours</a></div><p class="prose">We have written the red banner as &quot;If this is an emergency, call us first — do not drive over unannounced.&quot; Tell us if you would rather it said something else.</p><footer class="card-foot"><div class="cf-l"><span class="stamp" aria-label="Raised 2026-07-28"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-calendar"></use></svg>2026-07-28</span></div><div class="cf-r"></div></footer></article><article class="card"><div class="card-head"><h3 class="card-title">Get the booking widget key from PetDesk</h3><a class="ref reflink" href="#b-03">B-03</a></div><p class="prose">PetDesk will only issue the website key to the account holder, so this one has to come from your side. Ten minutes with your rep should do it.</p><footer class="card-foot"><div class="cf-l"><span class="stamp" aria-label="Raised 2026-07-15"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-calendar"></use></svg>2026-07-15</span></div><div class="cf-r"></div></footer></article></div></section><section class="lm" aria-labelledby="h-agency-2"><h2 class="lm-h" id="h-agency-2"><svg class="ic lm-ic" aria-hidden="true" focusable="false"><use href="#i-screwdriver-wrench"></use></svg><span>Waiting on us</span><span class="h2-count t-queued" aria-hidden="true">1</span><span class="sr-only">, 1 item</span></h2><div class="cards"><article class="card blocker" id="b2-dns"><div class="card-head"><h3 class="card-title">Domain access for launch day</h3></div><p class="prose">We need this in place before launch day, not on it. Nothing for you to do yet — we are working it out with your registrar.</p><footer class="card-foot"><div class="cf-l"><span class="stamp" aria-label="Raised 2026-07-22"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-calendar"></use></svg>2026-07-22</span></div><div class="cf-r"></div></footer></article></div></section><section class="lm" aria-labelledby="h-work-2"><h2 class="lm-h" id="h-work-2"><svg class="ic lm-ic" aria-hidden="true" focusable="false"><use href="#i-list-check"></use></svg><span>The work in this round</span></h2><details class="sect" id="sect-s2-pages" open><summary><h3 class="sect-title">Remaining pages</h3><span class="sect-meta"><span class="flag t-client" title="Something here needs you"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-exclamation"></use></svg><span class="sr-only">Needs you</span></span><span class="tally"><span aria-hidden="true">1/6</span><span class="sr-only">1 of 6 done</span></span></span></summary><div class="sect-body"><p class="prose">The rest of the site map we agreed at kickoff. Each item is tagged with the page it belongs to.</p><div class="tablewrap"><table class="wtable"><caption class="sr-only">Items in Remaining pages</caption><thead><tr><th scope="col" class="c-status"><span class="sr-only">Status</span></th><th scope="col">Ref</th><th scope="col">Item</th><th scope="col">Detail</th><th scope="col">Held on</th><th scope="col">Added</th><th scope="col">Page</th></tr></thead><tbody><tr id="p-01" class="s-done"><td class="c-status"><span class="st t-done" title="Done"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Done</span></span></td><td class="c-ref">P-01</td><th scope="row" class="c-item">Boarding and daycare</th><td class="c-detail"><p class="prose">Built and live on the preview site, with the price table you sent on 24 July.</p></td><td class="c-held"></td><td class="c-date"><time datetime="2026-07-06" title="2026-07-06">JUL 6</time></td><td class="c-page"><a class="lnk" href="https://example.com/preview/boarding" rel="noopener" title="Preview the page"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrow-up-right-from-square"></use></svg><span aria-hidden="true">Link</span><span class="sr-only">Preview the page</span></a></td></tr><tr id="p-02" class="s-blocked"><td class="c-status"><span class="st t-blocked" title="Blocked"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-minus"></use></svg><span class="sr-only">Blocked</span></span></td><td class="c-ref">P-02</td><th scope="row" class="c-item">Our team</th><td class="c-detail"><p class="prose">The page layout is finished and waiting on the bios and photos. Once they arrive this is about half a day&#x27;s work.</p></td><td class="c-held"><span class="held t-client">Waiting on you</span><span class="held-t">Team bios and headshots</span></td><td class="c-date"><time datetime="2026-07-06" title="2026-07-06">JUL 6</time></td><td class="c-page"><a class="lnk" href="https://example.com/preview/team" rel="noopener" title="Our Team"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrow-up-right-from-square"></use></svg><span aria-hidden="true">Link</span><span class="sr-only">Our Team</span></a></td></tr><tr id="p-03" class="s-queued"><td class="c-status"><span class="st t-queued" title="In progress"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-half-stroke"></use></svg><span class="sr-only">In progress</span></span></td><td class="c-ref">P-03</td><th scope="row" class="c-item">New client information and forms</th><td class="c-detail"><p class="prose">Being built now. Your intake form is going in as a real web form rather than a PDF download, so people can fill it in on a phone.</p></td><td class="c-held"></td><td class="c-date"><time datetime="2026-07-09" title="2026-07-09">JUL 9</time></td><td class="c-page"><a class="lnk" href="https://example.com/preview/new-clients" rel="noopener" title="New Client Info"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrow-up-right-from-square"></use></svg><span aria-hidden="true">Link</span><span class="sr-only">New Client Info</span></a></td></tr><tr id="p-04" class="s-review"><td class="c-status"><span class="st t-review" title="Review"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-eye"></use></svg><span class="sr-only">Review</span></span></td><td class="c-ref">P-04</td><th scope="row" class="c-item">Emergency and after hours</th><td class="c-detail"><p class="prose">Built and ready for you to read. This is the page people land on at 11pm, so we have kept it to the phone number, the address and the nearest 24-hour hospital, with nothing else competing for attention.</p></td><td class="c-held"></td><td class="c-date"><time datetime="2026-07-11" title="2026-07-11">JUL 11</time></td><td class="c-page"><a class="lnk" href="https://example.com/preview/emergency" rel="noopener" title="Preview the page"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrow-up-right-from-square"></use></svg><span aria-hidden="true">Link</span><span class="sr-only">Preview the page</span></a></td></tr><tr id="p-05" class="s-client"><td class="c-status"><span class="st t-client" title="Needs you"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-exclamation"></use></svg><span class="sr-only">Needs you</span></span></td><td class="c-ref">P-05</td><th scope="row" class="c-item">Confirm the wording on the emergency banner</th><td class="c-detail"><p class="prose">We have written the red banner as &quot;If this is an emergency, call us first — do not drive over unannounced.&quot; Tell us if you would rather it said something else.</p></td><td class="c-held"></td><td class="c-date"><time datetime="2026-07-28" title="2026-07-28">JUL 28</time></td><td class="c-page"><a class="lnk" href="https://example.com/preview/emergency" rel="noopener" title="Emergency &amp; After Hours"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrow-up-right-from-square"></use></svg><span aria-hidden="true">Link</span><span class="sr-only">Emergency &amp; After Hours</span></a></td></tr><tr id="p-06" class="s-deferred"><td class="c-status"><span class="st t-deferred" title="Deferred"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-pause"></use></svg><span class="sr-only">Deferred</span></span></td><td class="c-ref">P-06</td><th scope="row" class="c-item">Online pharmacy page</th><td class="c-detail"><p class="prose">Parked until after launch by agreement on the 15 July call — the pharmacy vendor changes in September and building it twice makes no sense.</p></td><td class="c-held"></td><td class="c-date"><time datetime="2026-07-06" title="2026-07-06">JUL 6</time></td><td class="c-page"></td></tr></tbody></table></div></div></details><details class="sect" id="sect-s2-booking" open><summary><h3 class="sect-title">Online booking</h3><span class="sect-meta"><span class="flag t-client" title="Something here needs you"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-exclamation"></use></svg><span class="sr-only">Needs you</span></span><span class="tally"><span aria-hidden="true">1/3</span><span class="sr-only">1 of 3 done</span></span></span></summary><div class="sect-body"><p class="prose">Letting people request an appointment from the site instead of calling. This one is genuinely site-wide, so it carries no page tag.</p><div class="tablewrap"><table class="wtable"><caption class="sr-only">Items in Online booking</caption><thead><tr><th scope="col" class="c-status"><span class="sr-only">Status</span></th><th scope="col">Ref</th><th scope="col">Item</th><th scope="col">Detail</th><th scope="col">Held on</th><th scope="col">Added</th></tr></thead><tbody><tr id="b-01" class="s-done"><td class="c-status"><span class="st t-done" title="Done"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Done</span></span></td><td class="c-ref">B-01</td><th scope="row" class="c-item">Book buttons placed across the site</th><td class="c-detail"><p class="prose">Every page now has a clear way to book, in the header and at the end of the main content.</p></td><td class="c-held"></td><td class="c-date"><time datetime="2026-07-13" title="2026-07-13">JUL 13</time></td></tr><tr id="b-02" class="s-blocked"><td class="c-status"><span class="st t-blocked" title="Blocked"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-minus"></use></svg><span class="sr-only">Blocked</span></span></td><td class="c-ref">B-02</td><th scope="row" class="c-item">Connect the booking system</th><td class="c-detail"><p class="prose">Waiting on the login. Until then the buttons dial your main number, which is a working fallback rather than a broken link.</p></td><td class="c-held"><span class="held t-client">Waiting on you</span><span class="held-t">Login for your booking system</span></td><td class="c-date"><time datetime="2026-07-13" title="2026-07-13">JUL 13</time></td></tr><tr id="b-03" class="s-client"><td class="c-status"><span class="st t-client" title="Needs you"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-exclamation"></use></svg><span class="sr-only">Needs you</span></span></td><td class="c-ref">B-03</td><th scope="row" class="c-item">Get the booking widget key from PetDesk</th><td class="c-detail"><p class="prose">PetDesk will only issue the website key to the account holder, so this one has to come from your side. Ten minutes with your rep should do it.</p></td><td class="c-held"><span class="held t-client">Waiting on you</span><span class="held-t">Login for your booking system</span></td><td class="c-date"><time datetime="2026-07-15" title="2026-07-15">JUL 15</time></td></tr></tbody></table></div></div></details><details class="sect" id="sect-s2-launch"><summary><h3 class="sect-title">Pre-launch checks</h3><span class="sect-meta"><span class="tally"><span aria-hidden="true">0/6</span><span class="sr-only">0 of 6 done</span></span></span></summary><div class="sect-body"><p class="prose">The work that makes launch day uneventful.</p><div class="tablewrap"><table class="wtable"><caption class="sr-only">Items in Pre-launch checks</caption><thead><tr><th scope="col" class="c-status"><span class="sr-only">Status</span></th><th scope="col">Ref</th><th scope="col">Item</th><th scope="col">Detail</th><th scope="col">Added</th></tr></thead><tbody><tr id="l-01" class="s-queued"><td class="c-status"><span class="st t-queued" title="In progress"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-half-stroke"></use></svg><span class="sr-only">In progress</span></span></td><td class="c-ref">L-01</td><th scope="row" class="c-item">Redirects from every old page</th><td class="c-detail"><p class="prose">Anyone who has an old page bookmarked, or finds one in Google, will land on the matching new page instead of an error. We have mapped 41 of your 47 old pages so far.</p></td><td class="c-date"><time datetime="2026-07-20" title="2026-07-20">JUL 20</time></td></tr><tr id="l-02" class="s-queued"><td class="c-status"><span class="st t-queued" title="Queued"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-clock"></use></svg><span class="sr-only">Queued</span></span></td><td class="c-ref">L-02</td><th scope="row" class="c-item">Speed and mobile testing</th><td class="c-detail"><p class="prose">A full pass on real phones once the last page is built.</p></td><td class="c-date">&mdash;</td></tr><tr id="l-03" class="s-queued"><td class="c-status"><span class="st t-queued" title="Queued"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-clock"></use></svg><span class="sr-only">Queued</span></span></td><td class="c-ref">L-03</td><th scope="row" class="c-item">Accessibility review</th><td class="c-detail"><p class="prose">Keyboard navigation, screen-reader labels and colour contrast checked across the finished site.</p></td><td class="c-date">&mdash;</td></tr><tr id="l-04" class="s-queued"><td class="c-status"><span class="st t-queued" title="Queued"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-clock"></use></svg><span class="sr-only">Queued</span></span></td><td class="c-ref">L-04</td><th scope="row" class="c-item">Sign off the finished site</th><td class="c-detail"><p class="prose">A final read-through by you before we point the domain. We will send a checklist so it is a quick job rather than an open-ended one.</p></td><td class="c-date">&mdash;</td></tr><tr id="l-05" class="s-queued"><td class="c-status"><span class="st t-queued" title="Queued"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-clock"></use></svg><span class="sr-only">Queued</span></span></td><td class="c-ref">L-05</td><th scope="row" class="c-item">Analytics and search console handover</th><td class="c-detail"><p class="prose">Set up in your name, not ours, so the data is yours if you ever move on.</p></td><td class="c-date">&mdash;</td></tr><tr id="l-06" class="s-queued"><td class="c-status"><span class="st t-queued" title="Queued"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-clock"></use></svg><span class="sr-only">Queued</span></span></td><td class="c-ref">L-06</td><th scope="row" class="c-item">Retire the old hosting account</th><td class="c-detail"><p class="prose">After launch, and only once we have confirmed the new site is serving. We will tell you when it is safe to cancel.</p></td><td class="c-date">&mdash;</td></tr></tbody></table></div></div></details></section><section class="lm" aria-labelledby="h-log-2"><h2 class="lm-h" id="h-log-2"><svg class="ic lm-ic" aria-hidden="true" focusable="false"><use href="#i-clock-rotate-left"></use></svg><span>History</span><span class="h2-count t-queued" aria-hidden="true">9</span><span class="sr-only">, 9 entries</span></h2><p class="lm-sub">Every change we made in round 2, and why.</p><div class="folds"><details class="fold"><summary><span class="grow-lbl"><svg class="ic grow-ic" aria-hidden="true" focusable="false"><use href="#i-globe"></use></svg>Site-wide</span><span class="tally">5</span></summary><div><div class="tablewrap"><table class="wtable"><caption class="sr-only">Changes for Site-wide</caption><thead><tr><th scope="col" class="c-status"><span class="sr-only">State</span></th><th scope="col">Ref</th><th scope="col">What</th><th scope="col">Why</th><th scope="col">Date</th></tr></thead><tbody><tr class="s-shipped"><td class="c-status"><span class="st t-done" title="Shipped"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Shipped</span></span></td><td class="c-ref">C-17</td><th scope="row" class="c-item">Phone number in the header is now tappable on mobile.</th><td class="c-detail"><p class="prose">Roughly two thirds of your current traffic is on a phone, and the number was plain text. This one is site-wide, so it sits in the site-wide group.</p></td><td class="c-date"><time datetime="2026-07-28" title="2026-07-28">JUL 28</time></td></tr><tr class="s-partial"><td class="c-status"><span class="st t-queued" title="Partly done"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-half-stroke"></use></svg><span class="sr-only">Partly done</span></span></td><td class="c-ref">C-15</td><th scope="row" class="c-item">Mapped 41 of 47 old pages to their new equivalents.</th><td class="c-detail"><p class="prose">So existing links and Google results keep working after launch.</p></td><td class="c-date"><time datetime="2026-07-22" title="2026-07-22">JUL 22</time></td></tr><tr class="s-shipped"><td class="c-status"><span class="st t-done" title="Shipped"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Shipped</span></span></td><td class="c-ref">C-14b</td><th scope="row" class="c-item">Browser tab icon and social share image applied everywhere.</th><td class="c-detail"><p class="prose">Links to you were showing a blank page icon when shared.</p></td><td class="c-date"><time datetime="2026-07-16" title="2026-07-16">JUL 16</time></td></tr><tr class="s-shipped"><td class="c-status"><span class="st t-done" title="Shipped"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Shipped</span></span></td><td class="c-ref">C-14</td><th scope="row" class="c-item">Book buttons fall back to the phone number until the booking system is connected.</th><td class="c-detail"><p class="prose">A button that does nothing is worse than no button. This way the page is useful today and gets better later.</p></td><td class="c-date"><time datetime="2026-07-15" title="2026-07-15">JUL 15</time></td></tr><tr class="s-deferred"><td class="c-status"><span class="st t-deferred" title="Deferred"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-pause"></use></svg><span class="sr-only">Deferred</span></span></td><td class="c-ref">C-12</td><th scope="row" class="c-item">Pharmacy page pulled out of this round.</th><td class="c-detail"><p class="prose">Your pharmacy vendor changes in September. Building it now means building it twice.</p></td><td class="c-date"><time datetime="2026-07-09" title="2026-07-09">JUL 9</time></td></tr></tbody></table></div></div></details><details class="fold"><summary><span class="grow-lbl"><svg class="ic grow-ic" aria-hidden="true" focusable="false"><use href="#i-file-lines"></use></svg>Boarding &amp; Daycare</span><span class="tally">1</span></summary><div><div class="tablewrap"><table class="wtable"><caption class="sr-only">Changes for Boarding &amp; Daycare</caption><thead><tr><th scope="col" class="c-status"><span class="sr-only">State</span></th><th scope="col">Ref</th><th scope="col">What</th><th scope="col">Why</th><th scope="col">Date</th><th scope="col">Link</th></tr></thead><tbody><tr class="s-shipped"><td class="c-status"><span class="st t-done" title="Shipped"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Shipped</span></span></td><td class="c-ref">C-16</td><th scope="row" class="c-item">Boarding prices added as an editable table.</th><td class="c-detail"><p class="prose">You said prices move every year. A table you can edit beats a graphic you have to ask us to change.</p></td><td class="c-date"><time datetime="2026-07-24" title="2026-07-24">JUL 24</time></td><td class="c-page"><a class="lnk" href="https://example.com/preview/boarding" rel="noopener" title="See the page"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrow-up-right-from-square"></use></svg><span aria-hidden="true">Link</span><span class="sr-only">See the page</span></a></td></tr></tbody></table></div></div></details><details class="fold"><summary><span class="grow-lbl"><svg class="ic grow-ic" aria-hidden="true" focusable="false"><use href="#i-file-lines"></use></svg>New Client Info</span><span class="tally">1</span></summary><div><div class="tablewrap"><table class="wtable"><caption class="sr-only">Changes for New Client Info</caption><thead><tr><th scope="col" class="c-status"><span class="sr-only">State</span></th><th scope="col">Ref</th><th scope="col">What</th><th scope="col">Why</th><th scope="col">Date</th></tr></thead><tbody><tr class="s-shipped"><td class="c-status"><span class="st t-done" title="Shipped"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Shipped</span></span></td><td class="c-ref">C-13</td><th scope="row" class="c-item">New-client intake is a web form rather than a PDF download.</th><td class="c-detail"><p class="prose">The PDF version could not be filled in on a phone, which is where most people were opening it.</p></td><td class="c-date"><time datetime="2026-07-11" title="2026-07-11">JUL 11</time></td></tr></tbody></table></div></div></details><details class="fold"><summary><span class="grow-lbl"><svg class="ic grow-ic" aria-hidden="true" focusable="false"><use href="#i-file-lines"></use></svg>Emergency &amp; After Hours</span><span class="tally">2</span></summary><div><div class="tablewrap"><table class="wtable"><caption class="sr-only">Changes for Emergency &amp; After Hours</caption><thead><tr><th scope="col" class="c-status"><span class="sr-only">State</span></th><th scope="col">Ref</th><th scope="col">What</th><th scope="col">Why</th><th scope="col">Date</th><th scope="col">Link</th></tr></thead><tbody><tr class="s-shipped"><td class="c-status"><span class="st t-done" title="Shipped"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Shipped</span></span></td><td class="c-ref">C-18</td><th scope="row" class="c-item">Stripped the after-hours page back to the phone number, address and referral hospital.</th><td class="c-detail"><p class="prose">It was carrying the full services menu and a booking button. Somebody reading that page at 11pm with a sick animal needs one number, not a menu.</p></td><td class="c-date"><time datetime="2026-07-30" title="2026-07-30">JUL 30</time></td><td class="c-page"><a class="lnk" href="https://example.com/preview/emergency" rel="noopener" title="See the page"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-arrow-up-right-from-square"></use></svg><span aria-hidden="true">Link</span><span class="sr-only">See the page</span></a></td></tr><tr class="s-shipped"><td class="c-status"><span class="st t-done" title="Shipped"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Shipped</span></span></td><td class="c-ref">C-18b</td><th scope="row" class="c-item">Confirmed and published the referral hospital name and number.</th><td class="c-detail"><p class="prose">You confirmed on the phone. This was the last unknown on the page.</p></td><td class="c-date"><time datetime="2026-07-29" title="2026-07-29">JUL 29</time></td><td class="c-page"></td></tr></tbody></table></div></div></details><details class="fold loose"><summary><span class="grow-lbl"><svg class="ic grow-ic" aria-hidden="true" focusable="false"><use href="#i-globe"></use></svg>Not tied to a specific round</span><span class="tally">1</span></summary><div><div class="tablewrap"><table class="wtable"><caption class="sr-only">Changes for Not tied to a specific round</caption><thead><tr><th scope="col" class="c-status"><span class="sr-only">State</span></th><th scope="col">Ref</th><th scope="col">What</th><th scope="col">Why</th><th scope="col">Date</th></tr></thead><tbody><tr class="s-shipped"><td class="c-status"><span class="st t-done" title="Shipped"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Shipped</span></span></td><td class="c-ref">&mdash;</td><th scope="row" class="c-item">Build started.</th><td class="c-detail"><p class="prose">Kickoff call, site map agreed. This entry has no round, so it appears under &#x27;Not tied to a specific round&#x27; in every round&#x27;s history.</p></td><td class="c-date"><time datetime="2026-05-19" title="2026-05-19">MAY 19</time></td></tr></tbody></table></div></div></details></div></section></div><div role="tabpanel" id="panel-r3" class="tabpanel" data-round="3" data-round-label="Round 3 &mdash; Post-launch: blog, pharmacy and the review flow" aria-labelledby="tab-r3" hidden><section class="letter"><p class="prose">Nothing here is underway yet — this is sketched out so you can see where things are heading after launch, and so anything we agreed to park has somewhere to sit rather than being quietly forgotten. We will scope it properly once you are live. Nothing in this round is tied to a page yet, which is what a round with no page associations looks like. This round also has no `note_by` or `note_on`, so the signature falls back to the project author and the round&#x27;s own dates.</p><p class="letter-sig">&mdash; <b>Chris LaFay</b> &middot; <time datetime="2026-07-31">July 31, 2026</time></p></section><section class="lm" aria-labelledby="h-client-3"><h2 class="lm-h" id="h-client-3"><svg class="ic lm-ic" aria-hidden="true" focusable="false"><use href="#i-hand"></use></svg><span>Waiting on you</span></h2><p class="empty">Nothing is waiting on you in this round.</p></section><section class="lm" aria-labelledby="h-agency-3"><h2 class="lm-h" id="h-agency-3"><svg class="ic lm-ic" aria-hidden="true" focusable="false"><use href="#i-screwdriver-wrench"></use></svg><span>Waiting on us</span></h2><p class="empty">Nothing is outstanding on our side in this round.</p></section><section class="lm" aria-labelledby="h-work-3"><h2 class="lm-h" id="h-work-3"><svg class="ic lm-ic" aria-hidden="true" focusable="false"><use href="#i-list-check"></use></svg><span>The work in this round</span></h2><details class="sect" id="sect-s3-plan"><summary><h3 class="sect-title">On the list</h3><span class="sect-meta"><span class="tally"><span aria-hidden="true">0/3</span><span class="sr-only">0 of 3 done</span></span></span></summary><div class="sect-body"><div class="tablewrap"><table class="wtable"><caption class="sr-only">Items in On the list</caption><thead><tr><th scope="col" class="c-status"><span class="sr-only">Status</span></th><th scope="col">Ref</th><th scope="col">Item</th><th scope="col">Detail</th><th scope="col">Added</th></tr></thead><tbody><tr id="n-01" class="s-queued"><td class="c-status"><span class="st t-queued" title="Queued"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-clock"></use></svg><span class="sr-only">Queued</span></span></td><td class="c-ref">N-01</td><th scope="row" class="c-item">Online pharmacy page, on the new vendor</th><td class="c-detail"><p class="prose">Carried over from round 2 deliberately — see P-06.</p></td><td class="c-date">&mdash;</td></tr><tr id="n-02" class="s-queued"><td class="c-status"><span class="st t-queued" title="Queued"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-clock"></use></svg><span class="sr-only">Queued</span></span></td><td class="c-ref">N-02</td><th scope="row" class="c-item">Blog and clinic news</th><td class="c-detail"><p class="prose">So you can post seasonal advice without calling us.</p></td><td class="c-date">&mdash;</td></tr><tr id="n-03" class="s-queued"><td class="c-status"><span class="st t-queued" title="Queued"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-clock"></use></svg><span class="sr-only">Queued</span></span></td><td class="c-ref">N-03</td><th scope="row" class="c-item">Reshoot the homepage photography</th><td class="c-detail"><p class="prose">Your current photos are from 2019 and go soft on large screens. Worth a half-day with a photographer once the site is live.</p></td><td class="c-date">&mdash;</td></tr></tbody></table></div></div></details></section><section class="lm" aria-labelledby="h-log-3"><h2 class="lm-h" id="h-log-3"><svg class="ic lm-ic" aria-hidden="true" focusable="false"><use href="#i-clock-rotate-left"></use></svg><span>History</span><span class="h2-count t-queued" aria-hidden="true">1</span><span class="sr-only">, 1 entry</span></h2><p class="lm-sub">Every change we made in round 3, and why.</p><div class="folds"><div class="tablewrap"><table class="wtable"><caption class="sr-only">Changes in this round</caption><thead><tr><th scope="col" class="c-status"><span class="sr-only">State</span></th><th scope="col">Ref</th><th scope="col">What</th><th scope="col">Why</th><th scope="col">Date</th></tr></thead><tbody><tr class="s-shipped"><td class="c-status"><span class="st t-done" title="Shipped"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Shipped</span></span></td><td class="c-ref">C-19</td><th scope="row" class="c-item">Round 3 sketched out and shared with you.</th><td class="c-detail"><p class="prose">So you can see what is coming after launch without it competing with what is live now.</p></td><td class="c-date"><time datetime="2026-07-31" title="2026-07-31">JUL 31</time></td></tr></tbody></table></div><details class="fold loose"><summary><span class="grow-lbl"><svg class="ic grow-ic" aria-hidden="true" focusable="false"><use href="#i-globe"></use></svg>Not tied to a specific round</span><span class="tally">1</span></summary><div><div class="tablewrap"><table class="wtable"><caption class="sr-only">Changes for Not tied to a specific round</caption><thead><tr><th scope="col" class="c-status"><span class="sr-only">State</span></th><th scope="col">Ref</th><th scope="col">What</th><th scope="col">Why</th><th scope="col">Date</th></tr></thead><tbody><tr class="s-shipped"><td class="c-status"><span class="st t-done" title="Shipped"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg><span class="sr-only">Shipped</span></span></td><td class="c-ref">&mdash;</td><th scope="row" class="c-item">Build started.</th><td class="c-detail"><p class="prose">Kickoff call, site map agreed. This entry has no round, so it appears under &#x27;Not tied to a specific round&#x27; in every round&#x27;s history.</p></td><td class="c-date"><time datetime="2026-05-19" title="2026-05-19">MAY 19</time></td></tr></tbody></table></div></div></details></div></section></div><section class="lm" aria-labelledby="key-h"><h2 class="lm-h" id="key-h"><svg class="ic lm-ic" aria-hidden="true" focusable="false"><use href="#i-palette"></use></svg><span>What the colours mean</span></h2><details class="logwrap"><summary><span class="rlabel">Open the key</span></summary><div class="round-body"><ul class="legend"><li><span class="swatch t-done"><svg class="ic sw-ic" aria-hidden="true" focusable="false"><use href="#i-circle-check"></use></svg></span><b>Done</b><span>Finished and checked. Nothing further needed.</span></li><li><span class="swatch t-review"><svg class="ic sw-ic" aria-hidden="true" focusable="false"><use href="#i-eye"></use></svg></span><b>Review</b><span>Built and live for you to look at — we are waiting on your yes.</span></li><li><span class="swatch t-client"><svg class="ic sw-ic" aria-hidden="true" focusable="false"><use href="#i-circle-exclamation"></use></svg></span><b>Needs you</b><span>We cannot finish this without something from you. Amber on this page always and only means your move.</span></li><li><span class="swatch t-blocked"><svg class="ic sw-ic" aria-hidden="true" focusable="false"><use href="#i-circle-minus"></use></svg></span><b>Blocked</b><span>Held up by something else. The row says what.</span></li><li><span class="swatch t-queued"><svg class="ic sw-ic" aria-hidden="true" focusable="false"><use href="#i-circle-half-stroke"></use></svg></span><b>Everything else</b><span>In progress, queued or deferred. It is on our list and there is nothing for you to do.</span></li></ul></div></details></section><footer class="foot"><p>Questions on anything here: Chris LaFay, chris@classiccity.com</p><p>Status page for Sandhill Animal Hospital. Generated 2026-07-31.</p></footer></main><script>
+(function () {
+  'use strict';
+
+  /* --- Round tabs. Hand-rolled because there is no native tab element, so
+     this is the one place ARIA has to be written by hand: roving tabindex,
+     arrow / Home / End keys, aria-selected on the button, hidden on the
+     panel. Selecting a round ALSO swaps the round-scoped furniture in the
+     sticky banner (counters, meter, subtitle) — every [data-round] on the
+     page belongs to exactly one round, so one loop keeps the whole page
+     honest about which round you are reading. --- */
+  var list = document.querySelector('[role="tablist"]');
+  if (list) {
+    var tabs = Array.prototype.slice.call(list.querySelectorAll('[role="tab"]'));
+    var scoped = Array.prototype.slice.call(
+      document.querySelectorAll('[data-round]:not([role="tab"])')
+    );
+    function select(tab, focus) {
+      var round = tab.getAttribute('data-round');
+      tabs.forEach(function (t) {
+        var on = t === tab;
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+        t.tabIndex = on ? 0 : -1;
+      });
+      scoped.forEach(function (el) {
+        el.hidden = el.getAttribute('data-round') !== round;
+      });
+      if (focus) { tab.focus(); }
+    }
+    list.addEventListener('click', function (e) {
+      var t = e.target.closest('[role="tab"]');
+      if (t) { select(t, false); }
+    });
+    list.addEventListener('keydown', function (e) {
+      var i = tabs.indexOf(document.activeElement);
+      if (i < 0) { return; }
+      var n = null;
+      if (e.key === 'ArrowRight') { n = tabs[(i + 1) % tabs.length]; }
+      else if (e.key === 'ArrowLeft') { n = tabs[(i - 1 + tabs.length) % tabs.length]; }
+      else if (e.key === 'Home') { n = tabs[0]; }
+      else if (e.key === 'End') { n = tabs[tabs.length - 1]; }
+      if (n) { e.preventDefault(); select(n, true); }
+    });
+  }
+
+  /* --- aria-expanded on <summary>.
+     Browsers already expose the open/closed state of <details> natively; this
+     mirrors it onto an explicit attribute so auditing tools and older screen
+     readers agree with what the page is doing. It only ever reports the real
+     state, so it can never contradict the native semantics. --- */
+  var summaries = Array.prototype.slice.call(document.querySelectorAll('details > summary'));
+  function sync(d) {
+    var s = d.querySelector(':scope > summary');
+    if (s) { s.setAttribute('aria-expanded', d.open ? 'true' : 'false'); }
+  }
+  summaries.forEach(function (s) {
+    var d = s.parentNode;
+    sync(d);
+    d.addEventListener('toggle', function () { sync(d); });
+  });
+
+  /* --- NOTE, so nobody "fixes" this: the section header's page link sits
+     inside a <summary>, and clicking it does NOT toggle the accordion. That
+     is not luck and it does not need a guard — an <a href> has its own
+     activation behaviour, so it becomes the click's activation target and
+     <summary>'s never runs. A stopPropagation() guard here would be worse
+     than useless: propagation and activation behaviour are different things,
+     so it would not prevent a toggle in an engine that did toggle, and it
+     would silently kill any future listener on those links. Verified in
+     Chrome; it is what the HTML spec requires. --- */
+
+  /* --- There is no expand/collapse-all button. It was justified by printing
+     and by Ctrl+F, and it is not needed for either: @media print forces every
+     accordion open (see the CSS), and browsers now expand a closed <details>
+     automatically when find-in-page matches inside it. That left a control
+     whose only remaining job was to undo the page's own default state. --- */
+
+  /* --- Deep links. Every item carries an id, so an email can say "see H-04"
+     and link straight to it. Opening a link into a collapsed accordion — or
+     into a round that is not the selected one — would otherwise land on a
+     blank space, so switch rounds first, then open every ancestor. --- */
+  function reveal() {
+    var id = location.hash.slice(1);
+    if (!id) { return; }
+    var el = document.getElementById(id);
+    if (!el) { return; }
+    var node = el;
+    while (node && node !== document.body) {
+      if (node.tagName === 'DETAILS') { node.open = true; }
+      if (node.classList && node.classList.contains('tabpanel')) {
+        var tab = document.getElementById(node.getAttribute('aria-labelledby'));
+        if (tab) { tab.click(); }
+      }
+      node = node.parentNode;
+    }
+    el.scrollIntoView({ block: 'center' });
+  }
+  window.addEventListener('hashchange', reveal);
+  reveal();
+})();
+</script></body></html>

@@ -2,7 +2,7 @@
 /**
  * Document Downloads block render template.
  *
- * Markup contract: BLOCK_MARKUP_CONTRACT.md § Document Downloads.
+ * Field keys: docs/BLOCKS.md (generated registry). This render.php is the canonical markup contract.
  *
  * File-type icons are FA webfont glyphs composed via ccc_fa_icon_class() with
  * a fixed name per type (PDF/DOC/XLS/FILE all have named FA icons). The

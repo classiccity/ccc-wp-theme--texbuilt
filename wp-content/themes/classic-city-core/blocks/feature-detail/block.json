@@ -1,0 +1,43 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/feature-detail",
+	"title": "Feature Detail",
+	"description": "Single feature presentation panel — image with overlapping caption card on one side, headline + description + detail rows + optional CTA on the other. Shares its rendered HTML with one tab's content panel in Product Feature Toggles via partials/feature-detail-section.php.",
+	"category": "theme",
+	"icon": "info-outline",
+	"keywords": [
+		"feature",
+		"detail",
+		"product",
+		"highlight"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"align": [
+			"wide",
+			"full"
+		],
+		"anchor": true,
+		"color": {
+			"background": true,
+			"gradients": true,
+			"text": false,
+			"link": false
+		},
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php",
+		"blockVersion": 3
+	}
+}

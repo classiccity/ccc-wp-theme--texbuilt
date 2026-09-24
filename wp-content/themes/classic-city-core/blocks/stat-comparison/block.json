@@ -1,0 +1,43 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/stat-comparison",
+	"title": "Stat Comparison",
+	"description": "One before → after figure set beside the sentence that explains it: “14.3% → 79.1%”, then a heading and a paragraph of context. The arrow is decorative — the pair is announced to screen readers as a single “from X to Y” label. Surface color comes from the block-level color picker; the border auto-derives to that color's palette partner (its “alt”).",
+	"category": "theme",
+	"icon": "arrow-right-alt",
+	"keywords": [
+		"stat",
+		"before after",
+		"comparison",
+		"uplift",
+		"metric"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"anchor": true,
+		"align": [
+			"wide",
+			"full"
+		],
+		"color": {
+			"background": true,
+			"gradients": true,
+			"text": false,
+			"link": false
+		},
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}

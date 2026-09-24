@@ -2,7 +2,7 @@
 /**
  * Hero: Full Image block render template.
  *
- * Markup contract: BLOCK_MARKUP_CONTRACT.md § Hero: Full Image.
+ * Field keys: docs/BLOCKS.md (generated registry). This render.php is the canonical markup contract.
  *
  * @package ClassicCityCore
  */
@@ -14,7 +14,8 @@ $title_html     = get_field( 'title_html' );
 $gradient_color = get_field( 'gradient_color' );
 $card_width     = get_field( 'card_width' ) ?: 'narrow';
 
-$wrapper_classes = array( 'sg-block-hero-full', 'alignfull' );
+/* `sg-hero` shared marker (no CSS) — see CLAUDE.md. */
+$wrapper_classes = array( 'sg-hero', 'sg-block-hero-full', 'alignfull' );
 if ( $gradient_color ) {
 	$wrapper_classes[] = 'sg-hero-grad-' . sanitize_html_class( $gradient_color );
 }

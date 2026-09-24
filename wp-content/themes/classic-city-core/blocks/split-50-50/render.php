@@ -2,7 +2,7 @@
 /**
  * Split 50/50 block render template.
  *
- * Markup contract: BLOCK_MARKUP_CONTRACT.md § Split 50/50.
+ * Field keys: docs/BLOCKS.md (generated registry). This render.php is the canonical markup contract.
  *
  * Side convention (matches blocks.css): default is image-left. When the admin
  * picks "Right", we add the `.content-left` modifier which flips column order.
@@ -24,7 +24,29 @@ if ( $has_texture ) {
 	$classes[] = 'has-bg-texture';
 }
 
+/* Native bg color / gradient picker should paint the CONTENT side
+   only — the image side has its own image. Strip the auto-injected
+   bg helpers off the wrapper (else the whole 50/50 paints in the
+   chosen color) and route them onto the body div instead. Same
+   pattern hero-50-50 uses. */
+$bg_color = $block['backgroundColor'] ?? ( $block['attrs']['backgroundColor'] ?? '' );
+$gradient = $block['gradient']        ?? ( $block['attrs']['gradient']        ?? '' );
+
 $wrapper_attrs = get_block_wrapper_attributes( array( 'class' => implode( ' ', $classes ) ) );
+if ( function_exists( 'ccc_strip_bg_from_wrapper' ) ) {
+	$wrapper_attrs = ccc_strip_bg_from_wrapper( $wrapper_attrs );
+}
+
+$body_classes = array( 'sg-block-split-body' );
+if ( $gradient ) {
+	$body_classes[] = 'has-' . sanitize_html_class( $gradient ) . '-gradient-background';
+	$body_classes[] = 'has-background';
+} else {
+	// Default the content side to a panel surface (paired text via the
+	// palette helper) so the block is card-esque out of the box.
+	$body_classes[] = 'has-' . sanitize_html_class( $bg_color ?: 'panel' ) . '-background-color';
+	$body_classes[] = 'has-background';
+}
 
 $image_url  = ! empty( $image['url'] ) ? $image['url'] : '';
 $image_alt  = ! empty( $image['alt'] ) ? $image['alt'] : '';
@@ -53,7 +75,7 @@ $video_mime = is_array( $video ) && ! empty( $video['mime_type'] ) ? $video['mim
 		aria-label="<?php echo esc_attr( $image_alt ); ?>"
 	></div>
 	<?php endif; ?>
-	<div class="sg-block-split-body">
+	<div class="<?php echo esc_attr( implode( ' ', $body_classes ) ); ?>">
 		<InnerBlocks />
 	</div>
 </div>

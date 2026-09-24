@@ -17,6 +17,13 @@
  * Or from WP-CLI (if available):
  *   wp style-guide:import /path/to/client.json [--activate]
  *
+ * DEPRECATED for new clients: this scaffolder emits the retired `light`/`dark`
+ * neutral palette, not the current `canvas`/`panel`/`ink`/`ink-soft` +
+ * `gray-10…100` ramp model. Hand-author new child themes per
+ * docs/THEME_TOKENS.md instead, using sg-sherman-phalen (light) /
+ * sg-trialport (dark) as references. See docs/CHIEF_OF_STUFF_HANDOFF.md,
+ * Track B. Kept runnable for legacy/existing uses only.
+ *
  * @package ClassicCityCore
  */
 

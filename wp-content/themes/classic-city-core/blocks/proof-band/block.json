@@ -1,0 +1,43 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/proof-band",
+	"title": "Proof Band",
+	"description": "A self-contained evidence band: an uppercase kicker, 2–4 headline stats whose values cycle through three accent slots, a pull-quote behind a left rule, and one closing link. Everything sits on a single rounded surface painted by the block-level color picker; the card border auto-derives to that color's palette partner (its “alt”).",
+	"category": "theme",
+	"icon": "awards",
+	"keywords": [
+		"proof",
+		"evidence",
+		"stats",
+		"quote",
+		"band"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"anchor": true,
+		"align": [
+			"wide",
+			"full"
+		],
+		"color": {
+			"background": true,
+			"gradients": true,
+			"text": false,
+			"link": false
+		},
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}

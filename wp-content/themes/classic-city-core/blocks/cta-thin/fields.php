@@ -78,10 +78,10 @@ acf_add_local_field_group(
 			),
 			array(
 				'key'           => 'field_cta_thin_bg_opacity',
-				'label'         => __( 'Color Overlay Opacity', 'classic-city-core' ),
+				'label'         => __( 'Background Image Opacity', 'classic-city-core' ),
 				'name'          => 'bg_opacity',
 				'type'          => 'range',
-				'instructions'  => __( 'Opacity of the brand color/gradient overlay on top of the background image (0–100).', 'classic-city-core' ),
+				'instructions'  => __( 'Opacity of the background image (0–100). Lower values let the chosen background color or gradient show through more.', 'classic-city-core' ),
 				'min'           => 0,
 				'max'           => 100,
 				'step'          => 5,

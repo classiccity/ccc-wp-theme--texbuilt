@@ -1,0 +1,37 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/stackable",
+	"title": "Stackable",
+	"description": "Position: sticky wrapper. Drop multiple Stackables back-to-back and they stack on top of each other as the page scrolls (each later one covers earlier ones). InnerBlocks accept any content. Sticky offset defaults to spacing--40 below the viewport top — adjust per-instance if a navbar or other fixed chrome needs more clearance.",
+	"category": "theme",
+	"icon": "layout",
+	"keywords": [
+		"sticky",
+		"stack",
+		"scroll",
+		"layout"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"jsx": true,
+		"align": [
+			"wide",
+			"full"
+		],
+		"anchor": true,
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}

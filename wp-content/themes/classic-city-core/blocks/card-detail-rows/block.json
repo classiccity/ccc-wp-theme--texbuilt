@@ -1,0 +1,43 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/card-detail-rows",
+	"title": "Card with Detail Rows",
+	"description": "Grid of data cards. Each card stacks an eyebrow, an h3, a hairline-separated list of label → value detail rows, a WYSIWYG description, and an optional button pinned to the bottom edge. The block-level color picker paints each CARD (not the grid), and the card border defaults to that color's palette partner (its “alt”).",
+	"category": "theme",
+	"icon": "list-view",
+	"keywords": [
+		"cards",
+		"detail rows",
+		"metrics",
+		"stats",
+		"funnel"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"anchor": true,
+		"align": [
+			"wide",
+			"full"
+		],
+		"color": {
+			"background": true,
+			"gradients": true,
+			"text": false,
+			"link": false
+		},
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}

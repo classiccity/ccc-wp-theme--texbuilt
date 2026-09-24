@@ -2,7 +2,7 @@
 /**
  * Image Tiles block render template.
  *
- * Markup contract: BLOCK_MARKUP_CONTRACT.md § Image Tiles.
+ * Field keys: docs/BLOCKS.md (generated registry). This render.php is the canonical markup contract.
  *
  * Each tile is an <a> so the whole tile is clickable. If no link_url is set,
  * renders as a <div> instead so we don't emit an empty-href anchor.

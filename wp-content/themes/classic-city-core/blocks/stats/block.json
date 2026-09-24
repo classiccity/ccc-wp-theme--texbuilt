@@ -3,7 +3,7 @@
 	"apiVersion": 3,
 	"name": "classic-city-core/stats",
 	"title": "Stats",
-	"description": "Row of big-number stats on a brand-gradient background. Admin provides a repeater of value + label pairs.",
+	"description": "Row of big-number stats. Admin provides a repeater of value + label pairs; background color or gradient comes from the block's native color picker (optional).",
 	"category": "theme",
 	"icon": "chart-bar",
 	"keywords": [
@@ -36,7 +36,7 @@
 		"mode": true
 	},
 	"acf": {
-		"mode": "auto",
+		"mode": "preview",
 		"renderTemplate": "render.php"
 	}
 }

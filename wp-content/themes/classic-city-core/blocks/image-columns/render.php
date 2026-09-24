@@ -2,7 +2,7 @@
 /**
  * Image Columns block render template.
  *
- * Markup contract: BLOCK_MARKUP_CONTRACT.md § Image Columns (cards).
+ * Field keys: docs/BLOCKS.md (generated registry). This render.php is the canonical markup contract.
  *
  * Card body bg = block-level native picker (solid OR gradient — both get the
  * combined `.has-{slug}-background-color` / `.has-{slug}-gradient-background`

@@ -3,7 +3,7 @@
 	"apiVersion": 3,
 	"name": "classic-city-core/logo-strip",
 	"title": "Logo Strip",
-	"description": "Row of client/partner logos. 5-col on desktop, 2-col on mobile.",
+	"description": "Client/partner logos in two layouts: static grid (5-col desktop, 2-col mobile) or infinite marquee scroller with speed, direction, and pause-on-hover controls.",
 	"category": "theme",
 	"icon": "screenoptions",
 	"keywords": [
@@ -29,7 +29,7 @@
 		"mode": true
 	},
 	"acf": {
-		"mode": "auto",
+		"mode": "preview",
 		"renderTemplate": "render.php"
 	}
 }

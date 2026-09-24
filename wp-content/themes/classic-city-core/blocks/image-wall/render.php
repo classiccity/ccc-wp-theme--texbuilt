@@ -2,7 +2,7 @@
 /**
  * Image Wall block render template.
  *
- * Markup contract: BLOCK_MARKUP_CONTRACT.md § Image Wall.
+ * Field keys: docs/BLOCKS.md (generated registry). This render.php is the canonical markup contract.
  *
  * Each row's images are doubled inline so the CSS `translateX(-50%)` animation
  * produces a seamless loop. The `--wall-count-top` / `--wall-count-bottom`

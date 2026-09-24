@@ -2,7 +2,7 @@
 /**
  * Image + Content Overlay block render template.
  *
- * Markup contract: BLOCK_MARKUP_CONTRACT.md § Image + Content Overlay.
+ * Field keys: docs/BLOCKS.md (generated registry). This render.php is the canonical markup contract.
  *
  * Side convention: default (no modifier) = content-right. `.content-left` modifier
  * flips the column order.

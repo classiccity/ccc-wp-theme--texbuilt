@@ -15,6 +15,14 @@
  * the Next.js repo. It builds a config array in-memory from flags + defaults.json,
  * then hands it to CCC_Client_Importer for scaffolding.
  *
+ * DEPRECATED (new-client + import): these scaffolding commands are deprecated
+ * for NEW clients — they emit the retired `light`/`dark` neutral palette, not
+ * the current `canvas`/`panel`/`ink`/`ink-soft` + `gray-10…100` ramp model.
+ * Hand-author new child themes per docs/THEME_TOKENS.md instead, using
+ * sg-sherman-phalen (light) / sg-trialport (dark) as references. See
+ * docs/CHIEF_OF_STUFF_HANDOFF.md, Track B. The commands still run for
+ * legacy/existing uses. `port-textures` is NOT deprecated.
+ *
  * @package ClassicCityCore
  */
 
@@ -30,6 +38,13 @@ class CCC_Style_Guide_CLI {
 
 	/**
 	 * Scaffold a new sg-{slug} child theme with the given brand tokens.
+	 *
+	 * DEPRECATED for new clients: this scaffolds the retired `light`/`dark`
+	 * neutral palette, not the current canvas/panel/ink + gray-ramp model.
+	 * Hand-author new child themes per docs/THEME_TOKENS.md instead
+	 * (sg-sherman-phalen = light reference, sg-trialport = dark reference).
+	 * See docs/CHIEF_OF_STUFF_HANDOFF.md, Track B. Kept runnable for
+	 * legacy/existing uses only.
 	 *
 	 * ## OPTIONS
 	 *
@@ -99,6 +114,8 @@ class CCC_Style_Guide_CLI {
 	 * @when after_wp_load
 	 */
 	public function new_client( $args, $assoc_args ) {
+		WP_CLI::warning( 'DEPRECATED for new clients: new-client emits the retired light/dark palette — hand-author per docs/THEME_TOKENS.md (see docs/CHIEF_OF_STUFF_HANDOFF.md Track B).' );
+
 		list( $slug ) = $args;
 
 		$slug = $this->validate_slug( $slug );
@@ -247,6 +264,13 @@ class CCC_Style_Guide_CLI {
 	/**
 	 * Import an existing clients/*.json config (legacy path).
 	 *
+	 * DEPRECATED for new clients: this scaffolds the retired `light`/`dark`
+	 * neutral palette, not the current canvas/panel/ink + gray-ramp model.
+	 * Hand-author new child themes per docs/THEME_TOKENS.md instead
+	 * (sg-sherman-phalen = light reference, sg-trialport = dark reference).
+	 * See docs/CHIEF_OF_STUFF_HANDOFF.md, Track B. Kept runnable for
+	 * legacy/existing uses only.
+	 *
 	 * ## OPTIONS
 	 *
 	 * <json-path>
@@ -262,6 +286,8 @@ class CCC_Style_Guide_CLI {
 	 * @when after_wp_load
 	 */
 	public function import( $args, $assoc_args ) {
+		WP_CLI::warning( 'DEPRECATED for new clients: import emits the retired light/dark palette — hand-author per docs/THEME_TOKENS.md (see docs/CHIEF_OF_STUFF_HANDOFF.md Track B).' );
+
 		list( $json_path ) = $args;
 
 		$source_fonts_dir = $assoc_args['source-fonts-dir'] ?? null;

@@ -82,6 +82,49 @@ function ccc_resolve_image_or_demo( $image, $seed = 'demo', $w = 960, $h = 720 )
 	);
 }
 
+/**
+ * Returns N image arrays pointing at the parent theme's bundled demo
+ * gallery photos at `assets/demo/gallery-{1..6}.jpg`. Used by blocks
+ * whose render.php needs an actual multi-image dataset on /style-guide
+ * (currently highlighted-image-gallery; other gallery-type blocks can
+ * adopt this pattern as needed).
+ *
+ * Cycles through the 6 bundled photos if N > 6. Returns image arrays in
+ * the same shape ACF returns for an attachment with `return_format=array`,
+ * containing only the fields gallery render templates actually read.
+ *
+ * Bundled images are seeded Picsum photos (CC-licensed Unsplash CDN)
+ * downloaded once into the theme repo so /style-guide works offline and
+ * stays reproducible across machines.
+ *
+ * @param int $count Number of image arrays to return (clamped 1..24).
+ * @return array[] List of image arrays.
+ */
+function ccc_get_demo_gallery_images( $count ) {
+	$count    = max( 1, min( 24, (int) $count ) );
+	$base_uri = trailingslashit( get_template_directory_uri() ) . 'assets/demo/';
+	$files    = array( 'gallery-1.jpg', 'gallery-2.jpg', 'gallery-3.jpg', 'gallery-4.jpg', 'gallery-5.jpg', 'gallery-6.jpg' );
+	$out      = array();
+	for ( $i = 0; $i < $count; $i++ ) {
+		$url   = $base_uri . $files[ $i % count( $files ) ];
+		$out[] = array(
+			'ID'     => 0,
+			'url'    => $url,
+			'alt'    => sprintf( 'Demo gallery image %d', $i + 1 ),
+			'width'  => 1600,
+			'height' => 1067,
+			'sizes'  => array(
+				'thumbnail'    => $url,
+				'medium'       => $url,
+				'medium_large' => $url,
+				'large'        => $url,
+				'full'         => $url,
+			),
+		);
+	}
+	return $out;
+}
+
 /*
  * Kept the old ACF format_value filter as a belt-and-suspenders layer —
  * harmless if ACF silently ignores it, useful if it does fire.

@@ -1,0 +1,37 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/swatch-explorer",
+	"title": "Swatch Explorer",
+	"description": "Full-width swatch showcase. A row of scenario toggles (e.g. time-of-day, lighting condition, product line) drives a panel with a big featured image and a horizontal scrollable row of selectable color/material swatches. Each swatch swaps the featured image when clicked.",
+	"category": "theme",
+	"icon": "color-picker",
+	"keywords": [
+		"swatches",
+		"colors",
+		"comparator",
+		"showcase"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"jsx": true,
+		"align": [
+			"full"
+		],
+		"anchor": true,
+		"spacing": {
+			"padding": false,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"viewScript": "file:./view.js",
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}
