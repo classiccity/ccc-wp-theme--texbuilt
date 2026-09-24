@@ -1550,6 +1550,10 @@ a { color: inherit; }
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* Which part of the photo survives the cover crop. Default `center center`
+     IS the browser default, so a block with no Image Alignment set renders
+     exactly as it did before the field existed. */
+  object-position: var(--ccc-hero-image-position, center center);
   box-shadow: var(--wp--preset--shadow--lg);
   display: block;
 }
@@ -1568,8 +1572,12 @@ a { color: inherit; }
   min-height: 0;
 }
 .sg-block-hero-bg.dynamic-height .sg-block-hero-bg-content {
-  padding-top: var(--wp--preset--spacing--40);
-  padding-bottom: var(--wp--preset--spacing--40);
+  /* Content Vertical Space. Fallback is spacing--40 — the value this rule
+     hardcoded before the field existed — so an unset block does not move.
+     The mobile rule further down overrides this, by design: the field is
+     desktop-only. */
+  padding-top: var(--ccc-hero-content-pad, var(--wp--preset--spacing--40));
+  padding-bottom: var(--ccc-hero-content-pad, var(--wp--preset--spacing--40));
 }
 /* Without this, the image/video's intrinsic size would set the grid row's
  * min-height and push it taller than the content side. `min-height: 0` lets the
@@ -1646,7 +1654,9 @@ a { color: inherit; }
     min-height: 0;
   }
   .sg-block-hero-bg-media {
-    aspect-ratio: 16 / 9;
+    /* Mobile Image Ratio. Fallback 16/9 is what this rule hardcoded before
+       the field existed, so an unset block is unchanged. */
+    aspect-ratio: var(--ccc-hero-mratio, 16 / 9);
     height: auto;
   }
   .sg-block-hero-bg-content {
@@ -1659,6 +1669,61 @@ a { color: inherit; }
   .sg-block-hero-bg.image-right .sg-block-hero-bg-content {
     grid-column: auto;
     grid-row: auto;
+  }
+}
+
+/* ── Image Hero 50/50 — crop + shape knobs (2026-09-24) ──────────────────────
+ * Four ACF fields, each emitted as a class that only sets a custom property.
+ * A child theme retunes any of them by redeclaring the property; it never has
+ * to duplicate the rule that consumes it.
+ *
+ * Every default reproduces the pre-field rendering, so pulling this parent
+ * into a client repo is a visual no-op until someone sets a field. */
+
+/* Image Alignment → object-position. */
+.sg-hero-align-top-left      { --ccc-hero-image-position: left top; }
+.sg-hero-align-top-center    { --ccc-hero-image-position: center top; }
+.sg-hero-align-top-right     { --ccc-hero-image-position: right top; }
+.sg-hero-align-center-left   { --ccc-hero-image-position: left center; }
+.sg-hero-align-center-center { --ccc-hero-image-position: center center; }
+.sg-hero-align-center-right  { --ccc-hero-image-position: right center; }
+.sg-hero-align-bottom-left   { --ccc-hero-image-position: left bottom; }
+.sg-hero-align-bottom-center { --ccc-hero-image-position: center bottom; }
+.sg-hero-align-bottom-right  { --ccc-hero-image-position: right bottom; }
+
+/* Content Vertical Space (desktop). Medium == spacing--40 == the previous
+ * hardcoded value, which is why medium is the field's default. */
+.sg-hero-space-hug    { --ccc-hero-content-pad: 0px; }
+.sg-hero-space-small  { --ccc-hero-content-pad: var(--wp--preset--spacing--10); }
+.sg-hero-space-medium { --ccc-hero-content-pad: var(--wp--preset--spacing--40); }
+.sg-hero-space-large  { --ccc-hero-content-pad: var(--wp--preset--spacing--60); }
+
+/* Desktop/Mobile Image Ratio values. */
+.sg-hero-dratio-16-9 { --ccc-hero-dratio: 16 / 9; }
+.sg-hero-dratio-3-2  { --ccc-hero-dratio: 3 / 2; }
+.sg-hero-dratio-4-3  { --ccc-hero-dratio: 4 / 3; }
+.sg-hero-dratio-5-4  { --ccc-hero-dratio: 5 / 4; }
+.sg-hero-dratio-1-1  { --ccc-hero-dratio: 1 / 1; }
+.sg-hero-mratio-16-9 { --ccc-hero-mratio: 16 / 9; }
+.sg-hero-mratio-3-2  { --ccc-hero-mratio: 3 / 2; }
+.sg-hero-mratio-4-3  { --ccc-hero-mratio: 4 / 3; }
+.sg-hero-mratio-5-4  { --ccc-hero-mratio: 5 / 4; }
+.sg-hero-mratio-1-1  { --ccc-hero-mratio: 1 / 1; }
+
+/* Desktop Image Ratio, applied. Scoped to .dynamic-height because the 100vh
+ * path sizes the panel itself, and to min-width:769px because below that the
+ * layout stacks and Mobile Image Ratio takes over.
+ *
+ * `height: auto` releases the grid's default stretch so aspect-ratio can
+ * actually set a height, and `align-self: center` then centres the panel
+ * against the text column instead of letting it grow to match. Only emitted
+ * when a ratio is chosen — "Hug text" adds no class, so the historic
+ * text-driven height stays the single uncontested rule. */
+@media (min-width: 769px) {
+  .sg-block-hero-bg.dynamic-height.sg-hero-has-dratio .sg-block-hero-bg-media {
+    aspect-ratio: var(--ccc-hero-dratio);
+    height: auto;
+    align-self: center;
   }
 }
 

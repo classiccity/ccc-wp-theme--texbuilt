@@ -26,6 +26,27 @@ $media_spacing  = ( $media_spacing === '' || $media_spacing === null ) ? true : 
 $full_height    = get_field( 'full_height' );
 $full_height    = ( $full_height === '' || $full_height === null ) ? true : (bool) $full_height;
 
+/*
+ * Crop + shape knobs (2026-09-24).
+ *
+ * EVERY default below reproduces the previous rendering exactly, so pulling
+ * this parent into a client repo that has never seen these fields changes
+ * nothing on screen until an editor sets one:
+ *
+ *   image_align         '' -> center-center  (the browser's own 50% 50%)
+ *   desktop_image_ratio '' -> hug            (panel height follows the text column)
+ *   content_space       '' -> medium         (spacing--40, the old hardcoded pad)
+ *   mobile_image_ratio  '' -> 16-9           (the old hardcoded mobile ratio)
+ *
+ * `hug` emits no ratio class at all rather than a class that re-states the
+ * default, so the "hug" path stays the plain inherited rule and there is only
+ * ever one rule competing for aspect-ratio.
+ */
+$align  = get_field( 'image_align' ) ?: 'center-center';
+$dratio = get_field( 'desktop_image_ratio' ) ?: 'hug';
+$cspace = get_field( 'content_space' ) ?: 'medium';
+$mratio = get_field( 'mobile_image_ratio' ) ?: '16-9';
+
 // DOM order is media → content, which naturally flows to image-left in the
 // grid. The `.image-right` modifier flips the columns via CSS.
 /* `sg-hero` shared marker (no CSS) — see CLAUDE.md. */
@@ -38,6 +59,18 @@ if ( ! $media_spacing ) {
 }
 if ( ! $full_height ) {
 	$root_classes[] = 'dynamic-height';
+}
+
+$root_classes[] = 'sg-hero-align-' . sanitize_html_class( $align );
+$root_classes[] = 'sg-hero-mratio-' . sanitize_html_class( $mratio );
+// Desktop-only knobs. The 100vh path sizes the panel itself, so neither the
+// ratio nor the content padding has anything to act on there.
+if ( ! $full_height ) {
+	$root_classes[] = 'sg-hero-space-' . sanitize_html_class( $cspace );
+	if ( 'hug' !== $dratio ) {
+		$root_classes[] = 'sg-hero-has-dratio';
+		$root_classes[] = 'sg-hero-dratio-' . sanitize_html_class( $dratio );
+	}
 }
 
 // WP auto-injects the bg helper class + inline background style onto the wrapper
