@@ -1,0 +1,43 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/detail-cards",
+	"title": "Detail Cards",
+	"description": "Row of image-backgrounded data cards. Each card stacks a stat + stat title at the top (separated by a hairline border) over a background image, with a description anchored at the bottom. Optional infinite-marquee autoscroll.",
+	"category": "theme",
+	"icon": "screenoptions",
+	"keywords": [
+		"cards",
+		"data",
+		"stats",
+		"marquee",
+		"detail"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"align": [
+			"wide",
+			"full"
+		],
+		"anchor": true,
+		"color": {
+			"background": true,
+			"gradients": false,
+			"text": false,
+			"link": false
+		},
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}

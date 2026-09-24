@@ -2,7 +2,7 @@
 /**
  * Testimonial Cards block render template.
  *
- * Markup contract: BLOCK_MARKUP_CONTRACT.md § Testimonial Cards.
+ * Field keys: docs/BLOCKS.md (generated registry). This render.php is the canonical markup contract.
  *
  * @package ClassicCityCore
  */

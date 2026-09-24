@@ -35,7 +35,7 @@
 		"mode": true
 	},
 	"acf": {
-		"mode": "auto",
+		"mode": "preview",
 		"renderTemplate": "render.php"
 	}
 }

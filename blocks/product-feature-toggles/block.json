@@ -1,0 +1,38 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/product-feature-toggles",
+	"title": "Product Feature Toggles",
+	"description": "Tabbed feature switcher — a row of icon toggles drives a two-column panel showing a product image with caption (left) and headline + description + detail-feature list + CTA button (right). Each tab is its own product variant or category.",
+	"category": "theme",
+	"icon": "list-view",
+	"keywords": [
+		"toggles",
+		"tabs",
+		"product features",
+		"switcher"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"jsx": true,
+		"align": [
+			"wide",
+			"full"
+		],
+		"anchor": true,
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"viewScript": "file:./view.js",
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}

@@ -1,0 +1,32 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/text-callout",
+	"title": "Text Callout",
+	"description": "A one-to-two sentence statement set large enough to stop a scroll. Renders a bare <div> wrapping the authored paragraph — no card, no background — so each child theme owns the look: style `p > strong` for a branded emphasis treatment, and use the div for ::before / ::after flourishes. Width is an ACF field (narrow / content / wide / full), and the block reserves spacing-60 above itself AND above whatever follows.",
+	"category": "theme",
+	"icon": "format-quote",
+	"keywords": [
+		"callout",
+		"large text",
+		"statement",
+		"pull quote",
+		"lede"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"anchor": true,
+		"spacing": {
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}

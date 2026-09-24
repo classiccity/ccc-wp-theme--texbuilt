@@ -2,7 +2,7 @@
 /**
  * Image Portfolio Gallery block render template.
  *
- * Markup contract: BLOCK_MARKUP_CONTRACT.md § Image Portfolio Gallery.
+ * Field keys: docs/BLOCKS.md (generated registry). This render.php is the canonical markup contract.
  *
  * Items are serialized into a JSON array on the wrapper via `data-items`. The
  * lightbox script (assets/portfolio-lightbox.js) reads that JSON, wires up the

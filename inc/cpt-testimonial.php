@@ -2,7 +2,7 @@
 /**
  * Testimonials CPT.
  *
- * Matches Phase 3 spec in WORDPRESS_CONVERSION_PLAN.md:
+ * Spec (from the original Next.js→WP conversion plan, doc since retired):
  *  - Post title → person's name
  *  - Featured image → headshot
  *  - ACF fields → Company Name (text), Job Title (text), Quote (textarea)

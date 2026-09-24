@@ -2,7 +2,7 @@
 /**
  * Thin CTA block render template.
  *
- * Markup contract: BLOCK_MARKUP_CONTRACT.md § Thin CTA.
+ * Field keys: docs/BLOCKS.md (generated registry). This render.php is the canonical markup contract.
  *
  * Fully field-driven — no InnerBlocks. The horizontal L/R layout depends on
  * two direct flex children, so we emit exactly those: `.sg-block-cta-thin-copy`
@@ -36,22 +36,26 @@ if ( $has_texture ) {
 	$classes[] = 'has-bg-texture';
 }
 
-$style = '';
-$bg_image_url = ! empty( $bg_image['url'] ) ? $bg_image['url'] : '';
-if ( $bg_image_url ) {
-	$style = 'background-image: url(\'' . esc_url( $bg_image_url ) . '\'); --sg-cta-overlay-opacity: ' . max( 0, min( 100, $bg_opacity ) ) / 100;
-}
+$wrapper_attrs = get_block_wrapper_attributes( array( 'class' => implode( ' ', $classes ) ) );
 
-$wrapper_attrs = get_block_wrapper_attributes(
-	array_filter(
-		array(
-			'class' => implode( ' ', $classes ),
-			'style' => $style,
-		)
-	)
-);
+/* Layered background model — same shape as cta-large. Wrapper paints the
+   color via WP's helper class (supports.color.background); .sg-block-cta-thin-bg
+   is an absolute overlay child carrying the image + opacity; the inner row
+   stacks above on z-index. Saved field shapes (bg_image, bg_opacity,
+   has_texture) unchanged — render-only refactor. */
+$bg_image_url       = ! empty( $bg_image['url'] ) ? $bg_image['url'] : '';
+$bg_image_alt       = ! empty( $bg_image['alt'] ) ? $bg_image['alt'] : '';
+$bg_opacity_decimal = max( 0, min( 100, $bg_opacity ) ) / 100;
 ?>
-<div <?php echo $wrapper_attrs; ?>>
+<div <?php echo $wrapper_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+	<?php if ( $bg_image_url ) : ?>
+	<div
+		class="sg-block-cta-thin-bg"
+		role="img"
+		aria-label="<?php echo esc_attr( $bg_image_alt ); ?>"
+		style="background-image: url('<?php echo esc_url( $bg_image_url ); ?>'); opacity: <?php echo esc_attr( $bg_opacity_decimal ); ?>;"
+	></div>
+	<?php endif; ?>
 	<div class="sg-block-cta-thin-inner">
 		<div class="sg-block-cta-thin-copy">
 			<?php if ( $headline ) : ?>

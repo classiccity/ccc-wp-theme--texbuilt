@@ -18,6 +18,14 @@
 $images  = get_field( 'images' );
 $columns = (int) ( get_field( 'columns' ) ?: 5 );
 
+// On /style-guide (and the ?ccc_demo=1 override) fall back to the parent
+// theme's bundled gallery so the block always renders in the demo context.
+// Production usage stays untouched — the fallback only fires when authors
+// haven't selected real images AND we're on the demo page.
+if ( ( empty( $images ) || ! is_array( $images ) ) && function_exists( 'ccc_is_demo_page' ) && ccc_is_demo_page() ) {
+	$images = ccc_get_demo_gallery_images( $columns + 1 );
+}
+
 if ( empty( $images ) || ! is_array( $images ) ) {
 	return;
 }

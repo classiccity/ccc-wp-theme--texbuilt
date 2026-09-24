@@ -1,5 +1,10 @@
 # Client Onboarding Runbook
 
+> **WPE platform behavior** (SSH Gateway limits, WAF, Git Push, caching)
+> is canonically documented in [`WPE_PLATFORM.md`](./WPE_PLATFORM.md).
+> This runbook repeats some of it inline where the context helps — if the
+> two ever disagree, `WPE_PLATFORM.md` wins.
+
 Step-by-step for spinning up a new client site. Target state at the end:
 - A WP Engine install running the parent theme + a new client-specific
   child theme.
@@ -408,39 +413,39 @@ git log --oneline -3                               # shows two commits:
 
 ---
 
-## Phase 8 — Scaffold the child theme
+## Phase 8 — Child theme into the repo
 
-Until there's a dedicated child theme template repo, copy from an
-existing child theme (e.g., `sg-texbuilt` or `sg-lumberock`) and
-substitute the client-specific values.
+> **Do NOT copy an old client theme as the starting point** (the
+> previous version of this phase said "copy sg-lumberock" — that's the
+> retired light/dark model and violates the never-copy-a-client rule in
+> [`NEW_SITE_CHECKLIST.md`](./NEW_SITE_CHECKLIST.md) and
+> [`SITES.md`](./SITES.md)).
 
-```bash
-# From the style-guide sandbox, copy a close-match template:
-cp -R "/Users/chris/Local Sites/the-style-guide-wp/app/public/wp-content/themes/sg-lumberock" \
-   "/Users/chris/Local Sites/{SITE_NAME}/app/public/wp-content/themes/sg-{slug}"
+The child theme is **hand-authored** on the canvas/panel/ink token model
+— this is "Track B" in
+[`CHIEF_OF_STUFF_HANDOFF.md`](./CHIEF_OF_STUFF_HANDOFF.md), with
+[`THEME_TOKENS.md`](./THEME_TOKENS.md) as the spec. Three files plus a
+CLAUDE.md, written into
+`{SITE_NAME}/app/public/wp-content/themes/sg-{slug}/`:
 
-# Clean macOS cruft from the copy
-find "/Users/chris/Local Sites/{SITE_NAME}/app/public/wp-content/themes/sg-{slug}" -name ".DS_Store" -delete
-```
+- **`theme.json`** — brand pairs + `canvas`/`panel`/`ink`/`ink-soft`
+  palette, tinted `custom.gray` ramp, gray-ramp opposites, custom
+  tokens, `styles` overrides. Reference: `sg-sherman-phalen` (light) /
+  `sg-trialport` (dark), each in its own client repo.
+- **`functions.php`** — child bootstrap (enqueue child `style.css`
+  after `ccc-blocks`; `add_editor_style`; webfont enqueue only if the
+  brand uses one).
+- **`style.css`** — theme header (`Template: classic-city-core`) + only
+  the client CSS that can't live in theme.json.
+- **`CLAUDE.md`** — copy the *structure* from `sg-sherman-phalen/CLAUDE.md`
+  and substitute: install slug, WPE URL, GitHub repo URL, brand
+  reference, local mirror path, empty current-state section. This ships
+  with the child theme so any future session opening the client repo
+  gets immediate orientation.
 
-**Then hand-edit these files** for the new client:
-
-- **`style.css`** — update the theme header: `Theme Name`,
-  `Description`, `Text Domain`.
-- **`theme.json`** — palette colors, typography (font families + Google
-  Fonts URL), any custom tokens.
-- **`functions.php`** — swap Google Fonts URL if fonts changed; update
-  text-domain string.
-- **`landing/index.html`** (if present) — update brand copy, contact
-  details, image URLs.
-- **`CLAUDE.md`** — copy from the source child theme and update every
-  client-specific reference: install slug, WPE URL, GitHub repo URL,
-  current-state section (start empty, fill in as content gets built),
-  brand reference (palette + fonts), local mirror path. This file
-  ships with the child theme so any future Claude session opening the
-  client repo gets immediate orientation. The TexBuilt one
-  (`sg-texbuilt/CLAUDE.md`) is the model — keep its structure, swap
-  the values.
+(The automated `phases/08-child-theme.ts` scaffold clones `sg-texbuilt`
+— old model, **deprecated**; it carries a runtime warning. Phase 8's
+*commit* step below is still the contract.)
 
 Commit the new files:
 
@@ -540,6 +545,11 @@ Nothing about content / media / menus goes into git — only code.
 ---
 
 ## Phase 12 — Deploy content programmatically (hybrid REST + wp-cli)
+
+> **Tip:** as you work through a content import, emit progress data (built
+> pages, content flags, image-confidence tiers) and generate a
+> **[Page Build Tracker](./PAGE_BUILD_TRACKER.md)** — a self-contained HTML
+> deliverable you can email the client to show exactly what's landed.
 
 When pre-building pages elsewhere (e.g., in the style-guide sandbox)
 and pushing them into a fresh client install, use this hybrid:
@@ -773,6 +783,9 @@ Whitelist addition in `.gitignore`:
 
 ## Common pitfalls
 
+> WPE-platform rows below are duplicated for convenience; the canonical
+> list is [`WPE_PLATFORM.md`](./WPE_PLATFORM.md) §5.
+
 | Symptom | Cause | Fix |
 |---|---|---|
 | `Repository not found` on `git subtree add` or `git clone` over HTTPS | Private repo, no cached credentials | Use SSH form (`git@github.com:...`) and verify `ssh -T git@github.com` works |
@@ -885,20 +898,13 @@ in `state/{slug}.json` so phases are resumable.
 | 6 — whitelist `.gitignore` | `phases/06-gitignore.ts` | ✅ implemented (Apr 30) |
 | 7 — parent theme subtree | `phases/07-parent-subtree.ts` | ✅ implemented (Apr 30) |
 | 7b — mu-plugins | `phases/07b-mu-plugins.ts` | ✅ implemented (Apr 30) |
-| 8 — child theme scaffold | `phases/08-child-theme.ts` | ✅ implemented (Apr 30) |
+| 8 — child theme scaffold | `phases/08-child-theme.ts` | ⚠️ implemented but **deprecated** (old light/dark model — hand-author per Track B; the commit step still applies) |
 | 9 — WPE Git Push deploy | `phases/09-wpe-deploy.ts` | ✅ implemented (Apr 30) |
-| 10 — activate child theme | (TBD) | ⏳ next |
-| 4 — WPE → Local pull | (manual) | ⏳ Local CLI is experimental |
-| 5 — `git init` at site root | (TBD) | ⏳ |
-| 6 — whitelist `.gitignore` | (TBD) | ⏳ |
-| 7 — parent theme subtree | (TBD) | ⏳ |
-| 7b — mu-plugins | (TBD) | ⏳ |
-| 8 — child theme scaffold | (TBD) | ⏳ |
-| 9 — WPE Git Push deploy | (TBD) | ⏳ |
-| 10 — activate child theme | (TBD) | ⏳ over SSH+wp-cli |
+| 10 — activate child theme | (TBD) | ⏳ next — over SSH+wp-cli |
 
 **Genuinely manual (no API path):**
 - Pulling WPE → Local (Local's CLI is experimental — GUI step today).
+- Registering the Git Push key on each install (no API endpoint).
 
 **Credentials:** WPE API username/password live at
 `~/.config/wpe/credentials.env` (chmod 600), shared across repos.
@@ -908,6 +914,14 @@ See `scripts/onboard-client/.env.example`.
 
 ## Change log
 
+- **2026-07-09** — Doc-accuracy pass. Phase 8 rewritten: the child theme
+  is **hand-authored** on the canvas/panel/ink model (Track B in
+  `CHIEF_OF_STUFF_HANDOFF.md`; spec in `THEME_TOKENS.md`) — the old
+  "copy sg-lumberock" instruction contradicted the never-copy-a-client
+  rule and the retired light/dark palette. Deduplicated the automation
+  status table (phases 4–10 appeared twice, once ✅ once ⏳). Marked the
+  `08-child-theme.ts` scaffold deprecated. Added the pointer to the new
+  canonical WPE platform reference (`WPE_PLATFORM.md`).
 - **2026-04-24** — Initial runbook drafted during TexBuilt onboarding.
   Phases 1–10 confirmed working end-to-end. TexBuilt's first WPE push
   used a themes-folder-scoped repo which deploys files to site root —

@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/background-texture",
+	"title": "Background Texture",
+	"description": "Drop-in texture overlay. The block itself has effectively zero height; a positioned texture image projects up, down, or both directions from the block's drop point. Source textures come from theme.json's settings.custom.textures, so adding new texture options to the dropdown is a child-theme registration step (no per-block work).",
+	"category": "theme",
+	"icon": "art",
+	"keywords": [
+		"texture",
+		"background",
+		"overlay",
+		"pattern"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"jsx": true,
+		"align": [
+			"full"
+		],
+		"anchor": true,
+		"spacing": {
+			"padding": false,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}

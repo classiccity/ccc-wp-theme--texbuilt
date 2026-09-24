@@ -21,6 +21,12 @@
 			"full"
 		],
 		"anchor": true,
+		"color": {
+			"background": true,
+			"gradients": true,
+			"text": false,
+			"link": false
+		},
 		"spacing": {
 			"padding": true,
 			"margin": [

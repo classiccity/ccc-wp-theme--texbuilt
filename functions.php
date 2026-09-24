@@ -41,6 +41,9 @@ require_once CCC_THEME_DIR . 'inc/blocks.php';
 // ACF-level validation tweaks (e.g., allow bare "#" in url fields).
 require_once CCC_THEME_DIR . 'inc/acf-validations.php';
 
+// Rewrites the rendered yoast/faq-block into <details> rows (content rule 24).
+require_once CCC_THEME_DIR . 'inc/faq-accordion.php';
+
 // Client child-theme importer (reads Style Guide JSON configs → scaffolds sg-{slug} child themes).
 // Class is loaded but not auto-run; invoke via a shim or WP-CLI command as needed.
 require_once CCC_THEME_DIR . 'inc/class-ccc-client-importer.php';
@@ -62,9 +65,35 @@ if ( is_admin() ) {
 // B4: /style-guide demo page + admin-bar shortcut.
 require_once CCC_THEME_DIR . 'inc/class-ccc-demo-page.php';
 
+// Font Lab — dev-only overlay for trying typefaces against the shared font
+// library. OFF unless a child theme calls add_theme_support('ccc-font-lab'),
+// AND the environment is non-production, AND the user can edit theme options.
+// Requiring it unconditionally is safe: the class self-guards in config().
+require_once CCC_THEME_DIR . 'inc/class-ccc-font-lab.php';
+
 // B4: substitute picsum placeholders for empty ACF image fields on the
 // style-guide page only. Keeps production renders untouched.
 require_once CCC_THEME_DIR . 'inc/demo-image-placeholders.php';
+
+// ─── Shared render partials (partials/) ────────────────────────────
+// All shared render helpers live under partials/ instead of inc/ —
+// inc/ is for infrastructure (block-loader, enqueue, validations,
+// CPTs, etc.), partials/ is for "called from multiple block render
+// templates" code. See CLAUDE.md for the convention.
+
+// Eyebrow + h2 intro section: ccc_block_head_fields() +
+// ccc_render_block_head().
+require_once CCC_THEME_DIR . 'partials/block-head.php';
+
+// "image on top, body below, optional footer" card pattern:
+// ccc_render_image_card().
+require_once CCC_THEME_DIR . 'partials/image-card.php';
+
+// One feature presentation panel — image with floating caption card
+// on the left, headline + description + detail rows + button on the
+// right. Shared by product-feature-toggles (one per tab) and the
+// feature-detail block (standalone single panel).
+require_once CCC_THEME_DIR . 'partials/feature-detail-section.php';
 
 // Dynamic textures — reads settings.custom.textures from theme.json and emits
 // CSS rules per registered entry. Admin UI for add/edit/delete ships alongside.

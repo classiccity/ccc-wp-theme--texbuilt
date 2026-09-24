@@ -2,7 +2,7 @@
 /**
  * Center Content block render template.
  *
- * Markup contract: BLOCK_MARKUP_CONTRACT.md § Center Content (with overhang image).
+ * Field keys: docs/BLOCKS.md (generated registry). This render.php is the canonical markup contract.
  *
  * @package ClassicCityCore
  */

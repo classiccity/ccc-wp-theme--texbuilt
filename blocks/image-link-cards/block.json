@@ -1,0 +1,38 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/image-link-cards",
+	"title": "Image Links with Icons",
+	"description": "Grid of clickable image cards. Each card has a fixed-aspect image on top and a palette-colored footer bar with a FontAwesome icon, title, and right-arrow affordance. Block-level eyebrow + header lead the grid.",
+	"category": "theme",
+	"icon": "grid-view",
+	"keywords": [
+		"image",
+		"links",
+		"cards",
+		"icons",
+		"grid"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"jsx": true,
+		"align": [
+			"wide",
+			"full"
+		],
+		"anchor": true,
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}

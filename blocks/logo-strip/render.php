@@ -8,7 +8,18 @@
  *     twice (the duplicate set is aria-hidden) so the animation can loop
  *     seamlessly via translateX(-50%).
  *
- * Markup contract: BLOCK_MARKUP_CONTRACT.md § Logo Strip.
+ * Markup contract: .sg-block-logos > .sg-block-logos-viewport > .sg-block-logos-row.
+ * The viewport is always emitted. It is the scroller's overflow clip box and the
+ * surface the light plate paints on; the plate cannot live on .sg-block-logos
+ * (that would put the eyebrow on the plate too) nor on .sg-block-logos-row (which
+ * is translated by the marquee animation, so its background would slide away).
+ *
+ * Appearance modifiers, both off unless the editor turns them on:
+ *   .sg-block-logos--plated     pale panel behind the strip.
+ *   .sg-block-logos--grayscale  desaturates the marks (was unconditional CSS
+ *                               until 2026-08-21 — see usage.md).
+ *
+ * Field keys: docs/BLOCKS.md (generated registry). This render.php is the canonical markup contract.
  *
  * @package ClassicCityCore
  */
@@ -19,6 +30,8 @@ $layout    = get_field( 'layout' ) ?: 'grid';
 $speed     = get_field( 'scroll_speed' ) ?: 'medium';
 $direction = get_field( 'scroll_direction' ) ?: 'left';
 $pause     = (bool) get_field( 'pause_on_hover' );
+$plate     = (bool) get_field( 'light_plate' );
+$grayscale = (bool) get_field( 'grayscale' );
 
 if ( ! is_array( $logos ) || empty( $logos ) ) {
 	return;
@@ -45,6 +58,12 @@ if ( $layout === 'scroller' ) {
 		$classes[] = 'sg-block-logos--pause-on-hover';
 	}
 }
+if ( $plate ) {
+	$classes[] = 'sg-block-logos--plated';
+}
+if ( $grayscale ) {
+	$classes[] = 'sg-block-logos--grayscale';
+}
 
 $wrapper_attrs = get_block_wrapper_attributes( array( 'class' => implode( ' ', $classes ) ) );
 
@@ -55,7 +74,8 @@ $render_passes = ( $layout === 'scroller' ) ? 2 : 1;
 	<?php if ( $eyebrow ) : ?>
 	<p class="sg-block-eyebrow"><?php echo esc_html( $eyebrow ); ?></p>
 	<?php endif; ?>
-	<div class="sg-block-logos-row">
+	<div class="sg-block-logos-viewport">
+		<div class="sg-block-logos-row">
 		<?php for ( $pass = 0; $pass < $render_passes; $pass++ ) :
 			$is_dupe = ( $pass === 1 );
 			foreach ( $logos as $idx => $row ) :
@@ -76,5 +96,6 @@ $render_passes = ( $layout === 'scroller' ) ? 2 : 1;
 				<?php
 			endforeach;
 		endfor; ?>
+		</div>
 	</div>
 </div>

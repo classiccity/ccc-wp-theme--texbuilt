@@ -2,7 +2,7 @@
 /**
  * Feature Grid block render template.
  *
- * Markup contract: BLOCK_MARKUP_CONTRACT.md § Feature Grid.
+ * Field keys: docs/BLOCKS.md (generated registry). This render.php is the canonical markup contract.
  *
  * Icons: FontAwesome Pro 7. Admin enters just the icon slug (`fa-star` or
  * bare `star`); `ccc_fa_icon_class()` composes `fa-{style} fa-{name}` using
@@ -24,7 +24,7 @@ if ( ! is_array( $features ) || empty( $features ) ) {
 	return;
 }
 
-$columns = max( 2, min( 5, $columns ) );
+$columns = max( 1, min( 5, $columns ) );
 
 // Block-level bg slug from the native picker (gradients disabled in block.json
 // so only `backgroundColor` applies here).

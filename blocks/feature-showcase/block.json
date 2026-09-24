@@ -1,0 +1,42 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/feature-showcase",
+	"title": "Feature Showcase",
+	"description": "Centered hero panel (title, copy, image) with a row of icon-feature pods below.",
+	"category": "theme",
+	"icon": "align-center",
+	"keywords": [
+		"hero",
+		"features",
+		"pods",
+		"showcase"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"align": [
+			"wide",
+			"full"
+		],
+		"anchor": true,
+		"color": {
+			"background": true,
+			"gradients": false,
+			"text": false,
+			"link": false
+		},
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "auto",
+		"renderTemplate": "render.php"
+	}
+}

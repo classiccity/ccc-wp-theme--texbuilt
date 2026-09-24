@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/hero-gradient",
+	"title": "Hero — Gradient",
+	"description": "Full-width hero. Background image dimmed to 70% so the selected palette background-color shows through, plus a directional gradient (transparent top-right → palette slug bottom-left). Entire content stack is InnerBlocks — eyebrow + h1 + paragraph + CTA button.",
+	"category": "theme",
+	"icon": "format-image",
+	"keywords": [
+		"hero",
+		"gradient",
+		"banner",
+		"image background"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"jsx": true,
+		"align": [
+			"full"
+		],
+		"anchor": true,
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}

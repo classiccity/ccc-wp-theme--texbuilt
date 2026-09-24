@@ -2,7 +2,7 @@
 /**
  * Image Hero 50/50 block render template.
  *
- * Markup contract: BLOCK_MARKUP_CONTRACT.md § Image Hero (50/50).
+ * Field keys: docs/BLOCKS.md (generated registry). This render.php is the canonical markup contract.
  *
  * The background color/gradient is applied to the inner `.sg-block-hero-bg-media`
  * panel (NOT the block root), so `get_block_wrapper_attributes()` would attach
@@ -28,7 +28,8 @@ $full_height    = ( $full_height === '' || $full_height === null ) ? true : (boo
 
 // DOM order is media → content, which naturally flows to image-left in the
 // grid. The `.image-right` modifier flips the columns via CSS.
-$root_classes = array( 'sg-block-hero-bg', 'alignfull' );
+/* `sg-hero` shared marker (no CSS) — see CLAUDE.md. */
+$root_classes = array( 'sg-hero', 'sg-block-hero-bg', 'alignfull' );
 if ( $side === 'right' ) {
 	$root_classes[] = 'image-right';
 }

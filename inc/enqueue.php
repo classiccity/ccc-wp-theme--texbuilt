@@ -70,6 +70,36 @@ function ccc_enqueue_portfolio_lightbox() {
 add_action( 'wp_enqueue_scripts', 'ccc_enqueue_portfolio_lightbox' );
 
 /**
+ * Enqueue the FAQ accordion's open/close animation on any page that
+ * renders a Yoast FAQ block.
+ *
+ * The accordion works without this file — inc/faq-accordion.php builds it
+ * out of <details>/<summary>, which the browser can already operate. This
+ * script only animates the transition, so it is a pure enhancement and
+ * loads in the footer. Skipped when the accordion treatment is filtered
+ * off, since there is then nothing on the page for it to bind to.
+ */
+function ccc_enqueue_faq_accordion() {
+	if ( is_admin() ) return;
+	if ( ! function_exists( 'ccc_faq_accordion_enabled' ) || ! ccc_faq_accordion_enabled() ) return;
+	if ( ! has_block( 'yoast/faq-block' ) ) return;
+
+	$rel  = 'assets/faq-accordion.js';
+	$path = CCC_THEME_DIR . $rel;
+	$uri  = CCC_THEME_URI . $rel;
+	if ( ! file_exists( $path ) ) return;
+
+	wp_enqueue_script(
+		'ccc-faq-accordion',
+		$uri,
+		array(),
+		(string) filemtime( $path ),
+		true // in footer
+	);
+}
+add_action( 'wp_enqueue_scripts', 'ccc_enqueue_faq_accordion' );
+
+/**
  * Block editor: inject the palette-driven pair helpers INTO the editor iframe
  * (where blocks actually render), not just the editor chrome.
  *
@@ -363,34 +393,47 @@ function ccc_build_color_pair_helpers_css() {
 			continue;
 		}
 		$slug_attr = esc_attr( $slug );
-		$rules[]   = sprintf(
-			// Combined-helper text color (bg helper pairs).
+
+		// Combined-helper text color (bg helper pairs) — for every slug.
+		$rules[] = sprintf(
 			'.has-%1$s-background-color{color:var(--wp--custom--color--%1$s-opposite);}' .
-			'.has-%1$s-gradient-background{color:var(--wp--custom--color--%1$s-opposite);}' .
-			// Feature Grid inverse icon — icon wrapper flips to opposite bg + slug text.
-			'.sg-block-feature.has-%1$s-background-color .sg-block-feature-icon{' .
-				'background-color:var(--wp--custom--color--%1$s-opposite);' .
-				'color:var(--wp--preset--color--%1$s);' .
-			'}' .
-			// Icon Feature Row inverse chip — the <i> glyph doesn't have a wrapper,
-			// so FontAwesome's base rule (`.fa-solid { display: inline-block;
-			// width: 1.25em }`) wins over our base at equal specificity. We
-			// re-declare display/width/height here at higher specificity
-			// (descendant selector = 0,3,0 vs FA's 0,1,0) so the chip renders
-			// as a 40×40 rounded square with a centered 20px glyph inside.
-			'.sg-block-feature-row-item.has-%1$s-background-color .sg-block-feature-row-icon{' .
-				'display:inline-flex;' .
-				'align-items:center;' .
-				'justify-content:center;' .
-				'width:var(--wp--preset--spacing--40);' .
-				'height:var(--wp--preset--spacing--40);' .
-				'background-color:var(--wp--custom--color--%1$s-opposite);' .
-				'color:var(--wp--preset--color--%1$s);' .
-				'border-radius:var(--wp--custom--radius--default);' .
-				'font-size:var(--wp--preset--spacing--20);' .
-			'}',
+			'.has-%1$s-gradient-background{color:var(--wp--custom--color--%1$s-opposite);}',
 			$slug_attr
 		);
+
+		// Inverse-icon chip (Feature Grid + Icon Feature Row) — only for
+		// colored / dark backgrounds. On a light neutral surface (panel,
+		// canvas) the chip's opposite color is dark ink, so it would render as
+		// an unwanted dark square behind the icon AND shrink the glyph (20px in
+		// a 40px chip). Those surfaces keep the plain primary-colored glyph
+		// (the :where default in blocks.css), which reads fine on light.
+		if ( ! in_array( $slug, array( 'panel', 'canvas' ), true ) ) {
+			$rules[] = sprintf(
+				// Feature Grid inverse icon — icon wrapper flips to opposite bg + slug text.
+				'.sg-block-feature.has-%1$s-background-color .sg-block-feature-icon{' .
+					'background-color:var(--wp--custom--color--%1$s-opposite);' .
+					'color:var(--wp--preset--color--%1$s);' .
+				'}' .
+				// Icon Feature Row inverse chip — the <i> glyph doesn't have a wrapper,
+				// so FontAwesome's base rule (`.fa-solid { display: inline-block;
+				// width: 1.25em }`) wins over our base at equal specificity. We
+				// re-declare display/width/height here at higher specificity
+				// (descendant selector = 0,3,0 vs FA's 0,1,0) so the chip renders
+				// as a 40×40 rounded square with a centered 20px glyph inside.
+				'.sg-block-feature-row-item.has-%1$s-background-color .sg-block-feature-row-icon{' .
+					'display:inline-flex;' .
+					'align-items:center;' .
+					'justify-content:center;' .
+					'width:var(--wp--preset--spacing--40);' .
+					'height:var(--wp--preset--spacing--40);' .
+					'background-color:var(--wp--custom--color--%1$s-opposite);' .
+					'color:var(--wp--preset--color--%1$s);' .
+					'border-radius:var(--wp--custom--radius--default);' .
+					'font-size:var(--wp--preset--spacing--20);' .
+				'}',
+				$slug_attr
+			);
+		}
 
 		// Per-color button hovers. Only emit for slugs with an -alt sibling.
 		//   Solid: bg fades base → -alt, text follows opposite → -alt-opposite.
@@ -441,9 +484,59 @@ function ccc_palette_slug_choices() {
 		'secondary-alt'=> 'Secondary Alt',
 		'tertiary'     => 'Tertiary',
 		'tertiary-alt' => 'Tertiary Alt',
-		'light'        => 'Light',
-		'light-alt'    => 'Light Alt',
-		'dark'         => 'Dark',
-		'dark-alt'     => 'Dark Alt',
+		'canvas'       => 'Canvas',
+		'panel'        => 'Panel',
+		'ink'          => 'Ink',
+		'ink-soft'     => 'Ink Soft',
 	);
+}
+
+/**
+ * Resolve a palette slug's PARTNER slug — the other half of its base/-alt pair.
+ *
+ * The palette is built in pairs (`cta`/`cta-alt`, `primary`/`primary-alt`, …),
+ * so a slug's visual sibling is a straight lookup, not a color computation:
+ * a base maps to `{slug}-alt` and an `-alt` maps back to its base.
+ *
+ * Blocks use this to derive a companion color from whatever background the
+ * admin picked — e.g. card-detail-rows borders each card in its background's
+ * partner. Resolution is checked against the ACTIVE palette (child themes
+ * REPLACE `color.palette` wholesale), so a slug with no partner registered —
+ * the unpaired `canvas` / `panel` / `ink` / `ink-soft` surfaces, or anything a
+ * child dropped — returns an empty string and the caller falls back.
+ *
+ * @param string $slug Palette slug, e.g. 'primary' or 'cta-alt'.
+ * @return string Partner slug if it exists in the active palette, else ''.
+ */
+function ccc_palette_partner_slug( $slug ) {
+	$slug = sanitize_html_class( (string) $slug );
+	if ( '' === $slug ) {
+		return '';
+	}
+
+	$partner = ( substr( $slug, -4 ) === '-alt' )
+		? substr( $slug, 0, -4 )
+		: $slug . '-alt';
+
+	$palette = wp_get_global_settings( array( 'color', 'palette' ) );
+	if ( ! is_array( $palette ) ) {
+		return '';
+	}
+
+	/* wp_get_global_settings() returns the palette keyed by origin
+	   (default / theme / custom) when more than one origin is present, and a
+	   flat list when it isn't. Normalize both shapes to one list of slugs. */
+	$groups = isset( $palette[0] ) ? array( $palette ) : $palette;
+	foreach ( $groups as $group ) {
+		if ( ! is_array( $group ) ) {
+			continue;
+		}
+		foreach ( $group as $color ) {
+			if ( isset( $color['slug'] ) && $color['slug'] === $partner ) {
+				return $partner;
+			}
+		}
+	}
+
+	return '';
 }

@@ -1,3 +1,9 @@
+// DEPRECATED for new clients: this phase clones sg-texbuilt, which uses the
+// retired light/dark neutral palette — not the current canvas/panel/ink +
+// gray-ramp model. Hand-author the child theme instead (Track B) per
+// docs/CHIEF_OF_STUFF_HANDOFF.md and docs/THEME_TOKENS.md, using
+// sg-sherman-phalen (light) / sg-trialport (dark) as references, then commit
+// it into the client repo — the commit step of Phase 8 is still valid.
 import { existsSync } from 'node:fs';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
@@ -35,6 +41,9 @@ async function walkTextFiles(dir: string): Promise<string[]> {
 }
 
 export async function runPhase8(slug: string): Promise<OnboardingState> {
+  console.warn(
+    'WARNING: Phase 8 scaffold is DEPRECATED for new clients (retired light/dark palette) — hand-author per docs/THEME_TOKENS.md (see docs/CHIEF_OF_STUFF_HANDOFF.md Track B).'
+  );
   const log = (msg: string) => console.log(`  ${msg}`);
   console.log('\nPhase 8: scaffold child theme\n');
 

@@ -1,0 +1,37 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/image-card-grid",
+	"title": "Image Card Grid",
+	"description": "Grid of image cards using the shared image-card partial. Configurable columns, mobile layout (stack or horizontal scroll), and image aspect ratio. Each card has a tag, title, image, description, optional footer title + subtitle (e.g., name + location for testimonials), and CTA button.",
+	"category": "theme",
+	"icon": "grid-view",
+	"keywords": [
+		"cards",
+		"grid",
+		"image",
+		"gallery"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"jsx": true,
+		"align": [
+			"wide",
+			"full"
+		],
+		"anchor": true,
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}

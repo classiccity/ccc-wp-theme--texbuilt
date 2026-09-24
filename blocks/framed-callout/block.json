@@ -1,0 +1,42 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/framed-callout",
+	"title": "Framed Callout",
+	"description": "Full-width hero / CTA section. Outer container holds a uniform padding 'frame' on all four sides; the inner panel inside that frame carries the bg color/gradient (Gutenberg native picker), an optional bg image, and a constrained-narrow InnerBlocks stack (eyebrow + h1 + paragraph + CTA button) vertically centered and left- or center-aligned.",
+	"category": "theme",
+	"icon": "align-pull-left",
+	"keywords": [
+		"hero",
+		"cta",
+		"callout",
+		"framed"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"jsx": true,
+		"align": [
+			"full"
+		],
+		"anchor": true,
+		"color": {
+			"background": true,
+			"gradients": true,
+			"text": false,
+			"link": false
+		},
+		"spacing": {
+			"padding": false,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}

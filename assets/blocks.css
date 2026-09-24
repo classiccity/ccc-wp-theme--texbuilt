@@ -26,6 +26,25 @@ html {
   overflow-x: clip;
 }
 
+/* Edge-to-edge horizontal scrollers (mobile). A block that switches to a
+ * horizontal scroll-snap carousel below 768px is otherwise trapped inside the
+ * page's root padding and clips its cards. Pull it out by the root padding on
+ * each side and re-add that gutter inside via padding so the first/last card
+ * still rests at the margin while the track reaches the page edges.
+ * NOTE: must be physical `margin-left`/`margin-right` + `!important` — the
+ * logical `margin-inline` does NOT override WP's physical margin-left/right
+ * centering on constrained-layout children. No `width:100vw` (that caused
+ * body sidescroll on iOS). Add `.sg-hscroll` to any future scroller. */
+@media (max-width: 768px) {
+  .is-mobile-scroll,
+  .sg-hscroll {
+    margin-left: calc(-1 * var(--wp--style--root--padding-left)) !important;
+    margin-right: calc(-1 * var(--wp--style--root--padding-left)) !important;
+    padding-left: var(--wp--style--root--padding-left);
+    padding-right: var(--wp--style--root--padding-right);
+  }
+}
+
 /* System (chrome) styles for the style guide page itself.
  * These intentionally use fixed values, NOT client tokens, so the chrome
  * never shifts when client tokens change. Client tokens live in a scoped
@@ -118,15 +137,95 @@ h1, h2, h3, h4, h5, h6 {
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--sg-bg);
-  color: var(--sg-text);
-  font-family: var(--sg-font);
-  font-size: 16px;
-  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
+/* Body background / text color / font come from theme.json (styles.color +
+ * typography), so they track each child theme's tokens (canvas / ink / body
+ * font). They are intentionally NOT set here — the old `var(--sg-*)` values
+ * were the /style-guide page's chrome tokens and leaked onto every client
+ * site's <body>. The --sg-* tokens below are scoped in use to the .sg-*
+ * chrome elements, which only exist on the style-guide page. */
 
 a { color: inherit; }
+
+/* ── Page-level rhythm + section panels ──────────────────────────────
+ * Automatic vertical spacing between top-level page sections, so page
+ * markup doesn't hand-code margins between blocks. This is larger than
+ * the in-block blockGap (spacing--30). Tune per child theme by overriding
+ * --ccc-section-gap. */
+:root { --ccc-section-gap: var(--wp--preset--spacing--70); }
+.wp-block-post-content > * + *,
+.entry-content > * + * {
+  margin-block-start: var(--ccc-section-gap);
+}
+
+/* Section-gap utilities — registered as the "Flush top" + "Overlap up" +
+ * "Underlap" block styles (inc/block-styles.php) on core/group + columns +
+ * cover + every CCC block. They override the section-gap on a top-level block.
+ *   flush-top  : zero the gap so two sections sit back-to-back.
+ *   overlap-up : pull the section up over the one above it (z-index:2). The
+ *                section ABOVE must have padding-bottom >= the overlap amount
+ *                or its content gets covered.
+ *   underlap   : inverse of overlap-up. Pull the section up the same amount,
+ *                but lift its PREVIOUS sibling on top (z-index:1) so the element
+ *                above overlaps down onto this one. The element ABOVE must have
+ *                bottom padding (footer: top padding) >= the overlap amount or
+ *                its content gets covered.
+ * Overlap distance is a token (--wp--custom--overlap--*), shared by overlap-up
+ * and underlap, so children can retune it; it collapses to the mobile token
+ * under 768px.
+ * Scoped to direct children of the content wrapper OR a template part so
+ * (0,2,0) beats the section-gap rule (0,1,0) without !important — this is why
+ * they work in headers/footers too, not just page content. */
+.entry-content > .is-style-flush-top,
+.wp-block-post-content > .is-style-flush-top,
+.wp-block-template-part > .is-style-flush-top {
+  margin-block-start: 0;
+}
+.entry-content > .is-style-overlap-up,
+.wp-block-post-content > .is-style-overlap-up,
+.wp-block-template-part > .is-style-overlap-up {
+  margin-block-start: calc(var(--wp--custom--overlap--desktop) * -1);
+  position: relative;
+  z-index: 2;
+}
+@media (max-width: 768px) {
+  .entry-content > .is-style-overlap-up,
+  .wp-block-post-content > .is-style-overlap-up,
+  .wp-block-template-part > .is-style-overlap-up {
+    margin-block-start: calc(var(--wp--custom--overlap--mobile) * -1);
+  }
+}
+.entry-content > .is-style-underlap,
+.wp-block-post-content > .is-style-underlap,
+.wp-block-template-part > .is-style-underlap {
+  margin-block-start: calc(var(--wp--custom--overlap--desktop) * -1);
+}
+/* Lift the element immediately BEFORE an underlap block so it paints on top. */
+.entry-content > *:has(+ .is-style-underlap),
+.wp-block-post-content > *:has(+ .is-style-underlap),
+.wp-block-template-part > *:has(+ .is-style-underlap) {
+  position: relative;
+  z-index: 1;
+}
+@media (max-width: 768px) {
+  .entry-content > .is-style-underlap,
+  .wp-block-post-content > .is-style-underlap,
+  .wp-block-template-part > .is-style-underlap {
+    margin-block-start: calc(var(--wp--custom--overlap--mobile) * -1);
+  }
+}
+
+/* "Section Panel" block style (className is-style-section) — gives a
+ * full-width wp:group the rounded + shadowed panel frame. Set the panel
+ * color with the group's normal Background control (has-{slug}-background-
+ * color, which also pairs the text color); set padding with the group's
+ * Dimensions control. The radius + shadow live here (not inline) so they
+ * survive editing and stay consistent site-wide. */
+.wp-block-group.is-style-section {
+  border-radius: var(--wp--custom--radius--default);
+  box-shadow: var(--wp--preset--shadow--sm);
+}
 
 /* Chrome classes explicitly use --sg-font. Without this, any chrome element
  * that doesn't set its own font-family would inherit the client body font
@@ -394,10 +493,13 @@ a { color: inherit; }
 .sg-block-hero-content > .acf-innerblocks-container,
 .sg-block-hero-full-card > .acf-innerblocks-container,
 .sg-block-hero-bg-content > .acf-innerblocks-container,
+.sg-block-hero-gradient__content > .acf-innerblocks-container,
 .sg-block-split-body > .acf-innerblocks-container,
 .sg-block-overlay-content > .acf-innerblocks-container,
 .sg-block-center-content-body > .acf-innerblocks-container,
-.sg-block-cta-inner > .acf-innerblocks-container {
+.sg-block-cta-inner > .acf-innerblocks-container,
+.sg-block-stackable > .acf-innerblocks-container,
+.sg-block-framed-callout__content > .acf-innerblocks-container {
   display: contents;
 }
 
@@ -446,6 +548,31 @@ a { color: inherit; }
   margin-block-start: var(--wp--preset--spacing--10);
 }
 
+/* ==================================================================
+ * Shared block head — the canonical "eyebrow + h2" intro section that
+ * sits at the top of blocks like image-link-cards and
+ * product-feature-toggles. Markup emitted by `ccc_render_block_head()`
+ * in inc/block-head.php.
+ *
+ * The wrapper carries `is-layout-flow` so the parent eyebrow→heading
+ * collapse rule above lands cleanly (10px gap, no flex-gap math).
+ * `has-text-align-center` on the eyebrow and h2 themselves wires up
+ * centering the WP-idiomatic way — same class WP applies when an
+ * author drops a centered block via Gutenberg's alignment toolbar.
+ * ================================================================== */
+.sg-block-head {
+  text-align: center;
+  max-width: var(--wp--custom--layout--narrow-size, 800px);
+  margin: 0 auto;
+}
+
+.sg-block-head__heading {
+  text-transform: uppercase;
+  /* margin intentionally NOT set — the parent's eyebrow + h2 rule
+     governs top margin (10px); h2 typography (size/family/weight)
+     inherits from theme.json's elements.h2. */
+}
+
 /* Hero */
 .sg-block-hero {
   display: grid;
@@ -475,21 +602,25 @@ a { color: inherit; }
   aspect-ratio: 4 / 3;
   background-size: cover;
   background-position: center;
-  background-color: var(--wp--preset--color--light-alt);
+  background-color: var(--wp--custom--gray--40);
   border-radius: var(--wp--custom--radius--default);
-  box-shadow: var(--wp--preset--shadow--md);
+  box-shadow: var(--wp--custom--elevation--card, var(--wp--preset--shadow--md));
 }
 
 /* Stats — block in markup carries .has-secondary-gradient-background, which
  * applies the secondary→secondary-alt gradient AND secondary's opposite text
- * color via the generated gradient helper (see css-generator.ts). */
+ * color via the generated gradient helper (see css-generator.ts).
+ *
+ * This is the DEFAULT treatment only. The `is-style-pods` and `is-style-strip`
+ * block styles, plus the per-cell variable plumbing they drive, live in the
+ * "Stats — block styles" section at the end of this file. */
 .sg-block-stats {
   display: grid;
   grid-template-columns: repeat(var(--block-columns, 4), 1fr);
   gap: var(--wp--style--block-gap);
   padding: var(--wp--preset--spacing--60) var(--wp--preset--spacing--50);
   border-radius: var(--wp--custom--radius--default);
-  box-shadow: var(--wp--preset--shadow--md);
+  box-shadow: var(--wp--custom--elevation--card, var(--wp--preset--shadow--md));
 }
 .sg-block-stat {
   text-align: center;
@@ -507,12 +638,12 @@ a { color: inherit; }
 /* Default bg wrapped in :where() (0-specificity) so any .has-*-background-color
  * helper from the admin's per-card picker wins without needing !important. */
 :where(.sg-block-feature) {
-  background: #FFFFFF;
+  background: var(--wp--preset--color--panel, #ffffff);
 }
 .sg-block-feature {
   border-radius: var(--wp--custom--radius--default);
   padding: var(--wp--preset--spacing--30);
-  box-shadow: var(--wp--preset--shadow--md);
+  box-shadow: var(--wp--custom--elevation--card, var(--wp--preset--shadow--md));
   display: flex;
   flex-direction: column;
   gap: var(--wp--style--block-gap);
@@ -560,6 +691,15 @@ a { color: inherit; }
  *   --sg-logo-scroll-dur   marquee cycle duration (default 40s; the
  *                          speed modifier classes set this, but child
  *                          themes can pin it explicitly too)
+ *   --sg-logo-plate-bg     light-plate fill (default gray--10 / white)
+ *   --sg-logo-plate-pad    light-plate inner padding (default spacing--30)
+ *
+ * Two appearance modifiers, both OPT-IN from block fields:
+ *   .sg-block-logos--plated     pale plate behind the strip.
+ *   .sg-block-logos--grayscale  desaturates the marks.
+ * grayscale was applied unconditionally here until 2026-08-21. It is a
+ * field now because these are frequently registered trademarks and
+ * recolouring somebody's mark is not a site-level styling decision.
  * ================================================================== */
 .sg-block-logos {
   --sg-logo-gap: var(--wp--preset--spacing--50);
@@ -579,14 +719,46 @@ a { color: inherit; }
   object-fit: contain;
   flex-shrink: 0;
 }
+.sg-block-logos-viewport {
+  /* Always emitted. Two jobs: it is the scroller's overflow clip box, and it
+   * is the surface the light plate paints on. It cannot be .sg-block-logos
+   * (the eyebrow would land on the plate) nor .sg-block-logos-row (the
+   * marquee translates that element, so its background would slide away). */
+  width: 100%;
+}
 .sg-block-logos-row {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
   gap: var(--sg-logo-gap);
+  /* Neither greyscale nor opacity dimming by default — both alter how a
+   * third party's mark reads, so both are per-site decisions. Greyscale is
+   * the .sg-block-logos--grayscale field; opacity is not offered. */
+}
+
+/* Light plate — a pale panel behind the whole strip, for dark sections.
+ * One plate for the strip rather than one per logo, deliberately: logo files
+ * arrive as a mix of transparent art and art with its own flat white
+ * background baked in, and a single white plate swallows that seam. Per-logo
+ * plates would instead frame each baked-in white box inside a second box, and
+ * any tone mismatch between the two would show as a visible rectangle.
+ * The plate fixes legibility without touching a single mark. */
+.sg-block-logos--plated .sg-block-logos-viewport {
+  background: var(--sg-logo-plate-bg, var(--wp--custom--gray--10, #ffffff));
+  border-radius: var(--wp--custom--radius--default, 6px);
+  padding-block: var(--sg-logo-plate-pad, var(--wp--preset--spacing--30));
+}
+/* Horizontal padding only in grid mode. In scroller mode the clip box IS the
+ * padding box, so inline padding would not hold the marquee off the edge — it
+ * would only make the plate wider. Logos running edge to edge is correct there. */
+.sg-block-logos--plated:not(.sg-block-logos--scroller) .sg-block-logos-viewport {
+  padding-inline: var(--sg-logo-plate-pad, var(--wp--preset--spacing--30));
+}
+
+/* Opt-in greyscale. Was unconditional on .sg-block-logos-row until 2026-08-21. */
+.sg-block-logos--grayscale .sg-block-logos-row {
   filter: grayscale(1);
-  /* Opacity dimming is a per-site decision — not applied by default. */
 }
 
 /* Scroller layout — single nowrap row, CSS marquee. The .row contains
@@ -595,8 +767,10 @@ a { color: inherit; }
  * first started, producing an infinite loop. */
 .sg-block-logos--scroller {
   --sg-logo-max-height: 60px;
-  overflow: hidden;
   width: 100%;
+}
+.sg-block-logos--scroller .sg-block-logos-viewport {
+  overflow: hidden;
 }
 .sg-block-logos--scroller .sg-block-logos-row {
   flex-wrap: nowrap;
@@ -621,8 +795,15 @@ a { color: inherit; }
 /* Accessibility: respect prefers-reduced-motion by halting the
  * animation entirely and falling back to wrapped layout. */
 @media (prefers-reduced-motion: reduce) {
-  .sg-block-logos--scroller {
+  .sg-block-logos--scroller .sg-block-logos-viewport {
     overflow: visible;
+  }
+  /* Scroller mode emits the logo set twice so the marquee can loop. Once the
+   * animation is off and the row wraps, the second set is no longer off-screen
+   * — it just renders the whole wall of logos a second time. It is already
+   * aria-hidden, so hiding it costs a reduced-motion reader nothing. */
+  .sg-block-logos--scroller .sg-block-logos-row img[aria-hidden="true"] {
+    display: none;
   }
   .sg-block-logos--scroller .sg-block-logos-row {
     animation: none;
@@ -679,6 +860,16 @@ a { color: inherit; }
           mask-size: contain;
 }
 
+/* core/image — Drop Shadow style.
+ * Registered in inc/block-styles.php. Apply via the editor sidebar's
+ * Styles panel; WP injects `.is-style-shadow` on the wrapping <figure>.
+ * Shadow lands on the <img> itself so it tracks the image rectangle
+ * (not the caption, if one's set). Uses --wp--preset--shadow--md so
+ * every client theme picks up its own shadow scale. */
+.wp-block-image.is-style-shadow img {
+  box-shadow: var(--wp--custom--elevation--card, var(--wp--preset--shadow--md));
+}
+
 /* Testimonial cards */
 .sg-block-testimonial-grid {
   display: grid;
@@ -686,9 +877,9 @@ a { color: inherit; }
   gap: var(--wp--style--block-gap);
 }
 .sg-block-testimonial-card {
-  background: #FFFFFF;
+  background: var(--wp--preset--color--panel, #ffffff);
   border-radius: var(--wp--custom--radius--default);
-  box-shadow: var(--wp--preset--shadow--md);
+  box-shadow: var(--wp--custom--elevation--card, var(--wp--preset--shadow--md));
   padding: var(--wp--preset--spacing--30);
   display: flex;
   flex-direction: column;
@@ -705,7 +896,7 @@ a { color: inherit; }
   gap: var(--wp--preset--spacing--10);
 }
 .sg-block-faq-item {
-  background: #FFFFFF;
+  background: var(--wp--preset--color--panel, #ffffff);
   border: 1px solid var(--sg-border);
   border-left: 4px solid transparent;
   border-radius: var(--wp--custom--radius--default);
@@ -742,17 +933,17 @@ a { color: inherit; }
 }
 
 .sg-block-card {
-  background: #FFFFFF;
+  background: var(--wp--preset--color--panel, #ffffff);
   border-radius: var(--wp--custom--radius--default);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: var(--wp--preset--shadow--md);
+  box-shadow: var(--wp--custom--elevation--card, var(--wp--preset--shadow--md));
 }
 .sg-block-card-image {
   background-size: cover;
   background-position: center;
-  background-color: var(--wp--preset--color--light-alt);
+  background-color: var(--wp--custom--gray--40);
 }
 .sg-block-card-image.aspect-horizontal { aspect-ratio: 16 / 9; }
 .sg-block-card-image.aspect-square     { aspect-ratio: 1 / 1; }
@@ -760,7 +951,7 @@ a { color: inherit; }
 /* Card body default bg wrapped in :where() so per-card .has-*-background-color
  * helpers from the admin picker override without needing !important. */
 :where(.sg-block-card-body) {
-  background: #FFFFFF;
+  background: var(--wp--preset--color--panel, #ffffff);
 }
 .sg-block-card-body {
   padding: var(--wp--preset--spacing--30);
@@ -782,10 +973,10 @@ a { color: inherit; }
 .sg-block-split {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  background: #FFFFFF;
+  background: var(--wp--preset--color--panel, #ffffff);
   border-radius: var(--wp--custom--radius--default);
   overflow: hidden;
-  box-shadow: var(--wp--preset--shadow--md);
+  box-shadow: var(--wp--custom--elevation--card, var(--wp--preset--shadow--md));
   align-items: stretch;
 }
 /* Side-toggle swap: DOM is image → body. Default matches field 'left'.
@@ -800,11 +991,21 @@ a { color: inherit; }
   grid-column: 1;
   grid-row: 1;
 }
+/* Focal point is a token so a site can move the crop without overriding the
+ * whole rule. Default `center` is unchanged — no existing site shifts.
+ *
+ * It exists because `cover` crops against whatever box the breakpoint gives
+ * this element, and the mobile rule below forces 16:9. A PORTRAIT source in a
+ * 16:9 band loses its top and bottom, which for a photograph of a person means
+ * losing their head — verified on two pages, where the visible frame ran from
+ * collarbone to mid-torso. Every image in this block had been landscape until
+ * then, so the default had never been wrong. Set the token at the child level
+ * per breakpoint; don't re-declare background-position. */
 .sg-block-split-image {
   position: relative;
   background-size: cover;
-  background-position: center;
-  background-color: var(--wp--preset--color--light-alt);
+  background-position: var(--ccc-split-image-position, center);
+  background-color: var(--wp--custom--gray--40);
   min-height: 360px;
 }
 .sg-block-split-video {
@@ -828,16 +1029,56 @@ a { color: inherit; }
 }
 .sg-block-split-list li + li { margin-top: var(--wp--preset--spacing--10); }
 
-/* Large CTA block */
+/* Large CTA block — layered background model:
+ *
+ *  z-axis (bottom → top):
+ *    wrapper bg color  (this rule's `background` OR WP helper class)
+ *    wrapper texture   (.has-bg-texture, if set — see textures.php)
+ *    .sg-block-cta-bg  (absolute child, image at chosen opacity)
+ *    .sg-block-cta-inner (positioned, z-index:1 — content always on top)
+ *
+ * `overflow: hidden` keeps the absolute image layer clipped to the
+ * wrapper's border-radius. The `background:` shorthand here is the
+ * default that prints when no native bg color is chosen — WP's
+ * `.has-{slug}-background-color { !important }` utility wins when an
+ * author picks a different palette color from the native picker.
+ *
+ * See blocks/cta-large/render.php header for the full rationale and
+ * backward-compat notes.
+ */
+/* Full-width CTAs read as edge-to-edge bands, so the rounded corners look
+ * wrong at that scale — square them when the block is alignfull. */
+.sg-block-cta.alignfull,
+.sg-block-cta-thin.alignfull {
+  border-radius: 0;
+}
 .sg-block-cta {
+  position: relative;
+  overflow: hidden;
   background: var(--wp--preset--color--cta);
   color: var(--wp--custom--color--cta-opposite);
   border-radius: var(--wp--custom--radius--default);
-  box-shadow: var(--wp--preset--shadow--md);
+  box-shadow: var(--wp--custom--elevation--card, var(--wp--preset--shadow--md));
   padding: var(--wp--preset--spacing--60) var(--wp--preset--spacing--30);
   text-align: center;
 }
+.sg-block-cta-bg {
+  /* Absolute child filling the wrapper's padding box (inset:0 lands at
+     the padding edge of the nearest positioned ancestor). Image is
+     cover-fit and center-positioned by default — overrides via
+     block-instance custom CSS if a specific CTA needs `contain` or a
+     non-center focal point. Opacity comes from render.php inline. */
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
+  pointer-events: none;
+}
 .sg-block-cta-inner {
+  position: relative;
+  z-index: 1;
   max-width: var(--wp--custom--layout--narrow-size);
   margin: 0 auto;
   display: flex;
@@ -876,14 +1117,52 @@ a { color: inherit; }
   padding: var(--wp--custom--btn--padding-y) var(--wp--custom--btn--padding-x);
 }
 
+/* Text button style — the third rung below Fill and Outline (registered on
+ * core/button in inc/block-styles.php), for tertiary actions that shouldn't
+ * carry a button's visual weight.
+ *
+ * theme.json's button element ships a 2px border, a card shadow, and
+ * symmetric padding; all three have to come back off here, and the inline
+ * padding especially — a text button has to sit flush with the text column
+ * above it or it reads as misaligned. `color: inherit` takes the surface's
+ * text color by default; an author-picked textColor still wins, because WP
+ * emits its `.has-{slug}-color` utility with `!important`. */
+.wp-block-button.is-style-text .wp-block-button__link {
+  background-color: transparent;
+  border: 0;
+  box-shadow: none;
+  color: inherit;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+.wp-block-button.is-style-text .wp-block-button__link:hover {
+  background-color: transparent;
+  text-decoration: none;
+}
+
 /* Thin CTA bar — full-width, content-width inner row justified L/R.
- * Left: headline + subtext. Right: CTA-opposite button. Stacks centered on mobile. */
+ * Left: headline + subtext. Right: CTA-opposite button. Stacks centered on mobile.
+ * Same layered-bg model as cta-large — see that block's comment above for
+ * the rationale. No border-radius here so no `overflow: hidden` needed. */
 .sg-block-cta-thin {
+  position: relative;
   background: var(--wp--preset--color--cta);
   color: var(--wp--custom--color--cta-opposite);
   padding: var(--wp--preset--spacing--30) var(--wp--preset--spacing--30);
 }
+.sg-block-cta-thin-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
+  pointer-events: none;
+}
 .sg-block-cta-thin-inner {
+  position: relative;
+  z-index: 1;
   max-width: var(--wp--style--global--content-size);
   margin: 0 auto;
   display: flex;
@@ -905,13 +1184,17 @@ a { color: inherit; }
 }
 
 /* Flat icon feature row — four inline benefits with FA icon + heading + copy.
- * Block sits on --wp--preset--color--light with a large drop shadow; columns are separated
- * by a 1px divider in --wp--preset--color--light-alt. */
+ * Block sits on --wp--preset--color--canvas with a large drop shadow; columns are separated
+ * by a 1px divider in --wp--custom--gray--40. */
 .sg-block-feature-row {
   display: grid;
   grid-template-columns: repeat(var(--block-columns, 4), 1fr);
   gap: 0;
-  background: var(--wp--preset--color--light);
+  /* Card-esque default: a panel (white) surface so the row reads as a card
+   * on the page canvas. (Was canvas — which now equals the body bg, leaving
+   * the panel invisible.) Set a per-item Background to override. */
+  background: var(--wp--preset--color--panel);
+  color: var(--wp--custom--color--panel-opposite, var(--wp--preset--color--ink));
   border-radius: var(--wp--custom--radius--default);
   box-shadow: var(--wp--preset--shadow--lg);
   /* Clip children so per-item backgrounds respect the block's rounded corners. */
@@ -925,21 +1208,27 @@ a { color: inherit; }
   gap: var(--wp--preset--spacing--20);
   padding: var(--wp--preset--spacing--30);
 }
-/* The icon + h5 are tightly coupled (spacing--10) inside this wrapper; the
- * wrapper is then a sibling to the body paragraph with the roomier
- * spacing--20 set on the item above. Creates a clear header/body rhythm
- * instead of three equally-spaced elements. */
+/* Icon + h5 stack inside this wrapper at the spacing--30 gap; the wrapper
+ * is then a sibling to the body paragraph (spacing--20 set on the item
+ * above), creating a clear header/body rhythm. */
 .sg-block-feature-row-head {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--wp--preset--spacing--10);
+  gap: var(--wp--preset--spacing--30);
 }
-/* Divider only between items that share the default (no per-item bg) look.
+/* Dividers only between items that share the default (no per-item bg) look.
  * When an item has its own .has-*-background-color, the contrasting bg is
- * the divider — the 1px line would look grubby against it. */
-.sg-block-feature-row-item:not(:first-child):not([class*="has-"][class*="-background-color"]) {
-  border-left: 1px solid var(--wp--preset--color--light-alt);
+ * the divider — the 1px line would look grubby against it.
+ * Both axes: vertical between columns (skipped at each row start) and
+ * horizontal between rows (skipped on the first row). The row-position
+ * classes come from render.php, which knows --block-columns; nth-child
+ * can't read a CSS var. */
+.sg-block-feature-row-item:not(.is-row-start):not([class*="has-"][class*="-background-color"]) {
+  border-left: 1px solid var(--wp--custom--gray--40);
+}
+.sg-block-feature-row-item:not(.is-first-row):not([class*="has-"][class*="-background-color"]) {
+  border-top: 1px solid var(--wp--custom--gray--40);
 }
 /* Default icon look — plain glyph, primary-colored. Wrapped in :where() so
  * the per-slug chip rules emitted by css-generator.ts (higher specificity)
@@ -970,14 +1259,18 @@ a { color: inherit; }
   /* Make room for the number badges that overhang the card tops by half their height. */
   padding-top: calc(var(--wp--preset--spacing--60) / 2);
 }
-/* Card bg default wrapped in :where() so per-step .has-*-background-color wins. */
+/* Card bg default wrapped in :where() so per-step .has-*-background-color wins.
+ * Pair the text color with the panel bg too — without this, a process-steps
+ * block placed inside a dark-bg section inherits that section's light text and
+ * the step copy renders invisibly (light on the light panel). */
 :where(.sg-block-process-step) {
-  background: #FFFFFF;
+  background: var(--wp--preset--color--panel, #ffffff);
+  color: var(--wp--custom--color--panel-opposite, var(--wp--preset--color--ink));
 }
 .sg-block-process-step {
   position: relative;
   border-radius: var(--wp--custom--radius--default);
-  box-shadow: var(--wp--preset--shadow--md);
+  box-shadow: var(--wp--custom--elevation--card, var(--wp--preset--shadow--md));
   padding: calc(var(--wp--preset--spacing--60) / 2 + var(--wp--preset--spacing--30)) var(--wp--preset--spacing--20) var(--wp--preset--spacing--30);
   display: flex;
   flex-direction: column;
@@ -1032,10 +1325,10 @@ a { color: inherit; }
   gap: var(--wp--style--block-gap);
 }
 .sg-block-doc {
-  background: #FFFFFF;
+  background: var(--wp--preset--color--panel, #ffffff);
   border-radius: var(--wp--custom--radius--default);
   padding: var(--wp--preset--spacing--30);
-  box-shadow: var(--wp--preset--shadow--md);
+  box-shadow: var(--wp--custom--elevation--card, var(--wp--preset--shadow--md));
   display: flex;
   flex-direction: column;
   gap: var(--wp--style--block-gap);
@@ -1051,8 +1344,8 @@ a { color: inherit; }
   align-items: center;
   gap: 0.5em;
   padding-bottom: var(--wp--preset--spacing--20);
-  border-bottom: 1px solid var(--wp--preset--color--light-alt);
-  color: var(--wp--preset--color--dark-alt);
+  border-bottom: 1px solid var(--wp--custom--gray--40);
+  color: var(--wp--preset--color--ink-soft);
   font-family: var(--wp--preset--font-family--body);
   font-size: var(--wp--preset--font-size--x-small);
   font-weight: 700;
@@ -1143,9 +1436,9 @@ a { color: inherit; }
   background: linear-gradient(
     to bottom,
     transparent 30%,
-    color-mix(in srgb, var(--hero-grad, var(--wp--custom--body--bg)) 40%, transparent) 55%,
-    color-mix(in srgb, var(--hero-grad, var(--wp--custom--body--bg)) 80%, transparent) 75%,
-    var(--hero-grad, var(--wp--custom--body--bg)) 100%
+    color-mix(in srgb, var(--hero-grad, var(--wp--preset--color--canvas)) 40%, transparent) 55%,
+    color-mix(in srgb, var(--hero-grad, var(--wp--preset--color--canvas)) 80%, transparent) 75%,
+    var(--hero-grad, var(--wp--preset--color--canvas)) 100%
   );
 }
 /* Palette-slug gradient overrides. Each class also sets --hero-grad-opposite
@@ -1159,16 +1452,16 @@ a { color: inherit; }
 .sg-hero-grad-secondary-alt { --hero-grad: var(--wp--preset--color--secondary-alt); --hero-grad-opposite: var(--wp--custom--color--secondary-alt-opposite); }
 .sg-hero-grad-tertiary      { --hero-grad: var(--wp--preset--color--tertiary);      --hero-grad-opposite: var(--wp--custom--color--tertiary-opposite); }
 .sg-hero-grad-tertiary-alt  { --hero-grad: var(--wp--preset--color--tertiary-alt);  --hero-grad-opposite: var(--wp--custom--color--tertiary-alt-opposite); }
-.sg-hero-grad-light         { --hero-grad: var(--wp--preset--color--light);         --hero-grad-opposite: var(--wp--custom--color--light-opposite); }
-.sg-hero-grad-light-alt     { --hero-grad: var(--wp--preset--color--light-alt);     --hero-grad-opposite: var(--wp--custom--color--light-alt-opposite); }
-.sg-hero-grad-dark          { --hero-grad: var(--wp--preset--color--dark);          --hero-grad-opposite: var(--wp--custom--color--dark-opposite); }
-.sg-hero-grad-dark-alt      { --hero-grad: var(--wp--preset--color--dark-alt);      --hero-grad-opposite: var(--wp--custom--color--dark-alt-opposite); }
+.sg-hero-grad-canvas        { --hero-grad: var(--wp--preset--color--canvas);        --hero-grad-opposite: var(--wp--custom--color--canvas-opposite); }
+.sg-hero-grad-panel         { --hero-grad: var(--wp--preset--color--panel);         --hero-grad-opposite: var(--wp--custom--color--panel-opposite); }
+.sg-hero-grad-ink           { --hero-grad: var(--wp--preset--color--ink);           --hero-grad-opposite: var(--wp--custom--color--ink-opposite); }
+.sg-hero-grad-ink-soft      { --hero-grad: var(--wp--preset--color--ink-soft);      --hero-grad-opposite: var(--wp--custom--color--ink-soft-opposite); }
 /* When a gradient color is explicitly chosen, recolor the headline to the
  * gradient's paired opposite. The headline sits in the bottom half of the
  * hero (margin-top: auto) where the gradient is strongest, so a dark
  * gradient + default dark headline becomes unreadable without this. */
 [class*="sg-hero-grad-"] .sg-block-hero-full-headline h1 {
-  color: var(--hero-grad-opposite, var(--wp--preset--color--dark));
+  color: var(--hero-grad-opposite, var(--wp--preset--color--ink));
 }
 .sg-block-hero-full-headline {
   position: relative;
@@ -1180,7 +1473,7 @@ a { color: inherit; }
   margin-bottom: var(--wp--preset--spacing--30);
 }
 .sg-block-hero-full-headline h1 {
-  color: var(--wp--preset--color--dark);
+  color: var(--wp--preset--color--ink);
   margin: 0;
 }
 .sg-block-hero-full-headline h1 strong {
@@ -1194,7 +1487,7 @@ a { color: inherit; }
    * keeps the hardcoded fallback in case neither class is present. */
   max-width: var(--wp--custom--layout--narrow-size, 800px);
   width: 100%;
-  background: #FFFFFF;
+  background: var(--wp--preset--color--panel, #ffffff);
   border-radius: var(--wp--custom--radius--default);
   box-shadow: var(--wp--preset--shadow--xl);
   padding: var(--wp--preset--spacing--40);
@@ -1224,6 +1517,9 @@ a { color: inherit; }
 /* Full-width hero — alignfull, 50/50 image (left) and content (right).
  * Image side has a brand backdrop so transparent product PNGs read clearly. */
 .sg-block-hero-bg {
+  /* Media inset, declared once so the dynamic-height rules below can
+     inset an absolutely positioned image by exactly the same amount. */
+  --ccc-hero-media-pad: var(--wp--preset--spacing--30);
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: stretch;
@@ -1246,7 +1542,7 @@ a { color: inherit; }
 .sg-block-hero-bg-media {
   width: 100%;
   height: 100%;
-  padding: var(--wp--preset--spacing--30);
+  padding: var(--ccc-hero-media-pad);
   display: flex;
 }
 .sg-block-hero-bg-image,
@@ -1258,8 +1554,8 @@ a { color: inherit; }
   display: block;
 }
 /* Media-spacing OFF — media fills its half edge-to-edge, no drop shadow. */
-.sg-block-hero-bg.no-media-spacing .sg-block-hero-bg-media {
-  padding: 0;
+.sg-block-hero-bg.no-media-spacing {
+  --ccc-hero-media-pad: 0px;
 }
 .sg-block-hero-bg.no-media-spacing .sg-block-hero-bg-image,
 .sg-block-hero-bg.no-media-spacing .sg-block-hero-bg-video {
@@ -1283,7 +1579,59 @@ a { color: inherit; }
 .sg-block-hero-bg.dynamic-height .sg-block-hero-bg-media {
   min-height: 0;
   overflow: hidden;
+  /* Containing block for the absolutely positioned media below. */
+  position: relative;
 }
+
+/* ...and `min-height: 0` alone was NOT enough, which is the bug this
+ * rule fixes. It removes the automatic MINIMUM size; it does nothing
+ * about the maximum. The media is `height: 100%` of a grid row whose
+ * height is exactly what is being computed, so that percentage is
+ * indefinite during intrinsic sizing and falls back to auto — the media
+ * sizes to its content, and its content is an image at INTRINSIC
+ * height. The content column never gets to drive the row.
+ *
+ * It hid for a long time because it only bites with a TALL image. Half
+ * a 1440px viewport is ~720px wide; a 3:2 landscape photo lands ~480px
+ * tall, shorter than a typical content column, so the content wins by
+ * accident and everything looks right. The same block with a 3:4
+ * portrait photo lands ~960px tall — taller than the viewport — and the
+ * hero reads as full height even though full height is switched OFF.
+ * (Found on trialport /biopharma, 960x1280, against /communities,
+ * 2560x1707, which looked correct on identical markup.)
+ *
+ * Taking the image out of flow is the fix: an absolutely positioned box
+ * contributes nothing to its parent's size, so the row is sized by the
+ * content column alone and the image then covers whatever height that
+ * produces.
+ *
+ * The offsets and the size are BOTH written out, and only top/left are
+ * used, because an <img> is a REPLACED element: given `width: auto`,
+ * an absolutely positioned replaced box takes its INTRINSIC width and
+ * ignores the opposing inset, so `inset: …` alone positions the image
+ * but leaves it at full photo size (verified in-browser — the hero
+ * collapsed correctly while the image still measured 1280px). Setting
+ * top/left only, with an explicit size, avoids over-constraining the
+ * box in the first place. Percentages on an out-of-flow box resolve
+ * against the PADDING box, so subtracting twice the media's padding
+ * lands the image exactly on the content box — which is what preserves
+ * the media-spacing gap and the drop shadow sitting in it. With spacing
+ * off the padding is 0px and the calc collapses to 100%.
+ *
+ * Deliberately scoped to .dynamic-height. The 100vh path has the same
+ * latent behaviour — a portrait image can push a "full height" hero
+ * past the viewport — but nothing has asked for that to change, and
+ * there it is at least growing a block whose whole job is to be tall.
+ * Fix it the same way if it ever surfaces. */
+.sg-block-hero-bg.dynamic-height .sg-block-hero-bg-image,
+.sg-block-hero-bg.dynamic-height .sg-block-hero-bg-video {
+  position: absolute;
+  top: var(--ccc-hero-media-pad);
+  left: var(--ccc-hero-media-pad);
+  width: calc(100% - 2 * var(--ccc-hero-media-pad));
+  height: calc(100% - 2 * var(--ccc-hero-media-pad));
+}
+
 .sg-block-hero-bg-content {
   padding: var(--wp--preset--spacing--60);
   display: flex;
@@ -1335,7 +1683,7 @@ a { color: inherit; }
  * / .has-*-gradient-background helpers (specificity 0,1,0) can override when the admin
  * picks a bg color or gradient from the native picker. */
 :where(.sg-block-overlay-content) {
-  background: #FFFFFF;
+  background: var(--wp--preset--color--panel, #ffffff);
 }
 .sg-block-overlay-content {
   grid-column: 2;
@@ -1432,7 +1780,7 @@ a { color: inherit; }
   aspect-ratio: 16 / 9;
   background-size: cover;
   background-position: center;
-  background-color: var(--wp--preset--color--light-alt);
+  background-color: var(--wp--custom--gray--40);
   border-radius: calc(var(--wp--custom--radius--default) * 0.5);
   margin-top: calc((var(--wp--preset--spacing--80) + var(--wp--preset--spacing--30)) * -1);
   box-shadow: var(--wp--preset--shadow--lg);
@@ -1458,7 +1806,7 @@ a { color: inherit; }
 }
 .sg-align-caption {
   margin-top: var(--wp--preset--spacing--30);
-  color: var(--wp--preset--color--dark);
+  color: var(--wp--preset--color--ink);
   text-align: center;
 }
 .sg-align-caption code {
@@ -1781,7 +2129,7 @@ a { color: inherit; }
   flex-shrink: 0;
   background-size: cover;
   background-position: center;
-  background-color: var(--wp--preset--color--light-alt);
+  background-color: var(--wp--custom--gray--40);
   border-radius: calc(var(--wp--custom--radius--default) * 0.5);
   transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
 }
@@ -1887,9 +2235,9 @@ a { color: inherit; }
 .sg-team-member {
   display: flex;
   flex-direction: column;
-  background: var(--wp--preset--color--light);
+  background: var(--wp--preset--color--canvas);
   border-radius: var(--wp--custom--radius--default);
-  box-shadow: var(--wp--preset--shadow--md);
+  box-shadow: var(--wp--custom--elevation--card, var(--wp--preset--shadow--md));
   overflow: hidden;
 }
 .sg-team-photo {
@@ -1897,7 +2245,7 @@ a { color: inherit; }
   width: 100%;
   background-size: cover;
   background-position: center;
-  background-color: var(--wp--preset--color--light-alt);
+  background-color: var(--wp--custom--gray--40);
 }
 .sg-team-content {
   display: flex;
@@ -1942,7 +2290,7 @@ a { color: inherit; }
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  background: var(--wp--preset--color--light-alt);
+  background: var(--wp--custom--gray--40);
   border-radius: var(--wp--custom--radius--default);
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
@@ -1988,7 +2336,7 @@ a { color: inherit; }
   transform: scale(1.05) rotate(-2deg);
 }
 /* Title chip sits bottom-right, overlaying the image. A semi-transparent
- * --wp--preset--color--dark pill (65% opacity) keeps it readable on any photo. All
+ * --wp--preset--color--ink pill (65% opacity) keeps it readable on any photo. All
  * typography — font size, weight, line-height, letter-spacing — comes
  * from the paragraph's default styles (.has-medium-font-size on the
  * element sets the size). */
@@ -1999,8 +2347,8 @@ a { color: inherit; }
   margin: 0;
   max-width: calc(100% - var(--wp--preset--spacing--20) * 2);
   padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--20);
-  background: color-mix(in srgb, var(--wp--preset--color--dark) 65%, transparent);
-  color: var(--wp--preset--color--light);
+  background: color-mix(in srgb, var(--wp--preset--color--ink) 65%, transparent);
+  color: var(--wp--preset--color--canvas);
   border-radius: var(--wp--custom--radius--default);
   pointer-events: none;
   backdrop-filter: blur(var(--wp--custom--bg--blur));
@@ -2018,7 +2366,7 @@ a { color: inherit; }
 
 /* ==================================================================
  * Image tiles — 4-col grid of portrait 3:4 image cards, each a full-area
- * link. A vertical dark gradient (transparent → --wp--preset--color--dark) over the
+ * link. A vertical dark gradient (transparent → --wp--preset--color--ink) over the
  * image keeps the bottom-left blurb readable. Hover zooms the image
  * layer and upgrades the shadow from --wp--preset--shadow--md to --wp--preset--shadow--lg.
  * ================================================================== */
@@ -2102,7 +2450,7 @@ a { color: inherit; }
     to bottom,
     transparent 0%,
     transparent 40%,
-    var(--wp--preset--color--dark) 100%
+    var(--wp--preset--color--ink) 100%
   );
   pointer-events: none;
 }
@@ -2112,7 +2460,7 @@ a { color: inherit; }
   bottom: var(--wp--preset--spacing--20);
   right: var(--wp--preset--spacing--20);
   margin: 0;
-  color: var(--wp--preset--color--light);
+  color: var(--wp--preset--color--canvas);
   font-weight: 700;
 }
 .sg-block-image-tile:hover {
@@ -2165,7 +2513,11 @@ a { color: inherit; }
   .sg-block-split { grid-template-columns: 1fr; }
   .sg-block-split-image {
     aspect-ratio: 16 / 9;
-    min-height: 0;
+    /* Explicit floor: when stacked, this is an empty grid item with only a
+       background-image, and iOS Safari computes aspect-ratio height to 0 on
+       it. The min-height guarantees the image is visible; aspect-ratio still
+       governs where it's honored. */
+    min-height: 220px;
   }
   .sg-block-split-body { padding: var(--wp--preset--spacing--30); }
   /* Reset the desktop .content-left swap — with grid-template-columns: 1fr
@@ -2216,16 +2568,18 @@ a { color: inherit; }
     scroll-snap-align: center;
   }
 
-  /* Icon feature row — 2×2 grid. Reset the desktop left-divider rule
-   * and paint a grid: right border on the left column, bottom border
-   * on the top row, no trailing borders on the right/bottom edges. */
+  /* Icon feature row — 2-up grid. Reset the desktop divider rules (the
+   * is-row-start / is-first-row classes describe the DESKTOP column
+   * count) and repaint for two columns with nth-child, which works here
+   * because the column count is fixed: left border on even items
+   * (column 2), top border on every row after the first. */
   .sg-block-feature-row { grid-template-columns: repeat(2, 1fr); }
-  .sg-block-feature-row-item:not(:first-child) { border-left: 0; }
-  .sg-block-feature-row-item:nth-child(odd) {
-    border-right: 1px solid var(--wp--preset--color--light-alt);
+  .sg-block-feature-row-item { border-left: 0; border-top: 0; }
+  .sg-block-feature-row-item:nth-child(even):not([class*="has-"][class*="-background-color"]) {
+    border-left: 1px solid var(--wp--custom--gray--40);
   }
-  .sg-block-feature-row-item:nth-child(-n+2) {
-    border-bottom: 1px solid var(--wp--preset--color--light-alt);
+  .sg-block-feature-row-item:nth-child(n+3):not([class*="has-"][class*="-background-color"]) {
+    border-top: 1px solid var(--wp--custom--gray--40);
   }
   /* If the item count is odd, the last item would leave an empty
    * quadrant in the bottom-right. Span it across both columns so the
@@ -2233,7 +2587,7 @@ a { color: inherit; }
    * the last item sits in an odd position (total count is odd). */
   .sg-block-feature-row-item:last-child:nth-child(odd) {
     grid-column: 1 / -1;
-    border-right: 0;
+    border-left: 0;
   }
 }
 
@@ -2402,7 +2756,18 @@ header.wp-block-template-part
  * CSS: equal padding, top-right close button, left-aligned link list with
  * divider borders, and a full-width CTA button below.
  * ================================================================== */
-.wp-block-navigation__responsive-container.is-menu-open {
+/* Both selectors are deliberate. Core ships
+ * `.is-menu-open:not(.disable-default-overlay)` — three classes, so it
+ * OUT-SPECIFIES a bare `.is-menu-open` and wins. Worse, what core sets is
+ * `clamp(1rem, var(--wp--style--root--padding-top), 20rem)`, and our root
+ * padding top/bottom is `0`: a unitless number is not a <length>, so the
+ * clamp is invalid, the whole shorthand is invalid at computed-value time,
+ * and padding resolves to the INITIAL value — 0. The overlay's links end up
+ * flush against the screen edge. Matching core's specificity here lets our
+ * value win on source order (this file loads after core's block styles);
+ * the bare selector still covers the disable-default-overlay case. */
+.wp-block-navigation__responsive-container.is-menu-open,
+.wp-block-navigation__responsive-container.is-menu-open:not(.disable-default-overlay) {
   padding: var(--wp--preset--spacing--30);
   /* Let the overlay scroll when the menu is taller than the viewport.
    * Combined with flex-column + margin-top:auto on the CTA below, this
@@ -2475,7 +2840,7 @@ header.wp-block-template-part
   padding-top: var(--wp--preset--spacing--10);
   padding-bottom: var(--wp--preset--spacing--10);
   border-bottom: var(--wp--custom--border--default-width) solid
-    var(--wp--preset--color--light-alt);
+    var(--wp--custom--gray--40);
 }
 .wp-block-navigation__responsive-container.is-menu-open
   .wp-block-navigation-item__content {
@@ -2697,5 +3062,3296 @@ header.wp-block-template-part
   /* Two columns on phones. */
   .sg-block-highlighted-image-gallery__thumbs {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ==================================================================
+ * Image Links with Icons (classic-city-core/image-link-cards).
+ *
+ * Grid of clickable image cards. Each card: aspect-locked image on top,
+ * colored footer bar (palette slug → has-{slug}-background-color → text
+ * + icon auto-flip via the parent's palette pair-helpers) with
+ * FontAwesome icon + title + right-arrow affordance.
+ *
+ * Column count comes from the block's `columns` field via the inline
+ * `--block-columns` CSS var. Gap uses the WP core block-gap token so
+ * spacing inherits theme.json defaults and tracks any per-child
+ * override.
+ *
+ * Image aspect-ratio is locked at 1:1 so user-uploaded images of any
+ * dimension fit consistently. `object-fit: cover` does the cropping.
+ * ================================================================== */
+.sg-block-image-link-cards {
+  /* Block-wide vertical spacing. Head → grid gap inherits from the
+     normal block-gap so it tracks theme.json. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--preset--spacing--40, 2rem);
+}
+
+/* Head section uses the shared `.sg-block-head` rule (above) — emitted
+   by the shared `ccc_render_block_head()` helper. Previously had
+   per-block __head + __heading overrides here; both deduplicated. */
+
+.sg-block-image-link-cards__grid {
+  display: grid;
+  grid-template-columns: repeat(var(--block-columns, 4), minmax(0, 1fr));
+  gap: var(--wp--style--block-gap, 1.5rem);
+}
+
+/* Each card is the entire <a>. `color: inherit` lets the inner footer
+   bar's `has-background` + palette pair-helpers control text color
+   instead of the user-agent's default link color. `overflow: hidden`
+   clips the image + bar to the corner radius. */
+.sg-block-image-link-cards__card {
+  display: flex;
+  flex-direction: column;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--wp--custom--radius--default, 0);
+  overflow: hidden;
+  background-color: transparent;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.sg-block-image-link-cards__card:hover,
+.sg-block-image-link-cards__card:focus-visible {
+  /* Subtle lift on hover/focus — readable affordance without overdoing it. */
+  transform: translateY(-2px);
+  box-shadow: var(--wp--preset--shadow--md, 0 4px 10px rgba(0,0,0,0.12));
+  outline: 0;
+}
+
+/* Square aspect image frame. `aspect-ratio` keeps cards uniform
+   regardless of uploaded image dimensions. */
+.sg-block-image-link-cards__image {
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background-color: var(--wp--custom--gray--40, #e5e5e5);
+}
+.sg-block-image-link-cards__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Footer bar. `has-{slug}-background-color has-background` (added in
+   render.php) applies the palette bg; the parent's palette pair-helper
+   CSS in inc/enqueue.php sets text + icon color to the slug's opposite
+   automatically. */
+.sg-block-image-link-cards__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--wp--preset--spacing--20, 0.75rem);
+  padding: var(--wp--preset--spacing--20, 0.75rem) var(--wp--preset--spacing--30, 1.25rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  /* font-size scales with viewport; pin to a medium scale for the bar. */
+  font-size: var(--wp--preset--font-size--medium, 1rem);
+  min-height: 3.25rem;
+}
+
+.sg-block-image-link-cards__icon {
+  flex: 0 0 auto;
+  font-size: 1.25em;
+  line-height: 1;
+}
+
+.sg-block-image-link-cards__title {
+  /* Center the title between the leading icon and trailing arrow. */
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sg-block-image-link-cards__arrow {
+  flex: 0 0 auto;
+  font-size: 1.1em;
+  line-height: 1;
+  /* Slide the arrow forward slightly on hover for a clearer "go" cue. */
+  transition: transform 0.2s ease;
+}
+.sg-block-image-link-cards__card:hover .sg-block-image-link-cards__arrow,
+.sg-block-image-link-cards__card:focus-visible .sg-block-image-link-cards__arrow {
+  transform: translateX(3px);
+}
+
+/* Responsive column collapse. The inline `--block-columns` is the
+   *desktop* target; smaller viewports step down to a reasonable count
+   even when the admin asks for many columns. */
+@media (max-width: 1024px) {
+  .sg-block-image-link-cards__grid {
+    /* Cap at 3 cols on tablets. min() picks the smaller of the
+       admin choice and 3, so 1- and 2-col layouts stay as-is. */
+    grid-template-columns: repeat(min(var(--block-columns, 4), 3), minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .sg-block-image-link-cards__grid {
+    grid-template-columns: repeat(min(var(--block-columns, 4), 2), minmax(0, 1fr));
+  }
+}
+@media (max-width: 480px) {
+  .sg-block-image-link-cards__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==================================================================
+ * Image Card Grid.
+ *
+ * Grid of `.sg-image-card` partials. Block-level CSS handles layout
+ * only — card markup + styling lives in the shared partial above.
+ *
+ * Mobile behavior is class-driven:
+ *   - .is-mobile-stack — collapses to one column under the breakpoint.
+ *   - .is-mobile-scroll — flex horizontal scroller with scroll-snap;
+ *     each card flexes to ~85% viewport width so the next one peeks
+ *     at the right edge.
+ * ================================================================== */
+.sg-block-image-card-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--block-columns, 3), minmax(0, 1fr));
+  gap: var(--wp--style--block-gap, var(--wp--preset--spacing--30, 1.5rem));
+  align-items: stretch;
+}
+
+@media (max-width: 768px) {
+  .sg-block-image-card-grid.is-mobile-stack {
+    grid-template-columns: 1fr;
+  }
+
+  .sg-block-image-card-grid.is-mobile-scroll {
+    /* Switch from grid to flex to enable horizontal scrolling. Each card
+       gets a fixed flex-basis so the carousel behaves consistently across
+       card counts. (No scroll-snap — free-scroll feels better here.) */
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    /* Pull the scroll past the page edge a touch so the bottom-right
+       scrollbar gutter sits below content rather than clipping it. */
+    padding-bottom: var(--wp--preset--spacing--20, 1rem);
+    /* Smooth, modern scrollbar — visible enough to signal scrollability
+       without being heavy. */
+    scrollbar-width: thin;
+  }
+  .sg-block-image-card-grid.is-mobile-scroll > * {
+    flex: 0 0 85%;
+  }
+}
+
+/* ==================================================================
+ * Image Card (shared partial).
+ *
+ * Rendered by `ccc_render_image_card()` in inc/image-card.php. Used by
+ * image-card-grid and any future block that needs the canonical
+ * "image-on-top, body in the middle, optional footer at the bottom"
+ * card style.
+ *
+ * Color treatment is HARDCODED via WP palette helper classes in
+ * markup (has-canvas-background-color (was has-light-background-color)
+ * on the card, has-secondary-color
+ * on the tag, has-cta-color on the footer link). CSS handles layout,
+ * spacing, dividers, and the link-arrow detail only.
+ *
+ * Footer-anchored-to-bottom contract: the card needs `height: 100%`
+ * from its grid cell context (which image-card-grid's CSS provides
+ * via `align-items: stretch` on the grid). `__body` then carries
+ * `flex: 1` so it expands to push the footer block to the card's
+ * bottom edge regardless of body length.
+ * ================================================================== */
+.sg-image-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--wp--custom--radius--default, 0);
+  box-shadow: var(--wp--custom--elevation--card);
+  /* `--card-aspect-ratio` is set inline on the article by render.php
+     so authors can vary the image aspect per-card or per-block. */
+}
+
+.sg-image-card__media {
+  position: relative;
+  aspect-ratio: var(--card-aspect-ratio, 16 / 9);
+  overflow: hidden;
+}
+
+.sg-image-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sg-image-card__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--preset--spacing--20, 1rem);
+  padding: var(--wp--preset--spacing--30, 1.5rem);
+}
+
+/* Tag + title group: a flex column with a tight 10px gap. The title
+   is now a <p> (not a heading), so the parent's eyebrow→heading gap-
+   collapse rule no longer applies — we own the spacing here directly. */
+.sg-image-card__heading-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--preset--spacing--10, 10px);
+}
+
+.sg-image-card__tag {
+  /* is-style-eyebrow handles typography (uppercase, letter-spacing,
+     small font-size); this rule owns the hue. Set as a semantic class
+     here rather than a hardcoded `has-secondary-color` utility on the
+     markup, so a child theme can recolor the tag with a normal
+     selector — no !important war. A direct color on the tag also wins
+     over the color the card's bg pair-helper would otherwise inherit
+     down to it. */
+  margin: 0;
+  color: var(--wp--preset--color--secondary);
+}
+.sg-image-card__tag a {
+  color: inherit;
+  text-decoration: none;
+}
+.sg-image-card__tag a:hover {
+  text-decoration: underline;
+}
+
+.sg-image-card__title {
+  margin: 0;
+  font-size: var(--wp--preset--font-size--large);
+  font-weight: 700;
+  line-height: 1.25;
+}
+.sg-image-card__title a {
+  color: inherit;
+  text-decoration: none;
+}
+.sg-image-card__title a:hover {
+  text-decoration: underline;
+}
+
+.sg-image-card__description {
+  margin: 0;
+  opacity: 0.85;
+}
+
+.sg-image-card__divider {
+  height: 1px;
+  background-color: var(--wp--preset--color--canvas, rgba(0, 0, 0, 0.1));
+  margin: 0 var(--wp--preset--spacing--30, 1.5rem);
+}
+
+.sg-image-card__footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--preset--spacing--20, 1rem);
+  padding: var(--wp--preset--spacing--30, 1.5rem);
+}
+
+.sg-image-card__footer-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.sg-image-card__footer-title {
+  margin: 0;
+  font-weight: 700;
+}
+
+.sg-image-card__footer-subtitle {
+  margin: 0;
+  opacity: 0.7;
+}
+
+.sg-image-card__footer-link {
+  margin: 0;
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: var(--wp--preset--font-size--small, 0.875rem);
+}
+.sg-image-card__footer-link a {
+  /* Hue owned here as a semantic class (cta), not a hardcoded
+     `has-cta-color` utility on the markup — so children recolor with a
+     normal selector instead of fighting WP's !important on the utility. */
+  color: var(--wp--preset--color--cta);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  transition: gap 0.15s ease;
+}
+.sg-image-card__footer-link a:hover {
+  gap: 0.65em;
+}
+.sg-image-card__footer-link-arrow {
+  display: inline-block;
+  line-height: 1;
+}
+
+/* ==================================================================
+ * Stackable.
+ *
+ * Position-sticky wrapper. Multiple Stackables placed back-to-back as
+ * siblings in the same scroll container stick at the same top offset
+ * and visually cover each other in DOM order as the user scrolls —
+ * the later ones rise up and stack on top of the earlier ones.
+ *
+ * Offset is per-instance via the inline `--stackable-offset` CSS var
+ * (set by render.php from the sticky_offset ACF field). Defaults to
+ * spacing--40 below the viewport top. Authors bump it under taller
+ * navbars by picking a larger spacing preset.
+ *
+ * NOTE: position: sticky only sticks within the bounds of its
+ * scrolling ancestor (typically <html>/<body>). Stackables nested
+ * inside a container with `overflow: hidden`, `overflow: auto`, or
+ * `transform` won't stick to the viewport — they'll stick to that
+ * container instead. If you find Stackables not sticking as expected,
+ * check the containing chain for any such overflow / transform
+ * ancestor.
+ * ================================================================== */
+/* Stackable supports two authoring patterns:
+ *
+ *  1. Multi-item (canonical / intuitive): ONE Stackable block with
+ *     N children inside it. Each child sticks at the top offset and
+ *     the next child covers it as the user scrolls. The wrapper
+ *     itself does NOT stick — it just bounds the sticky range so all
+ *     children release together when the wrapper scrolls past.
+ *
+ *  2. Single-item (legacy): N Stackable blocks back-to-back, each
+ *     with one child inside. Each wrapper sticks at the offset and
+ *     subsequent wrappers cover it in DOM order. This matches the
+ *     pre-:has() rendering and is preserved so existing client sites
+ *     keep working.
+ *
+ * We detect with :has(). The default rule (wrapper sticky) covers
+ * legacy + browsers without :has() support — degrades to "no stacking
+ * inside a multi-item stackable," which is benign. The @supports
+ * block then overrides for modern browsers: if the wrapper has >1
+ * authored child, sticky shifts off the wrapper and onto the children.
+ *
+ * Selector path: `> .acf-innerblocks-container > *` because ACF Pro
+ * wraps InnerBlocks in `.acf-innerblocks-container` on the front end.
+ * The container is `display: contents` (see the list near line 400),
+ * so layout-wise the children appear as direct children of the
+ * stackable, but selector-wise we still have to descend through the
+ * actual DOM. */
+.sg-block-stackable {
+  position: sticky;
+  top: var(--stackable-offset, var(--wp--preset--spacing--40));
+  /* Flex column + block-gap so children inside a multi-item Stackable
+     get the theme's default sibling spacing (same rhythm authors are
+     used to from constrained-layout containers — see the "canonical
+     flex-gap pattern" in this theme's CLAUDE.md). The
+     `.acf-innerblocks-container` is `display: contents` (line ~400),
+     so the authored children become real flex children of the wrapper
+     and the gap rule applies to them directly. Single-item Stackables
+     trivially have 0 internal gaps (no siblings). */
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--style--block-gap);
+}
+@supports selector(:has(*)) {
+  .sg-block-stackable:has(> .acf-innerblocks-container > :nth-child(2)) {
+    position: static;
+  }
+  .sg-block-stackable:has(> .acf-innerblocks-container > :nth-child(2)) > .acf-innerblocks-container > * {
+    position: sticky;
+    top: var(--stackable-offset, var(--wp--preset--spacing--40));
+  }
+}
+
+/* ==================================================================
+ * Background Texture.
+ *
+ * Drop-in decorative block that projects a registered texture image
+ * up, down, or both directions from its drop point. The block itself
+ * has effectively no height (1px for editor selectability); a
+ * `::before` pseudo carries the texture and is absolutely positioned.
+ *
+ * Stacking: pseudo lands at `z-index: -1` so the texture sits behind
+ * sibling content in its stacking context.
+ *
+ * CRITICAL: the pseudo intentionally does NOT use `mask-image` or
+ * `mix-blend-mode`. Both properties create implicit stacking contexts
+ * (per the CSS spec). Combining either with `z-index: -1` broke the
+ * negative stacking — the pseudo's local context floated up and the
+ * texture disappeared entirely instead of just sitting behind
+ * siblings. The fade-out at the far edge of the reach is the
+ * responsibility of the texture image itself (PNG alpha channel),
+ * not a CSS gradient mask.
+ *
+ * Reach: 50vh — viewport-relative so the texture scales naturally
+ * across screen sizes without per-breakpoint overrides.
+ *
+ * Visibility model: the texture is visible where adjacent siblings
+ * have no opaque background. Where a sibling has its own bg color,
+ * the sibling paints over the texture in that overlap. That's the
+ * direct consequence of "behind sibling content" — `z-index: -1`
+ * means exactly that. If you want a texture that's visible through
+ * opaque section bgs, design the bgs to be transparent on that
+ * section or use the texture as a `background-image` on the section
+ * itself instead of as a standalone block.
+ *
+ * CSS vars driven by inline style on the wrapper (render.php):
+ *   --texture-url      the texture image URL
+ *   --texture-opacity  respect from theme.json texture entry
+ * (blend-mode intentionally NOT honored — see above.)
+ * ================================================================== */
+.sg-block-background-texture {
+  position: relative;
+  height: 1px;
+  /* Allow the pseudo to spill above/below the 1px footprint. */
+  overflow: visible;
+}
+
+.sg-block-background-texture::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 50vh;
+  background-image: var(--texture-url);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: var(--texture-opacity, 1);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Bottom: pseudo's bottom edge aligns with the block's drop point.
+   Texture extends UPWARD by 50vh. Far-edge fade is the PNG's alpha. */
+.sg-block-background-texture--bottom::before {
+  bottom: 0;
+}
+
+/* Top: pseudo's top edge aligns with the block's drop point. Texture
+   extends DOWNWARD by 50vh. */
+.sg-block-background-texture--top::before {
+  top: 0;
+}
+
+/* Middle: pseudo's vertical center aligns with the block's drop
+   point. Texture extends both ways, 25vh in each direction.
+   `top: -25vh` (not `top: 50%; transform: translateY(-50%)`) because
+   transform ALSO creates a stacking context — same trap as the mask. */
+.sg-block-background-texture--middle::before {
+  top: -25vh;
+}
+
+/* ==================================================================
+ * Swatch Explorer.
+ *
+ * Full-width swatch showcase. A row of scenario tabs drives panels
+ * that each contain a featured "big image" + a horizontally
+ * scrollable swatch row. Click a swatch → swaps the big image.
+ * Tab + swatch state both track via class + aria.
+ *
+ * Layout pattern:
+ *  - Container is full-width with global side padding (same
+ *    technique as hero-gradient).
+ *  - Tab row mirrors product-feature-toggles' look (centered,
+ *    icon + label, active gets bordered box + cta-color icon).
+ *    If a third tab-row block joins, extract to a shared partial.
+ *  - Swatch track is a flex row with overflow-x: auto +
+ *    scroll-snap so swipe / drag / arrow-button all work. Active
+ *    swatch gets a CTA-color border. Swatch width is a CSS custom
+ *    prop that shrinks at the tablet + mobile breakpoints so
+ *    fewer swatches are visible per scroll-port (the count adapts
+ *    naturally — no explicit per-breakpoint count rules).
+ * ================================================================== */
+.sg-block-swatch-explorer {
+  --swatch-width: 8.75rem; /* 140px desktop default */
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--preset--spacing--40, 2rem);
+  /* Global side padding (same pattern as hero-gradient) so on mobile
+     the content area gets the theme.json layout padding naturally. */
+  padding-inline: var(--wp--style--root--padding-left, var(--wp--preset--spacing--40, 2rem));
+  padding-block: var(--wp--preset--spacing--60, 3rem);
+}
+
+/* Tab row — centered, wraps gracefully when a long list of tabs
+   exceeds the viewport. Active state mirrors product-feature-
+   toggles (bordered pill + cta-color icon) but scoped here so the
+   two blocks can diverge visually later without coupling. */
+.sg-block-swatch-explorer__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--wp--preset--spacing--20, 1rem);
+}
+
+.sg-block-swatch-explorer__tab {
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--wp--custom--radius--default, 0);
+  padding: var(--wp--preset--spacing--10, 0.625rem);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wp--preset--spacing--10, 0.625rem);
+  cursor: pointer;
+  font-family: var(--wp--preset--font-family--body, inherit);
+  font-size: var(--wp--preset--font-size--small, 0.875rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--wp--preset--color--ink, currentColor);
+  transition: border-color 0.15s ease;
+}
+.sg-block-swatch-explorer__tab:hover,
+.sg-block-swatch-explorer__tab:focus-visible {
+  border-color: var(--wp--custom--gray--40, rgba(0, 0, 0, 0.1));
+  outline: 0;
+}
+.sg-block-swatch-explorer__tab.is-active {
+  border-color: var(--wp--preset--color--primary, currentColor);
+}
+.sg-block-swatch-explorer__tab-icon {
+  font-size: 1.1em;
+  color: var(--wp--preset--color--secondary, currentColor);
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+.sg-block-swatch-explorer__tab.is-active .sg-block-swatch-explorer__tab-icon {
+  color: var(--wp--preset--color--cta, currentColor);
+}
+
+/* Panels — only one visible at a time. hidden attr is removed by
+   view.js when activated. */
+.sg-block-swatch-explorer__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--preset--spacing--40, 2rem);
+}
+.sg-block-swatch-explorer__panel[hidden] {
+  display: none;
+}
+
+/* Big featured image. Aspect-locked so swapping images doesn't make
+   the layout jump. */
+.sg-block-swatch-explorer__big-image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--wp--custom--radius--default, 0);
+}
+.sg-block-swatch-explorer__big-image-el {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Swatch row layout: arrow / track / arrow. Track is flex with
+   horizontal overflow + scroll-snap. */
+.sg-block-swatch-explorer__swatches {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--wp--preset--spacing--20, 1rem);
+}
+
+.sg-block-swatch-explorer__scroll-prev,
+.sg-block-swatch-explorer__scroll-next {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: var(--wp--preset--spacing--10, 0.625rem);
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: var(--wp--preset--color--ink, currentColor);
+  transition: opacity 0.15s ease;
+}
+.sg-block-swatch-explorer__scroll-prev:disabled,
+.sg-block-swatch-explorer__scroll-next:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.sg-block-swatch-explorer__swatch-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  gap: var(--wp--preset--spacing--20, 1rem);
+  padding-bottom: var(--wp--preset--spacing--10, 0.625rem);
+  scrollbar-width: thin;
+}
+
+.sg-block-swatch-explorer__swatch {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  flex: 0 0 var(--swatch-width);
+  width: var(--swatch-width);
+  scroll-snap-align: start;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--preset--spacing--10, 0.625rem);
+  text-align: center;
+}
+
+.sg-block-swatch-explorer__swatch-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background-color: var(--wp--custom--gray--40, #e6e6e6);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: var(--wp--custom--radius--default, 0);
+  /* Border carries the active-state cta indicator. Inset slightly
+     so the inactive border doesn't shift the layout when toggled. */
+  border: 3px solid transparent;
+  transition: border-color 0.15s ease;
+}
+.sg-block-swatch-explorer__swatch.is-active .sg-block-swatch-explorer__swatch-image {
+  border-color: var(--wp--preset--color--cta, currentColor);
+}
+.sg-block-swatch-explorer__swatch:hover .sg-block-swatch-explorer__swatch-image {
+  border-color: var(--wp--custom--gray--40, rgba(0, 0, 0, 0.1));
+}
+
+.sg-block-swatch-explorer__swatch-name {
+  font-size: var(--wp--preset--font-size--x-small, 0.75rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--wp--preset--color--ink, currentColor);
+}
+
+/* Responsive: shrink the per-swatch width at breakpoints so fewer
+   swatches fit per visible scroll-port. Counts adapt naturally. */
+@media (max-width: 900px) {
+  .sg-block-swatch-explorer { --swatch-width: 7rem; }
+}
+@media (max-width: 600px) {
+  .sg-block-swatch-explorer { --swatch-width: 6rem; }
+  .sg-block-swatch-explorer__big-image { aspect-ratio: 4 / 3; }
+}
+
+/* ==================================================================
+ * Hero — Gradient.
+ *
+ * Full-width image hero. Layer stack (bottom→top):
+ *   - Parent `has-{slug}-background-color` paints the entire hero in
+ *     the selected palette slug (the base layer).
+ *   - .__image — bg-image set inline by render.php, opacity 0.7 so the
+ *     palette color shows through ~30% everywhere. object-fit-style
+ *     via background-size: cover; position-bias toward center.
+ *   - .__gradient — directional `linear-gradient(to bottom left,
+ *     transparent, --hero-gradient-color)`. The CSS var is set inline
+ *     on the wrapper by render.php and tracks whichever palette slug
+ *     the parent's bg-color uses. The fade goes transparent (top-
+ *     right) → opaque palette color (bottom-left) so text in the
+ *     bottom-left reads cleanly against the image.
+ *   - .__content — relative-positioned wrapper that constrains the
+ *     InnerBlocks to the global content-size and centers them.
+ *
+ * Text-color cascade for InnerBlocks (h1, paragraph, eyebrow) is
+ * handled by the parent's per-palette pair-helpers — they read the
+ * has-{slug}-background-color on the parent and color descendant
+ * text to the slug's opposite automatically. No per-element color
+ * picking required by authors.
+ * ================================================================== */
+.sg-block-hero-gradient {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  /* Global side padding lives on the container, not the inner
+     content. On mobile this guarantees the content area gets natural
+     side spacing without per-breakpoint overrides. Bg image and
+     gradient overlay still extend full-width because they're
+     absolutely positioned and `inset: 0` resolves to the parent's
+     padding-box edges (which include the padding). */
+  padding-inline: var(--wp--style--root--padding-left, var(--wp--preset--spacing--40, 2rem));
+  padding-block: var(--wp--preset--spacing--80, 4rem);
+}
+
+.sg-block-hero-gradient__image {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.sg-block-hero-gradient__gradient {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  /* `to bottom left` reads as "fade starts top-right (transparent)
+     and ends bottom-left (full color)" — exactly what the spec asks
+     for. Color is whatever palette slug the parent's bg-color uses,
+     wired via the --hero-gradient-color inline var set in render.php. */
+  background: linear-gradient(
+    to bottom left,
+    transparent 0%,
+    var(--hero-gradient-color, var(--wp--preset--color--primary, currentColor)) 100%
+  );
+  pointer-events: none;
+}
+
+.sg-block-hero-gradient__content {
+  position: relative;
+  z-index: 2;
+  /* Constrain to global content-size and center. Padding-inline
+     intentionally NOT set here — it lives on the container so the
+     bg image + gradient extend past the padding edges naturally. */
+  max-width: var(--wp--style--global--content-size, 1200px);
+  margin-inline: auto;
+  /* Canonical InnerBlocks layout: flex column + gap=block-gap on
+     the InnerBlocks wrapper, paired with `display: contents` on the
+     acf-innerblocks-container (added to the list above) so the
+     authored eyebrow / h1 / paragraph / buttons become flex children
+     for layout purposes. Together with the parent theme's eyebrow→h1
+     collapse rule this lands a clean 10px eyebrow→h1 gap and
+     block-gap (30px) between everything else. Same pattern as
+     hero-content, hero-bg-content, split-body, cta-inner, etc. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--style--block-gap);
+}
+
+/* Modifier: narrow content stack.
+ *
+ * Wrapper stays at content-size so its left edge keeps aligning with
+ * the rest of the page's 1200px-centered content; the inner children
+ * are capped at narrow-size for shorter line lengths. Children sit
+ * flush-left in LTR (flex default with explicit max-width on each).
+ * Pair with .content-align-center to center them within content-size. */
+.sg-block-hero-gradient__content.content-width-narrow > .acf-innerblocks-container > * {
+  max-width: var(--wp--custom--layout--narrow-size);
+}
+
+/* Modifier: center alignment.
+ *
+ * Centers the flex children horizontally (works whether content is
+ * full content-size or narrow-size). text-align: center centers
+ * inline content (eyebrow + headline + paragraphs); the explicit
+ * wp-block-buttons rule centers the buttons row (which is its own
+ * flex container — text-align doesn't propagate through that). */
+.sg-block-hero-gradient__content.content-align-center {
+  align-items: center;
+  text-align: center;
+}
+.sg-block-hero-gradient__content.content-align-center .wp-block-buttons {
+  justify-content: center;
+}
+
+/* ==================================================================
+ * Product Feature Toggles.
+ *
+ * Tabbed feature switcher. A horizontal row of icon toggles drives a
+ * two-column panel: image + floating caption (left), headline + body +
+ * detail rows + CTA button (right). Each toggle is its own product
+ * variant or category; only one panel is visible at a time.
+ *
+ * Per-toggle detail row accent color is plumbed via `--detail-color`
+ * (set inline on the panel by render.php), so authors can pick any
+ * palette slug per toggle without per-toggle CSS overrides.
+ * ================================================================== */
+.sg-block-product-feature-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--preset--spacing--40, 2rem);
+}
+
+/* Tab row — horizontal flex, centered. Wraps gracefully on narrow
+   viewports so a long list of tabs doesn't blow the layout. */
+.sg-block-product-feature-toggles__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch;
+  gap: var(--wp--preset--spacing--20, 1rem);
+}
+
+.sg-block-product-feature-toggles__tab {
+  /* Reset button defaults; we render this as a styled icon + label
+     button-but-not-quite. */
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--wp--custom--radius--default, 0);
+  padding: var(--wp--preset--spacing--10, 0.625rem);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wp--preset--spacing--10, 0.625rem);
+  cursor: pointer;
+  font-family: var(--wp--preset--font-family--body, inherit);
+  font-size: var(--wp--preset--font-size--small, 0.875rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--wp--preset--color--ink, currentColor);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.sg-block-product-feature-toggles__tab:hover,
+.sg-block-product-feature-toggles__tab:focus-visible {
+  border-color: var(--wp--custom--gray--40, rgba(0, 0, 0, 0.1));
+  outline: 0;
+}
+
+.sg-block-product-feature-toggles__tab.is-active {
+  /* Active state: bordered box with primary color. Icon flips to CTA
+     to draw the eye to the live selection. */
+  border-color: var(--wp--preset--color--primary, currentColor);
+}
+
+.sg-block-product-feature-toggles__tab-icon {
+  font-size: 1.1em;
+  color: var(--wp--preset--color--secondary, currentColor);
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+.sg-block-product-feature-toggles__tab.is-active .sg-block-product-feature-toggles__tab-icon {
+  color: var(--wp--preset--color--cta, currentColor);
+}
+
+.sg-block-product-feature-toggles__divider {
+  height: 1px;
+  background-color: var(--wp--custom--gray--40, rgba(0, 0, 0, 0.1));
+  width: 100%;
+  margin: 0;
+}
+
+/* PFT tabpanel: only one visible at a time. Server-rendered with
+   `hidden` on inactive ones; view.js toggles `is-active` + the hidden
+   attribute. The 2-col grid layout lives on .sg-block-feature-detail
+   (the partial's root, shared by both PFT and the feature-detail
+   standalone block) — see that rule below. */
+.sg-block-product-feature-toggles__tabpanel[hidden] {
+  display: none;
+}
+
+/* Shared 2-col layout for the feature-detail panel. Lives on the
+   partial's root so it applies whether the partial is rendered inside
+   a PFT tabpanel OR by the standalone feature-detail block. */
+.sg-block-feature-detail {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--wp--preset--spacing--50, 2.5rem);
+  align-items: start;
+}
+
+/* Left column: image with floating caption card overlay. */
+.sg-block-feature-detail__image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: var(--wp--custom--radius--default, 0);
+}
+
+.sg-block-feature-detail__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Caption card overhangs the image's bottom-left corner. The orange
+   accent bar on the left edge is a `::before` pseudo-element so we
+   don't need extra markup. */
+.sg-block-feature-detail__caption {
+  position: absolute;
+  left: var(--wp--preset--spacing--30, 1.5rem);
+  bottom: var(--wp--preset--spacing--30, 1.5rem);
+  background-color: var(--wp--preset--color--canvas, #fff);
+  padding: var(--wp--preset--spacing--20, 1rem) var(--wp--preset--spacing--30, 1.25rem);
+  max-width: 75%;
+  box-shadow: var(--wp--custom--elevation--card, var(--wp--preset--shadow--md));
+  border-radius: var(--wp--custom--radius--default, 0);
+}
+
+.sg-block-feature-detail__caption::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--wp--preset--color--cta, currentColor);
+}
+
+.sg-block-feature-detail__caption-subtitle {
+  margin: 0;
+  font-size: var(--wp--preset--font-size--x-small, 0.75rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--wp--preset--color--ink-soft, currentColor);
+}
+
+.sg-block-feature-detail__caption-title {
+  margin: 0;
+  font-size: var(--wp--preset--font-size--large, 1.1rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--wp--preset--color--ink, currentColor);
+}
+
+/* Right column: text + detail list + CTA. */
+.sg-block-feature-detail__right {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--preset--spacing--30, 1.5rem);
+}
+
+/* Headline inherits all typography from theme.json's elements.h3 via
+   the .wp-block-heading family. No overrides here — each child theme
+   gets to decide how this scale looks. */
+.sg-block-feature-detail__headline {
+  margin: 0;
+}
+
+.sg-block-feature-detail__description {
+  margin: 0;
+  font-size: var(--wp--preset--font-size--medium, 1rem);
+}
+
+/* Detail row list — vertical stack, gap between rows. */
+.sg-block-feature-detail__details {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--preset--spacing--20, 1rem);
+}
+
+/* One detail row: panel-tinted card with a colored left bar driven by
+   the panel's --detail-color CSS prop (set inline by render.php from
+   the per-toggle right_detail_color palette slug). */
+.sg-block-feature-detail__detail {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wp--preset--spacing--20, 1rem);
+  background-color: var(--wp--preset--color--panel, #ffffff);
+  border-left: 4px solid var(--detail-color, var(--wp--preset--color--secondary, currentColor));
+  border-radius: var(--wp--custom--radius--default, 0);
+  padding: var(--wp--preset--spacing--20, 1rem);
+}
+
+.sg-block-feature-detail__detail-icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: var(--wp--preset--color--canvas, #f8f9fa);
+  border-radius: var(--wp--custom--radius--default, 0);
+  color: var(--detail-color, var(--wp--preset--color--secondary, currentColor));
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.sg-block-feature-detail__detail-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sg-block-feature-detail__detail-label {
+  margin: 0;
+  font-size: var(--wp--preset--font-size--medium, 1rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--wp--preset--color--ink, currentColor);
+}
+
+.sg-block-feature-detail__detail-desc {
+  margin: 0;
+  font-size: var(--wp--preset--font-size--small, 0.9rem);
+}
+
+/* CTA button — outlined by default to match the mockup. The trailing
+   arrow is a sibling span so it inherits color from the button text. */
+.sg-block-feature-detail__cta {
+  margin-top: var(--wp--preset--spacing--10, 0.5rem);
+}
+
+.sg-block-feature-detail__cta-arrow {
+  display: inline-block;
+  margin-left: 0.4em;
+  transform: translateY(-1px);
+}
+
+/* Mobile: collapse the panel to single column, image first, content below. */
+@media (max-width: 900px) {
+  .sg-block-feature-detail {
+    grid-template-columns: 1fr;
+  }
+  .sg-block-product-feature-toggles__tab {
+    /* Tighter horizontal padding so 4+ tabs still fit on phones. */
+    padding-inline: var(--wp--preset--spacing--20, 0.75rem);
+  }
+}
+
+/* ==================================================================
+ * Feature Showcase (.sg-block-feature-showcase)
+ *
+ * Two stacked sections: a colored "top panel" with centered title + WYSIWYG
+ * + figure-wrapped image, and a row of icon-feature pods underneath.
+ *
+ * Top panel padding is spacing--30 on three sides; bottom is flush so the
+ * image can bleed to the lower edge of the panel (Tailscale-style hero).
+ *
+ * The native bg picker is stripped off the block root by render.php and
+ * re-applied to `.sg-block-feature-showcase__top` only — so the icon pods
+ * stay transparent against the page bg.
+ * ================================================================== */
+/* Parent-most owns the corner radius + clips inner sections to it.
+   No gap between the colored top panel and the pod row — they butt
+   directly against each other so a future border on `.__pod` can sit
+   flush with the panel edge. */
+.sg-block-feature-showcase {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--wp--custom--radius--default);
+  overflow: hidden;
+}
+
+.sg-block-feature-showcase__top {
+  padding: var(--wp--preset--spacing--60) var(--wp--preset--spacing--30) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--wp--preset--spacing--30);
+  text-align: center;
+}
+
+.sg-block-feature-showcase__top-content {
+  max-width: var(--wp--custom--layout--narrow-size, 800px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--preset--spacing--20);
+}
+
+.sg-block-feature-showcase__title {
+  margin: 0;
+}
+
+.sg-block-feature-showcase__description > :first-child { margin-top: 0; }
+.sg-block-feature-showcase__description > :last-child { margin-bottom: 0; }
+
+/* Figure is flush with the panel's bottom edge — the panel has zero
+   bottom padding so the image clips cleanly against the colored bg. */
+.sg-block-feature-showcase__figure {
+  margin: 0;
+  width: 100%;
+  max-width: var(--wp--style--global--wide-size, 1200px);
+  display: block;
+}
+.sg-block-feature-showcase__figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Bottom: icon pod grid. No gap between pods — they sit edge-to-edge so
+   a future border treatment can share edges cleanly. Padding lives on
+   each `.__pod` instead, not the grid. Paints the card-bg so the row
+   reads as the bottom half of the same rounded shell as the top panel. */
+.sg-block-feature-showcase__pods {
+  display: grid;
+  grid-template-columns: repeat(var(--block-columns, 3), 1fr);
+  background: var(--wp--preset--color--panel, #ffffff);
+}
+
+.sg-block-feature-showcase__pod {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wp--preset--spacing--10);
+  padding: var(--wp--preset--spacing--30);
+}
+
+.sg-block-feature-showcase__pod-icon {
+  color: var(--wp--preset--color--primary);
+  font-size: var(--wp--preset--spacing--30);
+  line-height: 1;
+  margin-bottom: var(--wp--preset--spacing--10);
+}
+
+.sg-block-feature-showcase__pod-title {
+  margin: 0;
+}
+
+.sg-block-feature-showcase__pod-body {
+  margin: 0;
+}
+
+/* Pin the button to the pod's bottom edge so every pod's button aligns
+   on the same baseline regardless of how tall the body copy runs. The
+   grid's default `align-items: stretch` makes pods equal-height; the
+   `margin-top: auto` then shoves the button to the bottom. */
+.sg-block-feature-showcase__pod-btn {
+  margin-top: auto;
+  padding-top: var(--wp--preset--spacing--10);
+}
+
+/* Mobile: collapse pods. Top panel can keep its layout — title + image
+   already stack vertically. */
+@media (max-width: 900px) {
+  .sg-block-feature-showcase__pods {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .sg-block-feature-showcase__pods {
+    grid-template-columns: 1fr;
+  }
+  .sg-block-feature-showcase__top {
+    padding: var(--wp--preset--spacing--40) var(--wp--preset--spacing--20) 0;
+  }
+}
+
+/* ==================================================================
+ * Style-guide block descriptors.
+ *
+ * Rendered above every block on /style-guide by the
+ * `ccc_sg_block_descriptor()` helper in patterns/style-guide.php. Carries
+ * the block name, a "kind" pill (Custom / Hybrid / Gutenberg), the
+ * block.json description, and per-block usage guidance.
+ *
+ * Visually: a tinted card with an accent-color left bar. The accent bar
+ * + kind pill share the same hue per kind so authors can scan the page
+ * and immediately tell which blocks are pure-ACF (Custom), ACF wrapping
+ * InnerBlocks (Hybrid), or core WP blocks (Gutenberg).
+ *
+ * All hues pull from theme.json palette presets so this works across
+ * every child theme without per-child overrides.
+ * ================================================================== */
+.sg-block-descriptor {
+  /* Slightly tinted card. color-mix darkens the palette's `light` slot
+     by 8% toward `dark` — keeps the card distinct from the page bg on
+     light palettes and avoids being invisible. */
+  background-color: color-mix(in srgb, var(--wp--preset--color--canvas, #f5f5f5) 92%, var(--wp--preset--color--ink, #000) 8%);
+  border-left: 4px solid var(--wp--preset--color--primary, currentColor);
+  border-radius: var(--wp--custom--radius--default, 0);
+  padding: var(--wp--preset--spacing--30, 1.5rem) var(--wp--preset--spacing--40, 2rem);
+  /* Lots of top-margin separation from prior block, tight bottom margin
+     to visually pair the descriptor with the block it's introducing. */
+  margin-top: var(--wp--preset--spacing--80, 4rem);
+  margin-bottom: var(--wp--preset--spacing--20, 0.75rem);
+}
+
+.sg-block-descriptor__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wp--preset--spacing--30, 1rem);
+  flex-wrap: wrap;
+  margin-bottom: var(--wp--preset--spacing--10, 0.5rem);
+}
+
+.sg-block-descriptor__name {
+  margin: 0;
+  font-size: var(--wp--custom--fs--h-4, 1.5rem);
+  line-height: 1.15;
+  color: var(--wp--preset--color--ink, currentColor);
+}
+
+/* Kind pill — small, all-caps, padded, rounded (always round even when
+   the theme uses 0 radius — the pill should feel pill-shaped).
+   Per-kind background colors below; default text color is the palette's
+   opposite of the kind's bg so contrast is correct regardless of palette. */
+.sg-block-descriptor__kind {
+  display: inline-block;
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.35em 0.85em;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Custom: primary palette (cool / brand). */
+.sg-block-descriptor__kind--custom {
+  background-color: var(--wp--preset--color--primary, #000);
+  color: var(--wp--custom--color--primary-opposite, #fff);
+}
+.sg-block-descriptor--custom {
+  border-left-color: var(--wp--preset--color--primary, currentColor);
+}
+
+/* Hybrid: cta palette (warm / accent) — signals "more setup than Custom". */
+.sg-block-descriptor__kind--hybrid {
+  background-color: var(--wp--preset--color--cta, #ff8000);
+  color: var(--wp--custom--color--cta-opposite, #fff);
+}
+.sg-block-descriptor--hybrid {
+  border-left-color: var(--wp--preset--color--cta, currentColor);
+}
+
+/* Gutenberg: secondary palette (neutral / "core WP"). */
+.sg-block-descriptor__kind--gutenberg {
+  background-color: var(--wp--preset--color--secondary, #555);
+  color: var(--wp--custom--color--secondary-opposite, #fff);
+}
+.sg-block-descriptor--gutenberg {
+  border-left-color: var(--wp--preset--color--secondary, currentColor);
+}
+
+/* block.json description — the canonical short "what is this?" line. */
+.sg-block-descriptor__what {
+  margin: 0 0 var(--wp--preset--spacing--20, 0.75rem) 0;
+  font-size: var(--wp--preset--font-size--medium, 1rem);
+  font-style: italic;
+  color: color-mix(in srgb, var(--wp--preset--color--ink, #000) 70%, transparent);
+}
+
+/* Usage guidance — slightly muted body. Contains <code> spans for
+   field/setting names; style those distinctly so they read as
+   identifiers, not body copy. */
+.sg-block-descriptor__how {
+  margin: 0;
+  font-size: var(--wp--preset--font-size--small, 0.95rem);
+  line-height: 1.55;
+  color: var(--wp--preset--color--ink, currentColor);
+}
+.sg-block-descriptor__how p {
+  margin: 0;
+}
+.sg-block-descriptor__how code {
+  background-color: color-mix(in srgb, var(--wp--preset--color--ink, #000) 8%, transparent);
+  padding: 0.1em 0.4em;
+  border-radius: 3px;
+  font-size: 0.9em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--wp--preset--color--primary, currentColor);
+}
+
+/* ==================================================================
+ * Hero 3 Up (classic-city-core/hero-3-up).
+ *
+ * Layout: 2/3 + 1/3 intro row (title-col + desc-col), full-width hero
+ * image below. Field-driven; no Inner Blocks.
+ *
+ * Padding-top is the theme's block-gap (default of any Hero block;
+ * variant-specific value can be tuned here per design). Horizontal
+ * padding comes from theme.json's root padding because
+ * `useRootPaddingAwareAlignments` is on — we restore it inside the
+ * alignfull wrapper via `--wp--style--root--padding-left/right`.
+ *
+ * Mobile (≤ 768px): the 2-col intro stacks to single column; image
+ * stays full-width below.
+ *
+ * `.sg-hero` is on the wrapper as the shared "page hero" marker —
+ * no CSS attached to that class. The variant-specific layout lives
+ * here under `.sg-block-hero-3-up`.
+ * ================================================================== */
+.sg-block-hero-3-up {
+  padding-top: var(--wp--style--block-gap, var(--wp--preset--spacing--30));
+}
+.sg-block-hero-3-up__inner {
+  padding-left: var(--wp--style--root--padding-left, var(--wp--preset--spacing--30));
+  padding-right: var(--wp--style--root--padding-right, var(--wp--preset--spacing--30));
+  max-width: var(--wp--style--global--wide-size);
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--style--block-gap, var(--wp--preset--spacing--30));
+}
+.sg-block-hero-3-up__intro {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--wp--style--block-gap, var(--wp--preset--spacing--30));
+  align-items: end;
+}
+.sg-block-hero-3-up__title-col,
+.sg-block-hero-3-up__desc-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--style--block-gap, var(--wp--preset--spacing--30));
+}
+/* The image cell respects an authored aspect-ratio (set inline from
+   the field). When `none` is chosen, no inline aspect-ratio attribute
+   is emitted and the image uses its natural ratio. */
+.sg-block-hero-3-up__image {
+  width: 100%;
+  overflow: hidden;
+}
+.sg-block-hero-3-up__image > img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.sg-block-hero-3-up__image[style*="aspect-ratio"] {
+  /* Container has the ratio; image fills + crops. */
+}
+.sg-block-hero-3-up__image[style*="aspect-ratio"] > img {
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 768px) {
+  .sg-block-hero-3-up__intro {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+}
+
+/* ==================================================================
+ * Detail Cards.
+ *
+ * Image-backgrounded data cards (stat top-left, label top-right, hairline
+ * divider, description bottom). Two layout modes:
+ *   - .is-grid       — grid of `--block-columns` columns; mobile collapses
+ *                      to stack or horizontal scroll per .is-mobile-*.
+ *   - .is-autoscroll — single nowrap row, fixed ~33vw cards, CSS marquee
+ *                      (same pattern as .sg-block-logos--scroller). The
+ *                      duplicate card set in markup is aria-hidden; the
+ *                      animation translates -50% for a seamless loop.
+ *
+ * Card surface: the Gutenberg bg-color picker is applied per-card
+ * (render.php strips it off the wrapper and emits has-{slug}-background-
+ * color on each .__card). That triggers the parent's pair-helper text
+ * color automatically. The same slug is exposed as `--card-bg-color` on
+ * the wrapper so the top/bottom scrim gradients fade into the card's
+ * own color instead of an arbitrary black tint.
+ * ================================================================== */
+.sg-block-detail-cards {
+  --detail-cards-gap: var(--wp--style--block-gap, var(--wp--preset--spacing--30, 1.5rem));
+  --detail-cards-pad: var(--wp--preset--spacing--30, 1.5rem);
+  --detail-cards-card-bg-fallback: var(--wp--preset--color--panel, transparent);
+}
+
+.sg-block-detail-cards__row {
+  display: grid;
+  grid-template-columns: repeat(var(--block-columns, 3), minmax(0, 1fr));
+  gap: var(--detail-cards-gap);
+  align-items: stretch;
+}
+
+/* Autoscroll — single nowrap row of fixed 33vw cards, marquee loop.
+   The row contains every card twice (duplicate set is aria-hidden in
+   render.php); translateX(-50%) lands the duplicate exactly where the
+   original started. */
+.sg-block-detail-cards.is-autoscroll {
+  overflow: hidden;
+  width: 100%;
+}
+.sg-block-detail-cards.is-autoscroll .sg-block-detail-cards__row {
+  display: flex;
+  flex-wrap: nowrap;
+  width: max-content;
+  animation: sg-detail-cards-scroll 60s linear infinite;
+}
+.sg-block-detail-cards.is-autoscroll .sg-block-detail-cards__card {
+  flex: 0 0 33vw;
+}
+.sg-block-detail-cards.is-autoscroll:hover .sg-block-detail-cards__row {
+  animation-play-state: paused;
+}
+@keyframes sg-detail-cards-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(-50% - (var(--detail-cards-gap) / 2))); }
+}
+
+/* Card. */
+.sg-block-detail-cards__card {
+  position: relative;
+  aspect-ratio: var(--card-aspect-ratio, 3 / 4);
+  border-radius: var(--wp--custom--radius--default, 0);
+  overflow: hidden;
+  background-color: var(--detail-cards-card-bg-fallback);
+  /* `has-{slug}-background-color` from the Gutenberg picker overrides
+     the fallback above and (via the parent's pair-helpers) sets text
+     color to the slug's opposite. */
+}
+
+/* Background image fills the card; opacity is block-level. */
+.sg-block-detail-cards__bg {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  opacity: var(--card-bg-opacity, 1);
+  pointer-events: none;
+}
+.sg-block-detail-cards__bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Scrim — fades into the card's own bg color at top and bottom so the
+   stat row and description stay legible over arbitrary photos. When
+   no bg color is picked, --card-bg-color is unset and the gradient
+   falls back to transparent (no scrim). */
+.sg-block-detail-cards__card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    var(--card-bg-color, transparent) 0%,
+    transparent 22%,
+    transparent 70%,
+    var(--card-bg-color, transparent) 100%
+  );
+}
+
+.sg-block-detail-cards__inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--detail-cards-pad);
+  gap: var(--wp--style--block-gap, var(--wp--preset--spacing--30, 1.5rem));
+}
+
+/* Top: stat (left, 50%) + stat title (right, 50%) with hairline
+   divider below in currentColor — inherits the auto-paired text color
+   from has-{slug}-background-color. Items are bottom-aligned so the
+   stat sits on the baseline of the wrapped label (matches the
+   reference card). */
+.sg-block-detail-cards__head {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+  gap: var(--wp--preset--spacing--20, 1rem);
+  padding-bottom: var(--wp--preset--spacing--20, 1rem);
+  border-bottom: var(--wp--custom--border--default-width, 1px) solid currentColor;
+}
+.sg-block-detail-cards__stat {
+  margin: 0;
+  text-align: left;
+  line-height: 1.1;
+  font-size: var(--wp--preset--font-size--large);
+}
+.sg-block-detail-cards__stat-title {
+  margin: 0;
+  text-align: right;
+  line-height: 1.2;
+  font-size: var(--wp--preset--font-size--small);
+}
+
+/* Description anchored at the bottom. */
+.sg-block-detail-cards__desc {
+  margin: auto 0 0 0;
+  font-size: var(--wp--preset--font-size--small);
+}
+
+/* Respect prefers-reduced-motion: halt the marquee and fall back to a
+   wrapped layout so the cards still flow. */
+@media (prefers-reduced-motion: reduce) {
+  .sg-block-detail-cards.is-autoscroll {
+    overflow: visible;
+  }
+  .sg-block-detail-cards.is-autoscroll .sg-block-detail-cards__row {
+    animation: none;
+    flex-wrap: wrap;
+    width: auto;
+  }
+}
+
+/* Mobile — autoscroll always disables itself, then .is-mobile-* takes
+   over (stack collapses to 1 col; scroll becomes a swipeable snap row
+   matching the image-card-grid pattern). */
+@media (max-width: 768px) {
+  .sg-block-detail-cards.is-autoscroll {
+    overflow: visible;
+  }
+  .sg-block-detail-cards.is-autoscroll .sg-block-detail-cards__row {
+    animation: none;
+    width: auto;
+  }
+  /* Autoscroll on mobile falls back to whatever mobile_layout is set —
+     stack by default, scroll if the author opted in. */
+  .sg-block-detail-cards.is-mobile-stack .sg-block-detail-cards__row {
+    display: grid;
+    grid-template-columns: 1fr;
+    flex-wrap: initial;
+  }
+  .sg-block-detail-cards.is-mobile-stack .sg-block-detail-cards__card {
+    flex: initial;
+  }
+  .sg-block-detail-cards.is-mobile-scroll .sg-block-detail-cards__row {
+    display: flex;
+    flex-wrap: nowrap;
+    grid-template-columns: none;
+    overflow-x: auto;
+    padding-bottom: var(--wp--preset--spacing--20, 1rem);
+    scrollbar-width: thin;
+  }
+  .sg-block-detail-cards.is-mobile-scroll .sg-block-detail-cards__card {
+    flex: 0 0 85%;
+  }
+}
+
+/* ==================================================================
+ * Highlight Tiles.
+ *
+ * Marketing tile grid — 2×2 (.is-4-tiles) or 3×2 (.is-6-tiles) on
+ * desktop, single-column stack on mobile. Each tile is a headline-led
+ * card with a per-card palette bg color (via has-{slug}-background-
+ * color so the parent's pair-helper auto-sets text color) and an
+ * optional image with one of two treatments:
+ *
+ *   - .is-treatment-background — full-bleed `<figure>` behind the
+ *     headline, cover-cropped center/center. A top scrim driven by
+ *     --card-bg-color keeps the headline legible.
+ *   - .is-treatment-inline — image sits centered in the lower portion
+ *     at constrained max-width (does NOT bleed edge-to-edge).
+ *
+ * Aspect ratio is hardcoded here (no editor knob). 5/3 reads as a
+ * proper marketing tile across both desktop and tablet widths; on
+ * mobile we drop the ratio so a stacked tile can grow as tall as its
+ * content needs.
+ * ================================================================== */
+.sg-block-highlight-tiles {
+  --tiles-gap: var(--wp--style--block-gap, var(--wp--preset--spacing--30, 1.5rem));
+  --tiles-pad: var(--wp--preset--spacing--30, 1.5rem);
+  --tiles-inline-image-max-width: 60%;
+  display: grid;
+  gap: var(--tiles-gap);
+  align-items: stretch;
+}
+
+/* 6-tile: 3-column × 5-row bento (3fr / 5fr / 4fr widths). The 5-row
+   track lets tall tiles span 3 rows and short tiles span 2 — a 1.5×
+   height ratio that reads more uniform than the old 2:1 (2+1) split.
+     col 1 (3fr, narrow): #1 tall (rows 1-3), #4 short (rows 4-5)
+     col 2 (5fr, wide):   #2 short (rows 1-2), #5 tall (rows 3-5)
+     col 3 (4fr, medium): #3 tall (rows 1-3), #6 short (rows 4-5)
+   `aspect-ratio: 2/1` on the grid anchors the row heights; each cell
+   inherits its dimensions from grid track geometry, so different col
+   widths × different row spans produces visibly distinct aspect
+   shapes per tile. */
+.sg-block-highlight-tiles.is-6-tiles {
+  grid-template-columns: 3fr 5fr 4fr;
+  grid-template-rows: repeat(5, 1fr);
+  aspect-ratio: 2 / 1;
+}
+.sg-block-highlight-tiles.is-6-tiles .sg-block-highlight-tiles__tile:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1 / span 3;
+}
+.sg-block-highlight-tiles.is-6-tiles .sg-block-highlight-tiles__tile:nth-child(2) {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+.sg-block-highlight-tiles.is-6-tiles .sg-block-highlight-tiles__tile:nth-child(3) {
+  grid-column: 3;
+  grid-row: 1 / span 3;
+}
+.sg-block-highlight-tiles.is-6-tiles .sg-block-highlight-tiles__tile:nth-child(4) {
+  grid-column: 1;
+  grid-row: 4 / span 2;
+}
+.sg-block-highlight-tiles.is-6-tiles .sg-block-highlight-tiles__tile:nth-child(5) {
+  grid-column: 2;
+  grid-row: 3 / span 3;
+}
+.sg-block-highlight-tiles.is-6-tiles .sg-block-highlight-tiles__tile:nth-child(6) {
+  grid-column: 3;
+  grid-row: 4 / span 2;
+}
+
+/* 4-tile: drop col 3 (and its #3/#6 occupants). Cols are 3fr/5fr,
+   5 rows. Bumping the grid aspect to 4/3 keeps the leftover four
+   tiles at the same aspect shapes they have in the 6-tile layout —
+   they just get more horizontal room each because col 3 is gone. */
+.sg-block-highlight-tiles.is-4-tiles {
+  grid-template-columns: 3fr 5fr;
+  grid-template-rows: repeat(5, 1fr);
+  aspect-ratio: 4 / 3;
+}
+.sg-block-highlight-tiles.is-4-tiles .sg-block-highlight-tiles__tile:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1 / span 3;
+}
+.sg-block-highlight-tiles.is-4-tiles .sg-block-highlight-tiles__tile:nth-child(2) {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+.sg-block-highlight-tiles.is-4-tiles .sg-block-highlight-tiles__tile:nth-child(3) {
+  grid-column: 1;
+  grid-row: 4 / span 2;
+}
+.sg-block-highlight-tiles.is-4-tiles .sg-block-highlight-tiles__tile:nth-child(4) {
+  grid-column: 2;
+  grid-row: 3 / span 3;
+}
+
+.sg-block-highlight-tiles__tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--wp--custom--radius--default, 0);
+  overflow: hidden;
+  background-color: var(--wp--preset--color--panel, transparent);
+  /* No global aspect-ratio — 4-tile sets one on the tile, 6-tile lets
+     the grid cell determine size. `has-{slug}-background-color` from
+     markup auto-pairs text color via the parent's pair-helpers. */
+}
+
+/* Background-treatment image — fills the tile under the content. */
+.sg-block-highlight-tiles__bg {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.sg-block-highlight-tiles__bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+}
+
+/* Scrim — only for background treatment. Fades the picked card color
+   into transparency so the headline reads on any photo. When no bg
+   color is picked, --card-bg-color is unset and the gradient is
+   transparent (no scrim drawn). */
+.sg-block-highlight-tiles__tile.is-treatment-background::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    var(--card-bg-color, transparent) 0%,
+    transparent 55%
+  );
+}
+
+.sg-block-highlight-tiles__inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--tiles-pad);
+  gap: var(--wp--preset--spacing--20, 1rem);
+}
+
+.sg-block-highlight-tiles__headline {
+  margin: 0;
+  width: 60%;
+  text-align: left;
+  font-size: var(--wp--preset--font-size--large);
+}
+
+/* Inline image — fills the remaining vertical space below the
+   headline so every tile keeps its aspect ratio regardless of the
+   image's intrinsic shape. `flex: 1 + min-height: 0` lets the figure
+   shrink-or-grow to whatever space is left; `object-fit: contain` +
+   `object-position: center bottom` anchors the image so portrait or
+   landscape sources both feel deliberate. Width is capped so the
+   image never bleeds edge-to-edge. */
+.sg-block-highlight-tiles__inline {
+  margin: 0 auto;
+  width: 100%;
+  max-width: var(--tiles-inline-image-max-width);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+}
+.sg-block-highlight-tiles__inline img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+/* Mobile: stack to a single column. Drop bento placement (column +
+   row tracks), the grid aspect-ratio, and any tile aspect-ratio so
+   each tile grows to fit its content. */
+@media (max-width: 768px) {
+  .sg-block-highlight-tiles,
+  .sg-block-highlight-tiles.is-4-tiles,
+  .sg-block-highlight-tiles.is-6-tiles {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    aspect-ratio: auto;
+  }
+  .sg-block-highlight-tiles.is-4-tiles .sg-block-highlight-tiles__tile,
+  .sg-block-highlight-tiles.is-6-tiles .sg-block-highlight-tiles__tile {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .sg-block-highlight-tiles__tile {
+    aspect-ratio: auto;
+    min-height: 320px;
+  }
+}
+
+/* ==================================================================
+ * Framed Callout — full-width hero / CTA section.
+ *
+ * Container = `.sg-block-framed-callout.alignfull`. Carries uniform
+ * padding (the page's global L/R padding token) on all four sides
+ * so the inner panel is visually "framed" against the page bg.
+ *
+ * Inner = `.sg-block-framed-callout__inner`. Paints the bg color /
+ * gradient (from the Gutenberg native picker, propagated off the
+ * wrapper in render.php), holds the optional bg image figure, and
+ * flex-centers the content wrapper vertically.
+ *
+ * Content = `.sg-block-framed-callout__content`. Constrained to the
+ * page's content-size (wide) and centered. 40px top/bottom padding
+ * always present so the InnerBlocks never touch the inner panel's
+ * top/bottom edges. Children are width-capped at narrow-size via the
+ * canonical InnerBlocks pattern. Alignment modifier (left | center)
+ * decides which edge they pin to.
+ *
+ * Heights: `.is-height-{50..100}` sets `min-height` on the Container
+ * in vh. Because Container has `box-sizing: border-box`, the chosen
+ * vh INCLUDES the frame padding — so 100vh means the entire framed
+ * section is exactly one viewport tall (frame + inner panel together).
+ * `.is-height-auto` lets the section size to its content.
+ * ================================================================== */
+.sg-block-framed-callout {
+  /* Frame inset matches the site's root padding so the panel lines up with
+     the page's content gutters (was a fixed spacing--30). */
+  --framed-callout-frame-padding: var(--wp--style--root--padding-left, var(--wp--preset--spacing--30));
+  --framed-callout-inner-pad-block: var(--wp--preset--spacing--40);
+  display: flex;
+  flex-direction: column;
+  /* Frame insets top + sides; flush at the bottom (no bottom gap). */
+  padding: var(--framed-callout-frame-padding) var(--framed-callout-frame-padding) 0;
+  box-sizing: border-box;
+  /* No `width: 100%` here — WP's alignfull cascade sets `width: unset`
+     so the negative-margin breakout can reach the viewport edges. A
+     fixed width % would re-clamp it to the parent's content-box. We
+     do still need `margin-inline: 0` defensively because the page
+     template's `is-layout-constrained` rule otherwise auto-centers
+     each child. */
+  margin-inline: 0;
+  max-width: none;
+}
+
+.sg-block-framed-callout.is-height-50  { min-height: 50vh;  }
+.sg-block-framed-callout.is-height-60  { min-height: 60vh;  }
+.sg-block-framed-callout.is-height-70  { min-height: 70vh;  }
+.sg-block-framed-callout.is-height-80  { min-height: 80vh;  }
+.sg-block-framed-callout.is-height-90  { min-height: 90vh;  }
+.sg-block-framed-callout.is-height-100 { min-height: 100vh; }
+/* .is-height-auto intentionally has no rule — falls back to content. */
+
+.sg-block-framed-callout__inner {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-radius: var(--wp--custom--radius--default, 0);
+  box-shadow: var(--wp--custom--elevation--card);
+  overflow: hidden;
+  /* `has-{slug}-background-color` / `has-{slug}-gradient-background`
+     from render.php paint this panel; without them it inherits the
+     page bg through transparency. */
+}
+
+.sg-block-framed-callout__bg {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.sg-block-framed-callout__bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+}
+
+.sg-block-framed-callout__content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: var(--wp--style--global--content-size, 1200px);
+  margin-inline: auto;
+  padding-block: var(--framed-callout-inner-pad-block);
+  padding-inline: var(--wp--preset--spacing--30);
+  /* Canonical InnerBlocks layout: flex column + gap=block-gap with
+     `display: contents` on the acf-innerblocks-container (added to
+     the list near line 400) so authored eyebrow / h1 / paragraph /
+     buttons become flex children of __content. Same pattern as
+     hero-content, hero-bg-content, hero-gradient__content, etc. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--style--block-gap);
+}
+
+/* Narrow constraint on direct children (the authored blocks) so each
+   row is capped at narrow-size while the wrapper itself stays at
+   content-size — gives left-aligned content a natural left edge that
+   matches the page's content column. */
+.sg-block-framed-callout__content > .acf-innerblocks-container > * {
+  max-width: var(--wp--custom--layout--narrow-size);
+  width: 100%;
+}
+
+/* Alignment modifiers — same shape as hero-gradient's content-align. */
+.sg-block-framed-callout__content.content-align-center {
+  align-items: center;
+  text-align: center;
+}
+.sg-block-framed-callout__content.content-align-center .wp-block-buttons {
+  justify-content: center;
+}
+.sg-block-framed-callout__content.content-align-left {
+  align-items: flex-start;
+  text-align: left;
+}
+.sg-block-framed-callout__content.content-align-left .wp-block-buttons {
+  justify-content: flex-start;
+}
+
+/* ==================================================================
+ * Card with Detail Rows.
+ *
+ * Grid of data cards: eyebrow → h3 → label/value detail rows → WYSIWYG
+ * description → optional button pinned to the card's bottom edge.
+ *
+ * STRUCTURAL — palette-agnostic. Every color here resolves from a token
+ * or from `currentColor`; nothing in this file knows a slug or a hex.
+ * The card background arrives as a `has-*-background-color` /
+ * `has-*-gradient-background` helper class from render.php (which also
+ * brings the paired `-opposite` text color), and the border color
+ * arrives as `--ccc-cdr-border-color` — the palette partner of that
+ * background, resolved in PHP.
+ *
+ * Child-theme knobs, all declared on the grid root:
+ *   --ccc-cdr-gap            space between cards (default block-gap)
+ *   --ccc-cdr-padding        inner card padding (default spacing--30)
+ *   --ccc-cdr-border-width   card border width (default border token)
+ *   --ccc-cdr-border-style   card border style (default solid)
+ *   --ccc-cdr-border-color   card border color (default: bg's palette
+ *                            partner, else the default border token)
+ *   --ccc-cdr-rule-color     hairline between detail rows (default: a
+ *                            currentColor tint, so it adapts to light
+ *                            and dark cards without knowing the palette)
+ *   --ccc-cdr-value-color    detail-row value (default currentColor)
+ *
+ * Mobile behavior is class-driven, matching image-card-grid:
+ *   .is-mobile-stack   collapses to one column under the breakpoint
+ *   .is-mobile-scroll  horizontal flex scroller, cards at ~85% width so
+ *                      the next one peeks in at the right edge
+ * ================================================================== */
+.sg-block-card-detail-rows {
+  --ccc-cdr-gap: var(--wp--style--block-gap);
+  --ccc-cdr-padding: var(--wp--preset--spacing--30);
+  --ccc-cdr-border-width: var(--wp--custom--border--default-width);
+  --ccc-cdr-border-style: solid;
+  --ccc-cdr-border-color: var(--wp--custom--border--color);
+  --ccc-cdr-rule-color: color-mix(in srgb, currentColor 18%, transparent);
+  --ccc-cdr-value-color: currentColor;
+
+  display: grid;
+  grid-template-columns: repeat(var(--block-columns, 3), minmax(0, 1fr));
+  gap: var(--ccc-cdr-gap);
+  align-items: stretch;
+}
+
+/* Flex column + block-gap is what makes two things work: the eyebrow →
+   heading gap-collapse rule (which assumes a flex parent gapped at
+   block-gap), and `margin-top: auto` on the actions row below. */
+.sg-block-card-detail-rows__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--style--block-gap);
+  padding: var(--ccc-cdr-padding);
+  border: var(--ccc-cdr-border-width) var(--ccc-cdr-border-style) var(--ccc-cdr-border-color);
+  border-radius: var(--wp--custom--radius--default);
+}
+
+.sg-block-card-detail-rows__rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.sg-block-card-detail-rows__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wp--preset--spacing--20);
+  padding-block: var(--wp--preset--spacing--10);
+  border-bottom: var(--ccc-cdr-border-width) var(--ccc-cdr-border-style) var(--ccc-cdr-rule-color);
+}
+.sg-block-card-detail-rows__row:last-child {
+  border-bottom: 0;
+}
+/* Labels wrap, values never do — a broken "$75k–$150k" reads as two
+   numbers. The label column absorbs the wrapping instead. */
+.sg-block-card-detail-rows__label {
+  min-width: 0;
+}
+.sg-block-card-detail-rows__value {
+  color: var(--ccc-cdr-value-color);
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+/* Same trap as above: the block emitted `has-small-font-size` on this wrapper,
+   but the WYSIWYG <p> inside carries its own explicit size from WP's global
+   stylesheet and ignored it. 0-1-1 lands it on the paragraph (fixed 2026-07-31). */
+.sg-block-card-detail-rows__desc p {
+  font-size: var(--wp--preset--font-size--small);
+}
+.sg-block-card-detail-rows__desc :first-child {
+  margin-block-start: 0;
+}
+.sg-block-card-detail-rows__desc :last-child {
+  margin-block-end: 0;
+}
+
+/* Pins the button to the card's bottom edge so buttons line up across a
+   row of uneven-length cards. `align-items: stretch` on the grid gives
+   every card full row height for the auto margin to push against. */
+.sg-block-card-detail-rows__actions {
+  margin-top: auto;
+}
+
+@media (max-width: 768px) {
+  .sg-block-card-detail-rows.is-mobile-stack {
+    grid-template-columns: 1fr;
+  }
+
+  .sg-block-card-detail-rows.is-mobile-scroll {
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    /* Keeps the scrollbar gutter clear of the card borders. */
+    padding-bottom: var(--wp--preset--spacing--20);
+    scrollbar-width: thin;
+  }
+  .sg-block-card-detail-rows.is-mobile-scroll > * {
+    flex: 0 0 85%;
+  }
+}
+
+/* ==================================================================
+ * Chart: Horizontal Bars.
+ *
+ * A card wrapping a proportional bar chart. Each row is
+ * label | track(fill) | value; the fill's width arrives from render.php
+ * as `--ccc-chb-pct` (that value's share of the column total). No
+ * percentage is printed anywhere — showing one defeats the point of
+ * drawing the bar.
+ *
+ * STRUCTURAL — palette-agnostic. The ONE deliberate color rule is the
+ * highlighted fill (CTA), per spec. Everything else resolves from a
+ * token or from `currentColor`, so the block works on any child
+ * palette, light or dark, without knowing a single slug.
+ *
+ * OVERRIDING: change the variables, not the selectors. Every rule below
+ * is a single class (the highlight is one compound), so a child theme
+ * never has to out-specify a deep chain. To repaint the bars:
+ *
+ *   .sg-block-chart-horizontal-bars { --ccc-chb-fill: <anything>; }
+ *   .sg-block-chart-horizontal-bars__row.is-highlighted {
+ *     --ccc-chb-fill: var(--wp--preset--gradient--brand);
+ *   }
+ *
+ * `--ccc-chb-fill` accepts any background value — a flat color, a
+ * gradient, an image — because it is applied via `background`, not
+ * `background-color`.
+ *
+ * Knobs, all declared on the card root:
+ *   --ccc-chb-padding        card padding (default spacing--30)
+ *   --ccc-chb-border-width   card border width (default border token)
+ *   --ccc-chb-border-style   card border style (default solid)
+ *   --ccc-chb-border-color   card border color (default: bg's palette
+ *                            partner, else the default border token)
+ *   --ccc-chb-label-width    label column width (default 12rem)
+ *   --ccc-chb-value-width    value column width (default 5rem)
+ *   --ccc-chb-bar-height     track/fill thickness (default 0.625rem)
+ *   --ccc-chb-bar-radius     track/fill rounding (default 999px, pill)
+ *   --ccc-chb-track          unfilled track (default currentColor tint)
+ *   --ccc-chb-fill           bar fill (default currentColor tint;
+ *                            CTA on .is-highlighted rows)
+ *   --ccc-chb-small          description + footnote size (default sm)
+ * ================================================================== */
+.sg-block-chart-horizontal-bars {
+  --ccc-chb-padding: var(--wp--preset--spacing--30);
+  --ccc-chb-border-width: var(--wp--custom--border--default-width);
+  --ccc-chb-border-style: solid;
+  --ccc-chb-border-color: var(--wp--custom--border--color);
+  --ccc-chb-label-width: 12rem;
+  --ccc-chb-value-width: 5rem;
+  --ccc-chb-bar-height: 0.625rem;
+  --ccc-chb-bar-radius: 999px;
+  --ccc-chb-track: color-mix(in srgb, currentColor 12%, transparent);
+  --ccc-chb-fill: color-mix(in srgb, currentColor 45%, transparent);
+  --ccc-chb-small: var(--wp--preset--font-size--small);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--style--block-gap);
+  padding: var(--ccc-chb-padding);
+  border: var(--ccc-chb-border-width) var(--ccc-chb-border-style) var(--ccc-chb-border-color);
+  border-radius: var(--wp--custom--radius--default);
+}
+
+/* The size has to land on the PARAGRAPH. These are WYSIWYG fields, so the
+   output is a <p>, and WP emits `:root :where(p){font-size: …--medium}` — an
+   explicit value on the element, which beats anything inherited from this
+   wrapper. Setting it here alone silently did nothing (fixed 2026-07-31). */
+.sg-block-chart-horizontal-bars__desc,
+.sg-block-chart-horizontal-bars__desc p,
+.sg-block-chart-horizontal-bars__footnote p {
+  font-size: var(--ccc-chb-small);
+}
+
+.sg-block-chart-horizontal-bars__rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--preset--spacing--10);
+}
+
+/* Fixed label and value columns keep every bar starting and ending on
+   the same axis — the whole point of a bar chart is that the tracks are
+   directly comparable, which a content-sized column would break. */
+.sg-block-chart-horizontal-bars__row {
+  display: grid;
+  grid-template-columns: var(--ccc-chb-label-width) 1fr var(--ccc-chb-value-width);
+  align-items: center;
+  gap: var(--wp--preset--spacing--20);
+}
+
+.sg-block-chart-horizontal-bars__label {
+  min-width: 0;
+}
+
+.sg-block-chart-horizontal-bars__track {
+  height: var(--ccc-chb-bar-height);
+  border-radius: var(--ccc-chb-bar-radius);
+  background: var(--ccc-chb-track);
+  overflow: hidden;
+}
+
+.sg-block-chart-horizontal-bars__fill {
+  display: block;
+  width: var(--ccc-chb-pct, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ccc-chb-fill);
+}
+
+/* The one color rule in this block, per spec: a flagged row paints its
+   bar with CTA. Set as a variable on the ROW so the fill rule above
+   stays a single class and children can retarget either level. */
+.sg-block-chart-horizontal-bars__row.is-highlighted {
+  --ccc-chb-fill: var(--wp--preset--color--cta);
+}
+
+.sg-block-chart-horizontal-bars__value {
+  font-weight: bold;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.sg-block-chart-horizontal-bars__footnote {
+  font-size: var(--ccc-chb-small);
+}
+.sg-block-chart-horizontal-bars__desc :first-child,
+.sg-block-chart-horizontal-bars__footnote :first-child {
+  margin-block-start: 0;
+}
+.sg-block-chart-horizontal-bars__desc :last-child,
+.sg-block-chart-horizontal-bars__footnote :last-child {
+  margin-block-end: 0;
+}
+
+/* Narrow screens can't hold three columns and still leave a readable
+   track, so the label moves above its own bar and the value stays
+   inline with it. */
+@media (max-width: 600px) {
+  .sg-block-chart-horizontal-bars__row {
+    grid-template-columns: 1fr auto;
+    gap: var(--wp--preset--spacing--10);
+  }
+  .sg-block-chart-horizontal-bars__track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+/* ==================================================================
+ * Text Callout.
+ *
+ * A bare div + paragraph, set large. No card, no background, no color
+ * — every visual decision beyond size, measure and spacing belongs to
+ * the child theme, which styles `p > strong` for its own emphasis
+ * treatment and hangs ::before / ::after off the div.
+ *
+ * SIZE: `--ccc-tc-font-size` reuses the h-3 fluid scale (22px → 30px)
+ * because that measured right for this block, but keeps the BODY font
+ * and a readable line-height — the h3 ELEMENT style is uppercase at
+ * 0.9 line-height, which is wrong for prose. Same size ramp, different
+ * voice.
+ *
+ * SPACING: the block reserves spacing--60 above itself AND above the
+ * next block, so its breathing room survives whatever it's dropped
+ * between. Both rules are single-class, and `--ccc-tc-space` carries a
+ * fallback rather than being declared on the block — a sibling can't
+ * inherit a custom property from the block beside it, so the fallback
+ * is what makes the `+ *` rule work while still letting a child set
+ * `--ccc-tc-space` on any shared ancestor to move both at once.
+ *
+ * Knobs:
+ *   --ccc-tc-font-size    callout size (default: h-3 fluid scale)
+ *   --ccc-tc-line-height  default 1.35
+ *   --ccc-tc-space        space above the block AND above the next
+ *                         block (default spacing--60); set it on a
+ *                         shared ancestor, not on the block
+ * ================================================================== */
+.sg-block-text-callout {
+  --ccc-tc-font-size: clamp(
+    var(--wp--custom--fs--h-3-min),
+    calc(var(--wp--custom--heading--base-font-size) * 1.4 + 1.2vw),
+    var(--wp--custom--fs--h-3)
+  );
+  --ccc-tc-line-height: 1.35;
+}
+
+/* The size has to land on the PARAGRAPH, not the block. WP's global
+   stylesheet emits `:root :where(p){font-size: var(--…--medium)}` at
+   specificity 0-1-0, which is an explicit value on the paragraph and so
+   beats anything inherited from the wrapper — setting font-size on the
+   div silently does nothing. `.sg-block-text-callout p` is 0-1-1: it
+   wins on specificity rather than source order, so it holds regardless
+   of stylesheet enqueue order, and still overrides with a single class
+   plus a tag. */
+.sg-block-text-callout p {
+  font-size: var(--ccc-tc-font-size);
+  line-height: var(--ccc-tc-line-height);
+}
+
+/* Breathing room on both sides. Kept to two single-class selectors so a
+   child theme can override without out-specifying anything. */
+.sg-block-text-callout,
+.sg-block-text-callout + * {
+  margin-block-start: var(--ccc-tc-space, var(--wp--preset--spacing--60));
+}
+
+/* narrow / content are capped here; wide / full escape the content
+   measure via the alignwide / alignfull classes render.php emits, which
+   the layout CSS already understands. */
+.sg-block-text-callout.is-width-narrow {
+  max-width: var(--wp--custom--layout--narrow-size);
+  margin-inline: auto;
+}
+.sg-block-text-callout.is-width-content {
+  max-width: var(--wp--style--global--content-size);
+  margin-inline: auto;
+}
+
+/* The authored paragraph owns no outer margin — the block's own
+   margins are the spacing contract. */
+.sg-block-text-callout > :first-child {
+  margin-block-start: 0;
+}
+.sg-block-text-callout > :last-child {
+  margin-block-end: 0;
+}
+
+/* ==================================================================
+ * Accent font role.
+ *
+ * Applies the third font role to a block and its contents. The bare
+ * class covers the element itself and anything that inherits from it
+ * (paragraphs, list items); the descendant rule is needed because
+ * headings carry an EXPLICIT `h1 { font-family: var(--…--heading) }`
+ * from the generated global stylesheet, and an explicit value on the
+ * element always beats an inherited one however specific the ancestor.
+ *
+ * `accent` defaults to `var(--wp--preset--font-family--body)`, so this
+ * style is a no-op until a child theme points the role somewhere else —
+ * which is the intent: the markup commits to the ROLE, the child theme
+ * decides what the role sounds like.
+ * ================================================================== */
+.is-style-accent-font,
+.is-style-accent-font :where(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--wp--preset--font-family--accent);
+}
+
+/* ==================================================================
+ * Proof Band.
+ *
+ * One rounded surface carrying a kicker, 2–4 headline figures, a
+ * pull-quote behind a left rule, and a closing link. The block root IS
+ * the band, so the native color picker paints it directly and the paired
+ * `-opposite` text color arrives with the helper class — which is what
+ * lets every rule below resolve from `currentColor` and stay legible on
+ * a dark band and a light one alike.
+ *
+ * STRUCTURAL — palette-agnostic. The ONE deliberate palette color is
+ * `cta`, used for the first accent slot and (by reference) the quote
+ * rule: this block is the page's proof beat, and the figure it opens
+ * with should carry the same color the page's main action does. Every
+ * other color is a `currentColor` mix, so it adapts to whatever the
+ * child theme paints the band.
+ *
+ * ACCENT CYCLING lives here, not in render.php. The stats carry no index
+ * class; `:nth-child(3n+…)` assigns one of three slots in author order
+ * and each slot only sets a VARIABLE, so a child theme changes the whole
+ * rhythm by redefining three values and never touches a selector. With
+ * four stats the cycle wraps and the fourth reuses slot 1 — deliberate,
+ * and why the repeater caps at 4.
+ *
+ * PARAGRAPH SIZING is tag-qualified on purpose. WP core emits
+ * `:root :where(p){font-size: var(--wp--preset--font-size--medium)}` —
+ * an explicit declaration on the paragraph, which beats anything
+ * inherited from a wrapper however specific the wrapper's selector.
+ * `p.sg-block-proof-band__label` is 0-1-1 and wins on specificity, so it
+ * holds regardless of enqueue order. Same reason for
+ * `a.sg-block-proof-band__link`, which has to out-rank the global
+ * button rule.
+ *
+ * OVERRIDING: change the variables, not the selectors. Knobs, all
+ * declared on the band root:
+ *   --ccc-pb-padding          band padding (default spacing--50)
+ *   --ccc-pb-gap              space between kicker/stats/quote/link
+ *                             (default block-gap)
+ *   --ccc-pb-border-width     band border width (default border token)
+ *   --ccc-pb-border-style     band border style (default solid)
+ *   --ccc-pb-border-color     band border color (default: the picked
+ *                             background's palette partner, else the
+ *                             default border token)
+ *   --ccc-pb-stat-min         min stat column before the grid reflows
+ *                             (default 11rem — auto-fit, so the count
+ *                             never rags)
+ *   --ccc-pb-stat-gap         gap between stats (default spacing--40)
+ *   --ccc-pb-value-size       figure size (default: fluid h-3 scale)
+ *   --ccc-pb-accent-1/2/3     the three accent slots, in author order
+ *                             (defaults: cta, currentColor, a 70%
+ *                             currentColor mix)
+ *   --ccc-pb-label-size       stat caption size (default small)
+ *   --ccc-pb-label-color      stat caption color (default 75% mix)
+ *   --ccc-pb-quote-rule-width left rule on the quote (default 4× the
+ *                             border token — derived, not a raw value)
+ *   --ccc-pb-quote-rule-color left rule color (default accent 1)
+ *   --ccc-pb-quote-pad        gap between rule and quote text
+ *   --ccc-pb-cite-color       attribution color (default 70% mix)
+ *   --ccc-pb-link-radius      CTA link rounding (default: the theme's
+ *                             own button radius, so it is a no-op until
+ *                             a child asks for something else — set
+ *                             999px for the pill treatment)
+ * ================================================================== */
+.sg-block-proof-band {
+  --ccc-pb-padding: var(--wp--preset--spacing--50);
+  --ccc-pb-gap: var(--wp--style--block-gap);
+  --ccc-pb-border-width: var(--wp--custom--border--default-width);
+  --ccc-pb-border-style: solid;
+  --ccc-pb-border-color: var(--wp--custom--border--color);
+  --ccc-pb-stat-min: 11rem;
+  --ccc-pb-stat-gap: var(--wp--preset--spacing--40);
+  --ccc-pb-value-size: clamp(
+    var(--wp--custom--fs--h-3-min),
+    calc(var(--wp--custom--heading--base-font-size) * 1.4 + 1.2vw),
+    var(--wp--custom--fs--h-3)
+  );
+  --ccc-pb-accent-1: var(--wp--preset--color--cta);
+  --ccc-pb-accent-2: currentColor;
+  --ccc-pb-accent-3: color-mix(in srgb, currentColor 70%, transparent);
+  --ccc-pb-label-size: var(--wp--preset--font-size--small);
+  --ccc-pb-label-color: color-mix(in srgb, currentColor 75%, transparent);
+  --ccc-pb-quote-rule-width: calc(var(--wp--custom--border--default-width) * 4);
+  --ccc-pb-quote-rule-color: var(--ccc-pb-accent-1);
+  --ccc-pb-quote-pad: var(--wp--preset--spacing--20);
+  --ccc-pb-cite-color: color-mix(in srgb, currentColor 70%, transparent);
+  --ccc-pb-link-radius: var(--wp--custom--radius--default);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--ccc-pb-gap);
+  padding: var(--ccc-pb-padding);
+  border: var(--ccc-pb-border-width) var(--ccc-pb-border-style) var(--ccc-pb-border-color);
+  border-radius: var(--wp--custom--radius--default);
+}
+
+/* auto-fit rather than a column count: 2, 3 and 4 stats all fill the row
+   without the author picking a number that might not divide (rule 19,
+   solved by the layout instead of by the editor). */
+.sg-block-proof-band__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--ccc-pb-stat-min), 1fr));
+  gap: var(--ccc-pb-stat-gap);
+}
+
+.sg-block-proof-band__stat {
+  --ccc-pb-accent: var(--ccc-pb-accent-1);
+}
+.sg-block-proof-band__stat:nth-child(3n + 2) {
+  --ccc-pb-accent: var(--ccc-pb-accent-2);
+}
+.sg-block-proof-band__stat:nth-child(3n + 3) {
+  --ccc-pb-accent: var(--ccc-pb-accent-3);
+}
+
+/* A span, so it needs its own block formatting and line-height — this is
+   display type, not body copy, and the default leading looks slack at
+   this size. */
+.sg-block-proof-band__value {
+  display: block;
+  font-family: var(--wp--preset--font-family--heading);
+  font-size: var(--ccc-pb-value-size);
+  font-weight: bold;
+  line-height: 1.1;
+  color: var(--ccc-pb-accent);
+  white-space: nowrap;
+}
+
+p.sg-block-proof-band__label {
+  margin-block: var(--wp--preset--spacing--10) 0;
+  font-size: var(--ccc-pb-label-size);
+  color: var(--ccc-pb-label-color);
+}
+
+/* A real <blockquote>: content rule 23 reserves quote markup for words
+   somebody said, and this field is specified that way. UA margins come
+   off because the band's flex gap is the spacing contract. */
+.sg-block-proof-band__quote {
+  margin: 0;
+  padding-inline-start: var(--ccc-pb-quote-pad);
+  border-inline-start: var(--ccc-pb-quote-rule-width) solid var(--ccc-pb-quote-rule-color);
+}
+
+p.sg-block-proof-band__quote-text {
+  margin: 0;
+  font-style: italic;
+}
+
+.sg-block-proof-band__cite {
+  display: block;
+  margin-block-start: var(--wp--preset--spacing--10);
+  font-size: var(--wp--preset--font-size--small);
+  font-style: normal;
+  color: var(--ccc-pb-cite-color);
+}
+
+/* `margin-right: auto` keeps the button hugging its text instead of
+   stretching across the band — the flex column would otherwise stretch
+   it edge to edge. */
+.sg-block-proof-band__action {
+  margin-inline-end: auto;
+}
+
+a.sg-block-proof-band__link {
+  border-radius: var(--ccc-pb-link-radius);
+}
+
+@media (max-width: 600px) {
+  /* One figure per row below the phone breakpoint: at this width the
+     auto-fit minimum would still allow two cramped columns, and these
+     captions are full sentences. */
+  .sg-block-proof-band__stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==================================================================
+ * Stat Comparison.
+ *
+ * A before → after figure beside the heading and paragraph that explain
+ * it. Two flex children: the figure (never wraps, never shrinks) and the
+ * text column (takes the rest, with a min-width that forces a stack
+ * rather than a two-word-per-line squeeze).
+ *
+ * STRUCTURAL — palette-agnostic. The ONE deliberate palette color is
+ * `cta`, on the "after" figure. This is a considered departure from the
+ * mockup, which paints the "before" in the brand accent and the "after"
+ * in the brand blue: the point of the block is the improvement, so the
+ * destination gets the page's action color and the origin is stepped
+ * back to a currentColor mix. A reader who cannot name the palette still
+ * reads the direction. A child theme swaps the two by redefining
+ * `--ccc-sc-from-color` / `--ccc-sc-to-color`.
+ *
+ * The h3 is left entirely alone (content rule 2) — theme.json already
+ * sizes it, and the body copy keeps the default paragraph size, so
+ * neither needs the tag-qualified override the sibling blocks use.
+ *
+ * Knobs, all declared on the panel root:
+ *   --ccc-sc-padding        panel padding (default spacing--40)
+ *   --ccc-sc-gap            figure ↔ text gap (default spacing--40)
+ *   --ccc-sc-border-width   panel border width (default border token)
+ *   --ccc-sc-border-style   panel border style (default solid)
+ *   --ccc-sc-border-color   panel border color (default: the picked
+ *                           background's palette partner, else the
+ *                           default border token)
+ *   --ccc-sc-figure-size    figure size (default: fluid h-1 scale)
+ *   --ccc-sc-arrow-size     arrow size (default: 60% of the figure)
+ *   --ccc-sc-from-color     "before" figure (default 55% mix)
+ *   --ccc-sc-arrow-color    arrow (default 40% mix)
+ *   --ccc-sc-to-color       "after" figure (default cta)
+ *   --ccc-sc-text-min       text column min-width before the panel
+ *                           stacks (default 16rem)
+ * ================================================================== */
+.sg-block-stat-comparison {
+  --ccc-sc-padding: var(--wp--preset--spacing--40);
+  --ccc-sc-gap: var(--wp--preset--spacing--40);
+  --ccc-sc-border-width: var(--wp--custom--border--default-width);
+  --ccc-sc-border-style: solid;
+  --ccc-sc-border-color: var(--wp--custom--border--color);
+  --ccc-sc-figure-size: clamp(
+    var(--wp--custom--fs--h-1-min),
+    calc(var(--wp--custom--heading--base-font-size) * 1.8 + 2.2vw),
+    var(--wp--custom--fs--h-1)
+  );
+  --ccc-sc-arrow-size: calc(var(--ccc-sc-figure-size) * 0.6);
+  --ccc-sc-from-color: color-mix(in srgb, currentColor 55%, transparent);
+  --ccc-sc-arrow-color: color-mix(in srgb, currentColor 40%, transparent);
+  --ccc-sc-to-color: var(--wp--preset--color--cta);
+  --ccc-sc-text-min: 16rem;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ccc-sc-gap);
+  padding: var(--ccc-sc-padding);
+  border: var(--ccc-sc-border-width) var(--ccc-sc-border-style) var(--ccc-sc-border-color);
+  border-radius: var(--wp--custom--radius--default);
+}
+
+/* The figure is a paragraph (it is not a section title), so it needs the
+   tag-qualified selector to beat WP's `:root :where(p)` font-size, and
+   its UA margins removed so the flex gap is the only spacing. */
+p.sg-block-stat-comparison__figure {
+  flex: 0 0 auto;
+  margin: 0;
+  font-family: var(--wp--preset--font-family--heading);
+  font-size: var(--ccc-sc-figure-size);
+  font-weight: bold;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.sg-block-stat-comparison__from {
+  color: var(--ccc-sc-from-color);
+}
+
+.sg-block-stat-comparison__arrow {
+  padding-inline: 0.15em;
+  font-size: var(--ccc-sc-arrow-size);
+  color: var(--ccc-sc-arrow-color);
+}
+
+.sg-block-stat-comparison__to {
+  color: var(--ccc-sc-to-color);
+}
+
+/* `min-width` is what makes the wrap honest: below it the flex line
+   breaks and the figure sits above the copy, instead of the copy
+   collapsing to a two-word column beside a wide figure. */
+.sg-block-stat-comparison__text {
+  flex: 1 1 var(--ccc-sc-text-min);
+  min-width: min(var(--ccc-sc-text-min), 100%);
+}
+
+.sg-block-stat-comparison__heading {
+  margin-block-start: 0;
+}
+
+.sg-block-stat-comparison__body :first-child {
+  margin-block-start: var(--wp--preset--spacing--10);
+}
+.sg-block-stat-comparison__body :last-child {
+  margin-block-end: 0;
+}
+
+/* ==================================================================
+ * Comparison Table.
+ *
+ * Paired us/them bars, one pair per metric. Each ROW is scaled against
+ * its own pair (the larger value fills the track), never against a
+ * shared total — that is the whole reason this block exists alongside
+ * `chart-horizontal-bars`, whose share-of-total model would draw a false
+ * picture across metrics that have no common unit.
+ *
+ * A row whose two values could not be compared safely arrives WITHOUT
+ * `.has-bars` and without a track element (see render.php's same-unit
+ * guard). The `:not(.has-bars)` rule below re-lays that row as two
+ * columns so the value stays right-aligned with the ones above it — a
+ * bar-less row should read as a quiet omission, not a broken grid.
+ *
+ * STRUCTURAL — palette-agnostic. The ONE deliberate palette color is
+ * `cta` on the "ours" fill: this is an advocacy block, and the side
+ * being argued for should carry the page's action color. The comparator
+ * bar is a currentColor tint so it recedes on any surface.
+ *
+ * WYSIWYG paragraphs are sized by a tag-qualified rule for the reason
+ * spelled out under Text Callout: WP core's `:root :where(p)` font-size
+ * is an explicit declaration on the paragraph and inheritance from
+ * `.__desc` loses to it.
+ *
+ * Knobs, all declared on the card root:
+ *   --ccc-ct-padding         card padding (default spacing--30)
+ *   --ccc-ct-border-width    card border width (default border token)
+ *   --ccc-ct-border-style    card border style (default solid)
+ *   --ccc-ct-border-color    card border color (default: the picked
+ *                            background's palette partner, else the
+ *                            default border token)
+ *   --ccc-ct-metric-gap      gap between metrics (default spacing--40)
+ *   --ccc-ct-row-gap         gap between the two bars of a metric
+ *                            (default spacing--10)
+ *   --ccc-ct-side-width      side-label column (default 9rem)
+ *   --ccc-ct-value-width     value column (default 8rem)
+ *   --ccc-ct-bar-height      track/fill thickness (default 0.75rem)
+ *   --ccc-ct-bar-radius      track/fill rounding (default 999px, pill)
+ *   --ccc-ct-track           unfilled track (default currentColor tint)
+ *   --ccc-ct-fill            bar fill — set per row: cta on `.is-ours`,
+ *                            `--ccc-ct-fill-muted` on `.is-theirs`
+ *   --ccc-ct-fill-muted      the comparator fill (default 30% mix)
+ *   --ccc-ct-small           description + footnote + row size (small)
+ * ================================================================== */
+.sg-block-comparison-table {
+  --ccc-ct-padding: var(--wp--preset--spacing--30);
+  --ccc-ct-border-width: var(--wp--custom--border--default-width);
+  --ccc-ct-border-style: solid;
+  --ccc-ct-border-color: var(--wp--custom--border--color);
+  --ccc-ct-metric-gap: var(--wp--preset--spacing--40);
+  --ccc-ct-row-gap: var(--wp--preset--spacing--10);
+  --ccc-ct-side-width: 9rem;
+  --ccc-ct-value-width: 8rem;
+  --ccc-ct-bar-height: 0.75rem;
+  --ccc-ct-bar-radius: 999px;
+  --ccc-ct-track: color-mix(in srgb, currentColor 12%, transparent);
+  --ccc-ct-fill-muted: color-mix(in srgb, currentColor 30%, transparent);
+  --ccc-ct-fill: var(--ccc-ct-fill-muted);
+  --ccc-ct-small: var(--wp--preset--font-size--small);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp--style--block-gap);
+  padding: var(--ccc-ct-padding);
+  border: var(--ccc-ct-border-width) var(--ccc-ct-border-style) var(--ccc-ct-border-color);
+  border-radius: var(--wp--custom--radius--default);
+}
+
+.sg-block-comparison-table__metrics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ccc-ct-metric-gap);
+}
+
+.sg-block-comparison-table__metric {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ccc-ct-row-gap);
+}
+
+p.sg-block-comparison-table__name {
+  margin: 0;
+  font-size: var(--ccc-ct-small);
+  font-weight: bold;
+}
+
+/* Fixed side and value columns keep both bars of a pair — and every pair
+   on the card — starting and ending on the same axis. A content-sized
+   column would let one metric's bars start further right than the next
+   one's, which is exactly the comparison the block is making. */
+.sg-block-comparison-table__row {
+  display: grid;
+  grid-template-columns: var(--ccc-ct-side-width) 1fr var(--ccc-ct-value-width);
+  align-items: center;
+  gap: var(--wp--preset--spacing--20);
+  font-size: var(--ccc-ct-small);
+}
+
+/* No track element on this row — drop the middle column so the value
+   stays on the same right-hand axis as the rows that do have bars. */
+.sg-block-comparison-table__row:not(.has-bars) {
+  grid-template-columns: var(--ccc-ct-side-width) 1fr;
+}
+
+.sg-block-comparison-table__side {
+  min-width: 0;
+}
+
+.sg-block-comparison-table__track {
+  height: var(--ccc-ct-bar-height);
+  border-radius: var(--ccc-ct-bar-radius);
+  background: var(--ccc-ct-track);
+  overflow: hidden;
+}
+
+.sg-block-comparison-table__fill {
+  display: block;
+  width: var(--ccc-ct-pct, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ccc-ct-fill);
+}
+
+/* The one color decision in this block. Set as a variable on the ROW so
+   the fill rule above stays a single class and a child can retarget
+   either level — and, like the chart block, `--ccc-ct-fill` is applied
+   via `background`, so a gradient or an image works as well as a color. */
+.sg-block-comparison-table__row.is-ours {
+  --ccc-ct-fill: var(--wp--preset--color--cta);
+}
+.sg-block-comparison-table__row.is-theirs {
+  --ccc-ct-fill: var(--ccc-ct-fill-muted);
+}
+
+.sg-block-comparison-table__value {
+  font-weight: bold;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.sg-block-comparison-table__desc p,
+.sg-block-comparison-table__footnote p {
+  font-size: var(--ccc-ct-small);
+}
+.sg-block-comparison-table__desc :first-child,
+.sg-block-comparison-table__footnote :first-child {
+  margin-block-start: 0;
+}
+.sg-block-comparison-table__desc :last-child,
+.sg-block-comparison-table__footnote :last-child {
+  margin-block-end: 0;
+}
+
+/* Narrow screens can't hold three columns and still leave a readable
+   track, so the side label moves above its own bar and the value stays
+   inline with it — same treatment as the chart block, so the two read
+   consistently when they share a page. */
+@media (max-width: 600px) {
+  .sg-block-comparison-table__row,
+  .sg-block-comparison-table__row:not(.has-bars) {
+    grid-template-columns: 1fr auto;
+    gap: var(--wp--preset--spacing--10);
+  }
+  .sg-block-comparison-table__track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+/* ==================================================================
+ * Stats — block styles (`is-style-pods`, `is-style-strip`).
+ *
+ * Two alternative treatments of the same value+label repeater. Both are
+ * BAND styles: they strip the default card (padding + shadow) off the
+ * stats root, because in both the treatment lives on the cells and the
+ * band behind them belongs to the section. Content rule 17 still holds —
+ * these want a background — it is just the SECTION's background now, not
+ * the block's own shadow.
+ *
+ * HOW THE OVERRIDE SURFACE WORKS. Neither style writes a descendant
+ * selector. The cell plumbing below is unconditional and every property
+ * falls back to a no-op (`0`, `transparent`, `currentColor`); a style
+ * class only redefines variables on the root, and they cascade down. So
+ * a child theme retunes either style — or invents a third — by setting
+ * variables, and never has to out-specify `.is-style-x .child`.
+ *
+ * The `__value` / `__label` classes these rules target are emitted by
+ * blocks/stats/render.php. Both selectors are tag-qualified (0-1-1)
+ * because WP core's `:root :where(p)` font-size and the generated
+ * heading rules are explicit declarations on those elements, which an
+ * inherited value can never beat.
+ *
+ * Both color rules resolve to `currentColor` unless a style sets the
+ * variable, so the DEFAULT stats treatment is untouched. That is only
+ * safe while no palette pins a fixed color on `h3` or `p` in theme.json
+ * — content rule 2 forbids exactly that, and no child does it today. If
+ * one ever did, these two 0-1-1 rules would out-rank its 0-1-0 element
+ * rule and the stat would follow the surface's paired text color
+ * instead, which on a painted band is the behavior you want anyway.
+ *
+ * Knobs (set on `.sg-block-stats`):
+ *   --ccc-stats-cell-align         cell text alignment (default center)
+ *   --ccc-stats-cell-bg            cell background (default transparent)
+ *   --ccc-stats-cell-padding       cell padding (default 0)
+ *   --ccc-stats-cell-radius        cell rounding (default 0)
+ *   --ccc-stats-cell-border-width  cell border width (default 0)
+ *   --ccc-stats-cell-border-color  cell border color (default transparent)
+ *   --ccc-stats-cell-rule-width    hairline BETWEEN cells (default 0)
+ *   --ccc-stats-cell-rule-color    that hairline's color
+ *   --ccc-stats-accent-a / -b      value colors, alternating odd/even
+ *                                  (default currentColor — no cycle)
+ *   --ccc-stats-label-color        caption color (default currentColor)
+ *   --ccc-stats-pod-min            pods: min pod width before the
+ *                                  auto-fit grid reflows (default 10rem)
+ * ================================================================== */
+.sg-block-stat {
+  text-align: var(--ccc-stats-cell-align, center);
+  background: var(--ccc-stats-cell-bg, transparent);
+  padding: var(--ccc-stats-cell-padding, 0);
+  border: var(--ccc-stats-cell-border-width, 0) solid var(--ccc-stats-cell-border-color, transparent);
+  border-radius: var(--ccc-stats-cell-radius, 0);
+}
+
+/* The hairline is drawn once BETWEEN neighbors via the adjacent-sibling
+   selector, so there is no first-child exception to maintain and no
+   double rule where two cells meet. */
+.sg-block-stat + .sg-block-stat {
+  border-inline-start: var(--ccc-stats-cell-rule-width, 0) solid var(--ccc-stats-cell-rule-color, transparent);
+}
+
+/* Alternating accent slots. Both default to currentColor, so the base
+   stats block is untouched and only a style that defines the variables
+   gets a cycle. */
+.sg-block-stat:nth-child(odd) {
+  --ccc-stats-value-color: var(--ccc-stats-accent-a, currentColor);
+}
+.sg-block-stat:nth-child(even) {
+  --ccc-stats-value-color: var(--ccc-stats-accent-b, currentColor);
+}
+
+h3.sg-block-stat__value {
+  color: var(--ccc-stats-value-color, currentColor);
+}
+p.sg-block-stat__label {
+  color: var(--ccc-stats-label-color, currentColor);
+}
+
+/* ── Pods ──────────────────────────────────────────────────────────
+   Translucent bordered pods on a dark band. Both the fill and the
+   border are `currentColor` mixes, which is what makes one rule work on
+   a dark band (white text → white 6% wash) AND a light one (ink text →
+   ink 6% wash) without knowing a single palette slug.
+
+   auto-fit rather than `--block-columns`: this style exists for the
+   6-figure case, where a fixed column count either rags or forces the
+   author to do the arithmetic rule 19 asks for. */
+.sg-block-stats.is-style-pods {
+  --ccc-stats-pod-min: 10rem;
+  --ccc-stats-cell-align: start;
+  --ccc-stats-cell-bg: color-mix(in srgb, currentColor 6%, transparent);
+  --ccc-stats-cell-padding: var(--wp--preset--spacing--30);
+  --ccc-stats-cell-radius: var(--wp--custom--radius--default);
+  --ccc-stats-cell-border-width: var(--wp--custom--border--default-width);
+  --ccc-stats-cell-border-color: color-mix(in srgb, currentColor 16%, transparent);
+  --ccc-stats-accent-a: var(--wp--preset--color--cta);
+  --ccc-stats-accent-b: currentColor;
+  --ccc-stats-label-color: color-mix(in srgb, currentColor 80%, transparent);
+
+  grid-template-columns: repeat(auto-fit, minmax(var(--ccc-stats-pod-min), 1fr));
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* ── Strip ─────────────────────────────────────────────────────────
+   Hairline-separated cells, no gaps: one rule between neighbors and a
+   border around the set. `overflow: hidden` is what lets the outer
+   radius clip the corner cells' square edges. */
+.sg-block-stats.is-style-strip {
+  --ccc-stats-cell-align: start;
+  --ccc-stats-cell-padding: var(--wp--preset--spacing--30);
+  --ccc-stats-cell-rule-width: var(--wp--custom--border--default-width);
+  --ccc-stats-cell-rule-color: color-mix(in srgb, currentColor 15%, transparent);
+  --ccc-stats-label-color: color-mix(in srgb, currentColor 80%, transparent);
+
+  gap: 0;
+  padding: 0;
+  border: var(--wp--custom--border--default-width) solid var(--ccc-stats-cell-rule-color);
+  border-radius: var(--wp--custom--radius--default);
+  overflow: hidden;
+  box-shadow: none;
+}
+
+@media (max-width: 600px) {
+  /* Strip stacks to one column, so the hairline has to move from the
+     inline edge to the block edge or it disappears between rows. Written
+     unconditionally rather than scoped to `.is-style-strip`: every other
+     use of the block leaves `--ccc-stats-cell-rule-width` at 0, so this
+     is a no-op there and no descendant selector is needed. */
+  .sg-block-stats.is-style-strip {
+    grid-template-columns: 1fr;
+  }
+  .sg-block-stat + .sg-block-stat {
+    border-inline-start-width: 0;
+    border-block-start: var(--ccc-stats-cell-rule-width, 0) solid var(--ccc-stats-cell-rule-color, transparent);
+  }
+}
+
+/* STRUCTURAL */
+/* ==================================================================
+ * Yoast FAQ block (`yoast/faq-block`) — FRONT-END styles.
+ *
+ * Rule 3's Foundation half: palette-agnostic, every child gets this.
+ * The theme-specific half lives in each child (trialport's is marked
+ * TRIALPORT-SPECIFIC in sg-trialport/style.css).
+ *
+ * Content rule 24 makes this the house FAQ pattern on every Classic
+ * City site. Yoast registers an `editorStyle` and NOTHING else — it
+ * ships no front-end CSS at all — so without this section an FAQ
+ * renders as an unstyled run of bold text and paragraphs.
+ *
+ * THE MARKUP (verified off a live render, not off Yoast's docs):
+ *
+ *   div.schema-faq.wp-block-yoast-faq-block
+ *     div.schema-faq-section[id]
+ *       strong.schema-faq-question
+ *       p.schema-faq-answer
+ *
+ * Three facts follow from it, and between them they ARE the design:
+ *
+ * 1. THE QUESTION IS A <strong> — an inline element, not a heading and
+ *    not a button. `display: block` is what puts it above its answer at
+ *    all. It is styled to READ as a heading (heading family, one step
+ *    up the size scale) without pretending to BE one: it stays out of
+ *    the document outline, and the schema.org FAQPage data Yoast emits
+ *    is what carries the semantics.
+ *
+ * 2. IT IS AN ACCORDION — and the <strong> above is why the accordion
+ *    could not be built here in CSS. This note used to say a collapsing
+ *    FAQ was off the table, because the only way to get one was JS
+ *    re-parenting Yoast's DOM after paint, and an accordion whose
+ *    trigger is a bare <strong> is worse than no accordion: it is a
+ *    control keyboard and screen-reader users cannot operate. That
+ *    still holds. What changed is where the work happens.
+ *    inc/faq-accordion.php rewrites the RENDER, server-side, so the
+ *    browser is handed real <details>/<summary> markup:
+ *
+ *      details.schema-faq-section[id][open]
+ *        summary.ccc-faq-trigger
+ *          strong.schema-faq-question
+ *        div.ccc-faq-panel > div.ccc-faq-panel__inner
+ *          p.schema-faq-answer
+ *
+ *    The disclosure semantics are the platform's, not ours — implicit
+ *    aria-expanded, keyboard operation and screen-reader support come
+ *    free and correct. assets/faq-accordion.js adds ONLY the open/close
+ *    animation: with JS off every answer still opens, instantly. The
+ *    two element rules below are shared by both modes, so a child that
+ *    sets `add_filter( 'ccc_faq_accordion', '__return_false' )` gets the
+ *    old open Q&A list, still styled.
+ *
+ * 3. EVERY SECTION CARRIES AN id, so questions are deep-linkable.
+ *    `--ccc-faq-scroll-offset` keeps a deep link from parking the
+ *    question underneath a fixed header — a child with one sets it to
+ *    whatever that child calls its header clearance. `:target` also
+ *    gets a faint currentColor wash, so once you land, the row that was
+ *    linked is identifiable instead of anonymous. In accordion mode a
+ *    closed row would swallow the link, so the JS opens the targeted
+ *    row and re-scrolls (the browser aimed at it while it was still
+ *    collapsed, which leaves the landing position short).
+ *
+ * SPECIFICITY NOTE — the one that keeps biting. Both element rules
+ * below are tag-qualified (0-1-1) on purpose. WP core emits
+ * `:root :where(p){font-size: var(--wp--preset--font-size--medium)}`,
+ * which is an explicit declaration ON the paragraph, and an explicit
+ * value always beats one inherited from an ancestor. Setting a
+ * font-size on `.schema-faq` and expecting `.schema-faq-answer` to pick
+ * it up silently does nothing. Anything meant to land on the answer has
+ * to target the `p` itself. (Same trap as the stats block above and
+ * sg-trialport's paper block.)
+ *
+ * EDITOR SAFETY — why the row rules are written `.schema-faq-section[id]`.
+ * blocks.css is ALSO an editor stylesheet (inc/setup.php's
+ * add_editor_style), and unlike every `.sg-block-*` rule in this file
+ * these class names are not ours — Yoast's own editorStyle uses them
+ * too, and leans on `.schema-faq-section{padding-left:32px}` to make a
+ * gutter for the block-mover controls it absolutely positions there.
+ * An unqualified `.schema-faq-section{padding:…}` would take that
+ * gutter away and push Yoast's controls out of their box. The `[id]`
+ * is the discriminator: Yoast's SAVE output puts an id on every
+ * section (that is the deep-link hook), its EDIT component does not —
+ * so `[id]` matches on the front end and never in the editor. The two
+ * element rules need no such guard for a related reason: in the editor
+ * Yoast renders BOTH the question and the answer as `<p>` RichTexts,
+ * and only the saved markup makes the question a `<strong>`, so
+ * `strong.schema-faq-question` is already front-end-only. Do not drop
+ * the `[id]` or the tag qualifiers to "simplify" these selectors.
+ *
+ * HOW THE OVERRIDE SURFACE WORKS — same contract as stats: every knob
+ * is declared once on the root and the plumbing below is unconditional,
+ * so a child retunes the block by redefining variables and never has to
+ * out-specify a descendant selector. Rows meet on a hairline by default
+ * (gap 0 + a rule drawn between neighbours). A child that wants
+ * separate cards instead sets `--ccc-faq-gap`, `--ccc-faq-row-bg`,
+ * `--ccc-faq-row-space-outer` and `--ccc-faq-rule-width: 0`.
+ *
+ * Knobs (set on `.schema-faq`):
+ *   --ccc-faq-gap               space BETWEEN rows (default 0 — rows
+ *                               meet on the hairline)
+ *   --ccc-faq-row-space         vertical padding inside a row
+ *                               (default spacing--30)
+ *   --ccc-faq-row-space-inline  horizontal padding inside a row
+ *                               (default 0, so questions align with the
+ *                               heading above the list)
+ *   --ccc-faq-row-space-outer   vertical padding on the FIRST row's top
+ *                               and the LAST row's bottom (default 0 —
+ *                               the list sits flush in the block rhythm;
+ *                               raise it to --ccc-faq-row-space for cards)
+ *   --ccc-faq-row-bg            row background (default transparent)
+ *   --ccc-faq-row-radius        row rounding (default 0)
+ *   --ccc-faq-row-target-bg     background of the deep-linked row
+ *                               (default: faint currentColor wash)
+ *   --ccc-faq-rule-width        hairline BETWEEN rows (default border token)
+ *   --ccc-faq-rule-color        that hairline's color (default currentColor tint)
+ *   --ccc-faq-scroll-offset     deep-link scroll clearance (default spacing--50)
+ *   --ccc-faq-q-family          question typeface (default heading family)
+ *   --ccc-faq-q-size            question size (default large)
+ *   --ccc-faq-q-weight          question weight (default 700 — <strong>'s own)
+ *   --ccc-faq-q-leading         question line-height (default 1.35)
+ *   --ccc-faq-q-color           question color (default currentColor)
+ *   --ccc-faq-q-gap             space between a question and its answer
+ *                               (default spacing--10)
+ *   --ccc-faq-a-size            answer size (default medium)
+ *   --ccc-faq-a-leading         answer line-height (default 1.6)
+ *   --ccc-faq-a-color           answer color (default currentColor tint)
+ *   --ccc-faq-a-measure         max line length for the answer (default none)
+ *
+ * Knobs that only bite in ACCORDION mode:
+ *   --ccc-faq-marker-glyph      FA codepoint for the marker
+ *                               (default "\f078" — fa-chevron-down)
+ *   --ccc-faq-marker-size       marker size (default .75em, i.e. relative
+ *                               to the question it sits beside)
+ *   --ccc-faq-marker-color      marker color (default currentColor tint)
+ *   --ccc-faq-marker-gap        space between question and marker
+ *                               (default spacing--20)
+ *   --ccc-faq-marker-rotate     how far the marker turns when open
+ *                               (default 180deg — a chevron flipping to
+ *                               point back up. Set 45deg for a plus
+ *                               becoming a cross, 0 to hold it still)
+ *   --ccc-faq-panel-space       space between question and answer once
+ *                               open (default --ccc-faq-q-gap)
+ *   --ccc-faq-motion-duration   open/close time (default 320ms). READ BY
+ *                               THE JS as well as used here, so the two
+ *                               cannot drift — retune it in one place
+ *   --ccc-faq-trigger-hover-bg  hover/focus wash on the row's trigger
+ *                               (default transparent — opt in per child)
+ *
+ * Two defaults that were chosen, not overlooked:
+ *   · SIZE IS THE WEAKEST of the four things separating a question from
+ *     its answer. WP's fluid typography collapses the whole preset
+ *     scale toward its floor on small screens — at 375px `large` and
+ *     `medium` resolve about 0.1px apart — so the hierarchy on mobile
+ *     is carried by family, weight and the answer's color tint, all of
+ *     which hold at every width. That is why the question gets all
+ *     four and not just a size bump.
+ *   · `--ccc-faq-a-measure` defaults to `none` so answers wrap on the
+ *     same measure as every other paragraph on the page. Capping it
+ *     here would make FAQ copy narrower than the prose around it. Set
+ *     it per child if that site wants a tighter measure.
+ * ================================================================== */
+.schema-faq {
+  --ccc-faq-gap: 0;
+  --ccc-faq-row-space: var(--wp--preset--spacing--30);
+  --ccc-faq-row-space-inline: 0;
+  --ccc-faq-row-space-outer: 0;
+  --ccc-faq-row-bg: transparent;
+  --ccc-faq-row-radius: 0;
+  --ccc-faq-row-target-bg: color-mix(in srgb, currentColor 8%, transparent);
+  --ccc-faq-rule-width: var(--wp--custom--border--default-width);
+  --ccc-faq-rule-color: color-mix(in srgb, currentColor 18%, transparent);
+  --ccc-faq-scroll-offset: var(--wp--preset--spacing--50);
+  --ccc-faq-q-family: var(--wp--preset--font-family--heading);
+  --ccc-faq-q-size: var(--wp--preset--font-size--large);
+  --ccc-faq-q-weight: 700;
+  --ccc-faq-q-leading: 1.35;
+  --ccc-faq-q-color: currentColor;
+  --ccc-faq-q-gap: var(--wp--preset--spacing--10);
+  --ccc-faq-a-size: var(--wp--preset--font-size--medium);
+  --ccc-faq-a-leading: 1.6;
+  --ccc-faq-a-color: color-mix(in srgb, currentColor 82%, transparent);
+  --ccc-faq-a-measure: none;
+  --ccc-faq-marker-glyph: "\f078"; /* fa-chevron-down */
+  --ccc-faq-marker-size: .75em;
+  --ccc-faq-marker-color: color-mix(in srgb, currentColor 70%, transparent);
+  --ccc-faq-marker-gap: var(--wp--preset--spacing--20);
+  --ccc-faq-marker-rotate: 180deg;
+  --ccc-faq-panel-space: var(--ccc-faq-q-gap);
+  --ccc-faq-motion-duration: 320ms;
+  --ccc-faq-trigger-hover-bg: transparent;
+
+  /* Grid rather than flow: Yoast serializes whitespace text nodes
+     between the sections, and grid (like flex) does not generate
+     anonymous items for whitespace-only text, so `gap` is honest. */
+  display: grid;
+  gap: var(--ccc-faq-gap);
+}
+
+.schema-faq-section[id] {
+  padding: var(--ccc-faq-row-space) var(--ccc-faq-row-space-inline);
+  background: var(--ccc-faq-row-bg);
+  border-radius: var(--ccc-faq-row-radius);
+  /* Deep-link clearance. Physical `-top` rather than the logical
+     equivalent purely for reach — this one property has to work
+     everywhere the FAQ does, and the block is vertical in every locale
+     we ship. */
+  scroll-margin-top: var(--ccc-faq-scroll-offset);
+}
+
+/* Outer trim: with `--ccc-faq-row-space-outer: 0` the first and last
+   rows sit flush against the list's own box, so the surrounding block
+   rhythm — not doubled-up padding — sets the space above and below. */
+.schema-faq-section[id]:first-child { padding-block-start: var(--ccc-faq-row-space-outer); }
+.schema-faq-section[id]:last-child  { padding-block-end: var(--ccc-faq-row-space-outer); }
+
+/* The hairline is drawn once BETWEEN neighbours, so there is no
+   first-child exception to maintain and no doubled rule where two rows
+   meet. `+` skips the whitespace text nodes for free. */
+.schema-faq-section[id] + .schema-faq-section[id] {
+  border-block-start: var(--ccc-faq-rule-width) solid var(--ccc-faq-rule-color);
+}
+
+/* The row a deep link just landed on. currentColor-derived, so it is a
+   light wash on a dark surface and an ink wash on a light one. */
+.schema-faq-section[id]:target {
+  background: var(--ccc-faq-row-target-bg);
+}
+
+/* THE QUESTION. `display: block` is load-bearing — this is a <strong>,
+   and without it the question and its answer run together inline. */
+strong.schema-faq-question {
+  display: block;
+  margin-block-end: var(--ccc-faq-q-gap);
+  font-family: var(--ccc-faq-q-family);
+  font-size: var(--ccc-faq-q-size);
+  font-weight: var(--ccc-faq-q-weight);
+  line-height: var(--ccc-faq-q-leading);
+  color: var(--ccc-faq-q-color);
+  text-wrap: balance;
+}
+
+/* THE ANSWER. Tag-qualified for the reason in the header note: this IS
+   a <p>, and WP has already put an explicit font-size on it. */
+p.schema-faq-answer {
+  margin: 0;
+  max-inline-size: var(--ccc-faq-a-measure);
+  font-size: var(--ccc-faq-a-size);
+  line-height: var(--ccc-faq-a-leading);
+  color: var(--ccc-faq-a-color);
+}
+
+/* ------------------------------------------------------------------
+   ACCORDION MODE
+   Everything below matches ONLY the markup inc/faq-accordion.php
+   builds. `.ccc-faq-trigger` and `.ccc-faq-panel` do not exist in the
+   flat list and do not exist in the editor, so none of this needs the
+   `[id]` guard the row rules above carry — there is nothing of Yoast's
+   left to collide with.
+   ------------------------------------------------------------------ */
+
+/* THE TRIGGER. `--ccc-faq-q-gap: 0` is the whole trick for spacing:
+   `strong.schema-faq-question` sets its bottom margin from that knob,
+   and zeroing it HERE (rather than adding a second, more specific rule
+   for the strong) closes the gap by inheritance while the panel, which
+   is not a descendant of the trigger, still reads the real value off
+   the root. One declaration, no specificity contest. */
+.ccc-faq-trigger {
+  --ccc-faq-q-gap: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ccc-faq-marker-gap);
+  cursor: pointer;
+  /* Kills the default disclosure triangle everywhere but WebKit... */
+  list-style: none;
+}
+
+/* Hover affordance, off by default. A row spans the full measure, so a
+   wash here is a big block of color — whether that reads as helpful or
+   as noise depends entirely on the site's palette, which is not
+   something the parent gets to decide. Children opt in by setting
+   --ccc-faq-trigger-hover-bg. */
+.ccc-faq-trigger:hover {
+  background: var(--ccc-faq-trigger-hover-bg);
+}
+
+/* ...and this is the WebKit half. It has to be its own rule: an unknown
+   pseudo-element invalidates the entire selector list it appears in,
+   which would silently take the rule above down with it. */
+.ccc-faq-trigger::-webkit-details-marker {
+  display: none;
+}
+
+/* THE MARKER. Webfont FA, so the glyph is a codepoint in `content`
+   rather than an SVG — the kit this theme ships is webfont-only.
+   `font:` is the shorthand FA itself defines (family + the weight that
+   selects the icon style), so font-size MUST come after it or the
+   shorthand resets it back to 1em. `flex-shrink` keeps the chevron from
+   being squeezed by a long question on a narrow screen. */
+.ccc-faq-trigger::after {
+  content: var(--ccc-faq-marker-glyph);
+  font: var(--ccc-fa-font-active, normal 900 1em/1 "Font Awesome 7 Pro");
+  font-size: var(--ccc-faq-marker-size);
+  color: var(--ccc-faq-marker-color);
+  flex: 0 0 auto;
+  rotate: var(--ccc-faq-marker-turn, 0deg);
+  transition: rotate var(--ccc-faq-motion-duration) ease;
+}
+
+/* Marker state as a VARIABLE rather than a second `::after` rule, so a
+   child retunes the rotation through --ccc-faq-marker-rotate and never
+   has to out-specify a pseudo-element.
+
+   `.is-closing` is set by the JS the moment a close begins and removed
+   when it ends. Without it the marker would sit turned until `open`
+   finally comes off at the end of the animation, then snap back — the
+   chevron has to travel WITH the panel, not after it. */
+.schema-faq-section[open] { --ccc-faq-marker-turn: var(--ccc-faq-marker-rotate); }
+.schema-faq-section.is-closing { --ccc-faq-marker-turn: 0deg; }
+
+/* Focus. The trigger is a real <summary>, so it is in the tab order for
+   free; this only makes the ring visible against either polarity.
+   :focus-visible, not :focus — a mouse click should not draw a ring. */
+.ccc-faq-trigger:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+/* THE PANEL. `overflow: hidden` is load-bearing — it is what lets the
+   JS animate height without the answer spilling out of the collapsing
+   box on the way down. */
+.ccc-faq-panel {
+  overflow: hidden;
+}
+
+.ccc-faq-panel__inner {
+  padding-block-start: var(--ccc-faq-panel-space);
+}
+
+/* Reduced motion: the JS bails out and lets the browser toggle natively,
+   so kill the marker's transition to match. Nothing here disables the
+   accordion — collapsing is the point of it; only the movement goes. */
+@media (prefers-reduced-motion: reduce) {
+  .ccc-faq-trigger::after {
+    transition: none;
+  }
+}
+
+/* ==================================================================
+ * Motion primitives — reveal / count / bar.
+ *
+ * The CSS half of assets/reveal-metrics.js. Three data attributes,
+ * emitted server-side by the evidence blocks (card-detail-rows,
+ * chart-horizontal-bars, stat-comparison, stats, proof-band):
+ *
+ *   [data-ccc-count]   a figure that counts up to the number already
+ *                      printed inside it. Nothing here styles it but
+ *                      the digit metrics — the text is real content.
+ *   [data-ccc-bar]     a bar that fills to its share. This file owns
+ *                      the easing; the script only names a width.
+ *   [data-ccc-reveal]  fade + rise, "d1"/"d2"/"d3" to stagger.
+ *
+ * ── html.ccc-motion IS THE WHOLE SAFETY MODEL ──────────────────────
+ *
+ * Every rule that hides or zeroes something is scoped to that class.
+ * inc/enqueue.php prints it in <head>, before first paint, and ONLY
+ * when JavaScript is running and `prefers-reduced-motion` is not set.
+ * So:
+ *
+ *   no JS          → class never lands → nothing was ever hidden, the
+ *                    server's markup stands, the script no-ops.
+ *   reduced motion → identical, by the same route. Not a slower
+ *                    animation: the absence of one. The media query
+ *                    at the bottom repeats the guarantee in case the
+ *                    reader changes the setting after load.
+ *   JS + motion    → initial states apply before paint (no flash of
+ *                    finished content), then the script animates.
+ *
+ * A block adopting this must therefore print the final value and let
+ * these rules hide it — never render an empty element for JS to fill.
+ *
+ * Knobs, all on :root so a child retunes the whole system at once:
+ *   --ccc-motion-duration          count-up time (READ BY THE SCRIPT)
+ *   --ccc-motion-reveal-duration   fade/rise time
+ *   --ccc-motion-bar-duration      bar fill time
+ *   --ccc-motion-stagger           step between d1 / d2 / d3
+ *   --ccc-motion-ease              shared easing curve
+ *   --ccc-motion-rise              how far a revealing element travels
+ * ================================================================== */
+:root {
+  --ccc-motion-duration: 1100ms;
+  --ccc-motion-reveal-duration: 620ms;
+  --ccc-motion-bar-duration: 1100ms;
+  --ccc-motion-stagger: 110ms;
+  --ccc-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ccc-motion-rise: var(--wp--preset--spacing--10);
+}
+
+/* REVEAL. Hidden only while armed — see the safety model above. */
+html.ccc-motion [data-ccc-reveal] {
+  opacity: 0;
+  transform: translateY(var(--ccc-motion-rise));
+  transition:
+    opacity var(--ccc-motion-reveal-duration) ease-out,
+    transform var(--ccc-motion-reveal-duration) var(--ccc-motion-ease);
+}
+
+html.ccc-motion [data-ccc-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Stagger as multiples of one knob rather than three literals, so a
+   child changes the rhythm of every sequence by editing one value. */
+html.ccc-motion [data-ccc-reveal="d1"] { transition-delay: var(--ccc-motion-stagger); }
+html.ccc-motion [data-ccc-reveal="d2"] { transition-delay: calc(var(--ccc-motion-stagger) * 2); }
+html.ccc-motion [data-ccc-reveal="d3"] { transition-delay: calc(var(--ccc-motion-stagger) * 3); }
+
+/* COUNT. Proportional digits change width as they cycle, which makes a
+   counting figure jitter and shoves whatever sits beside it around.
+   Tabular figures are fixed-width, so the box is stable from 0 to the
+   final value. Scoped to the armed state because it is a (small) change
+   to how the number is drawn, and an un-animated page should render
+   exactly as it did before this file existed. */
+html.ccc-motion [data-ccc-count] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* BAR. The width the block computed stays in --ccc-chb-pct and is what
+   an unarmed page draws; armed, we start at zero and let the script
+   name the destination. */
+html.ccc-motion .sg-block-chart-horizontal-bars__fill[data-ccc-bar] {
+  width: 0;
+  transition: width var(--ccc-motion-bar-duration) var(--ccc-motion-ease);
+}
+
+/* THE GUARD. Everything above is decoration; with reduced motion the
+   page must say exactly the same thing, instantly. These repeat the
+   selectors verbatim so they match at equal specificity and win on
+   order — covering the case where the reader turns the setting on
+   after the flag was already printed. */
+@media (prefers-reduced-motion: reduce) {
+  html.ccc-motion [data-ccc-reveal],
+  html.ccc-motion [data-ccc-reveal].is-in {
+    opacity: 1;
+    transform: none;
+    transition: none;
+    transition-delay: 0s;
+  }
+
+  html.ccc-motion .sg-block-chart-horizontal-bars__fill[data-ccc-bar] {
+    width: var(--ccc-chb-pct, 0%);
+    transition: none;
   }
 }

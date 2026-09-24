@@ -1,0 +1,271 @@
+/**
+ * Font Lab overlay — dev-only chrome.
+ *
+ * Deliberately NOT palette-agnostic and deliberately not using theme tokens:
+ * this panel has to stay legible while you are actively breaking the site's
+ * typography, so it hardcodes its own dark UI and its own system font stack. If
+ * it inherited `--wp--preset--font-family--body`, every font you tried would
+ * also restyle the tool you were using to try it.
+ *
+ * Everything is scoped under .ccc-font-lab and z-indexed above the admin bar.
+ */
+
+.ccc-font-lab {
+	--fl-bg: #16161d;
+	--fl-panel: #1e1e28;
+	--fl-line: #32323f;
+	--fl-text: #e9e9f2;
+	--fl-dim: #9a9ab0;
+	--fl-accent: #6ea8fe;
+	--fl-warn: #ffb26e;
+
+	position: fixed;
+	inset-block-end: 24px;
+	inset-inline-end: 24px;
+	z-index: 100000; /* above the WP admin bar (99999) */
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 13px;
+	line-height: 1.4;
+	color: var(--fl-text);
+}
+
+.ccc-font-lab__toggle {
+	width: 48px;
+	height: 48px;
+	border-radius: 50%;
+	border: 1px solid var(--fl-line);
+	background: var(--fl-bg);
+	color: var(--fl-text);
+	cursor: pointer;
+	box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+	display: grid;
+	place-items: center;
+	transition: transform 0.15s ease;
+}
+.ccc-font-lab__toggle:hover {
+	transform: scale(1.06);
+}
+.ccc-font-lab__toggle-glyph {
+	font-size: 17px;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+
+.ccc-font-lab__panel {
+	position: absolute;
+	inset-block-end: 60px;
+	inset-inline-end: 0;
+	width: min(380px, calc(100vw - 32px));
+	max-height: min(620px, calc(100vh - 140px));
+	background: var(--fl-panel);
+	border: 1px solid var(--fl-line);
+	border-radius: 12px;
+	box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+	display: none;
+	flex-direction: column;
+	overflow: hidden;
+}
+.ccc-font-lab.is-open .ccc-font-lab__panel {
+	display: flex;
+}
+
+.ccc-font-lab__head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px 14px;
+	border-block-end: 1px solid var(--fl-line);
+}
+.ccc-font-lab__count {
+	margin-inline-start: auto;
+	color: var(--fl-dim);
+	font-size: 11px;
+}
+.ccc-font-lab__close {
+	background: none;
+	border: 0;
+	color: var(--fl-dim);
+	font-size: 20px;
+	line-height: 1;
+	cursor: pointer;
+	padding: 0 2px;
+}
+.ccc-font-lab__close:hover {
+	color: var(--fl-text);
+}
+
+.ccc-font-lab__roles {
+	display: flex;
+	gap: 4px;
+	padding: 10px 14px 0;
+}
+.ccc-font-lab__role {
+	flex: 1;
+	padding: 7px 4px;
+	background: none;
+	border: 1px solid var(--fl-line);
+	border-radius: 6px;
+	color: var(--fl-dim);
+	cursor: pointer;
+	font-size: 12px;
+	position: relative;
+}
+.ccc-font-lab__role.is-active {
+	color: var(--fl-text);
+	border-color: var(--fl-accent);
+}
+/* A dot marks a role that has been changed from the theme default, so you can
+   see at a glance which of the three you have actually overridden. */
+.ccc-font-lab__role.is-set::after {
+	content: "";
+	position: absolute;
+	inset-block-start: 4px;
+	inset-inline-end: 4px;
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	background: var(--fl-accent);
+}
+
+.ccc-font-lab__controls {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	padding: 10px 14px;
+}
+.ccc-font-lab__search {
+	flex: 1 1 100%;
+	padding: 7px 9px;
+	background: var(--fl-bg);
+	border: 1px solid var(--fl-line);
+	border-radius: 6px;
+	color: var(--fl-text);
+	font: inherit;
+}
+.ccc-font-lab__filter {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	color: var(--fl-dim);
+	font-size: 11.5px;
+	cursor: pointer;
+}
+
+.ccc-font-lab__list {
+	list-style: none;
+	margin: 0;
+	padding: 0 6px 6px;
+	overflow-y: auto;
+	flex: 1;
+}
+.ccc-font-lab__item + .ccc-font-lab__item {
+	border-block-start: 1px solid var(--fl-line);
+}
+.ccc-font-lab__pick {
+	display: grid;
+	gap: 2px;
+	width: 100%;
+	text-align: start;
+	padding: 9px 8px;
+	background: none;
+	border: 0;
+	border-radius: 6px;
+	color: inherit;
+	cursor: pointer;
+}
+.ccc-font-lab__pick:hover {
+	background: var(--fl-bg);
+}
+.ccc-font-lab__item.is-selected .ccc-font-lab__pick {
+	background: var(--fl-bg);
+	box-shadow: inset 2px 0 0 var(--fl-accent);
+}
+.ccc-font-lab__name {
+	font-size: 12px;
+	color: var(--fl-dim);
+}
+/* The sample is the point of the row — it renders in the family itself, so it
+   gets the size. Everything else stays small and out of the way. */
+.ccc-font-lab__sample {
+	font-size: 21px;
+	line-height: 1.25;
+	color: var(--fl-text);
+}
+.ccc-font-lab__meta {
+	font-size: 10.5px;
+	color: var(--fl-dim);
+	text-transform: lowercase;
+}
+/* caps-only and no-accents are the two traps a specimen never reveals. */
+.ccc-font-lab__meta.is-warn {
+	color: var(--fl-warn);
+}
+
+.ccc-font-lab__foot {
+	display: flex;
+	gap: 8px;
+	padding: 10px 14px;
+	border-block-start: 1px solid var(--fl-line);
+}
+.ccc-font-lab__btn {
+	flex: 1;
+	padding: 8px;
+	background: var(--fl-bg);
+	border: 1px solid var(--fl-line);
+	border-radius: 6px;
+	color: var(--fl-text);
+	cursor: pointer;
+	font: inherit;
+	font-size: 12px;
+}
+.ccc-font-lab__btn--primary {
+	border-color: var(--fl-accent);
+}
+.ccc-font-lab__btn:hover {
+	border-color: var(--fl-accent);
+}
+
+.ccc-font-lab__export {
+	max-height: 180px;
+	margin: 0;
+	padding: 10px 14px;
+	overflow: auto;
+	border-block-start: 1px solid var(--fl-line);
+	background: var(--fl-bg);
+	color: var(--fl-dim);
+	font-size: 10.5px;
+	white-space: pre;
+}
+
+.ccc-font-lab__error {
+	padding: 14px;
+	color: var(--fl-warn);
+	line-height: 1.5;
+}
+.ccc-font-lab__error small {
+	color: var(--fl-dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ccc-font-lab__toggle {
+		transition: none;
+	}
+}
+
+/* Running against a production-typed environment via `allow_production` in the
+   child theme. Amber rather than hidden: the point is that a lab left on is
+   something you SEE, not something you have to remember. */
+.ccc-font-lab__toggle.is-flagged {
+	border-color: var(--fl-warn);
+	color: var(--fl-warn);
+}
+.ccc-font-lab__warn {
+	padding: 2px 6px;
+	border: 1px solid var(--fl-warn);
+	border-radius: 4px;
+	color: var(--fl-warn);
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}

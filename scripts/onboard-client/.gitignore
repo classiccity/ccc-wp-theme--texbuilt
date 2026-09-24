@@ -1,3 +1,9 @@
 node_modules/
 state/*.json
 !state/.gitkeep
+
+# Per-machine build state also arrives as directories, not just JSON — e.g.
+# a client's hand-authored child theme staged before its Local site exists
+# (state/{slug}-pending/). Same rule as the JSON: local to this machine,
+# never committed to the parent theme.
+state/*/

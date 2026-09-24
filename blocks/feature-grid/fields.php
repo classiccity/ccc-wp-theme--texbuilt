@@ -30,7 +30,7 @@ acf_add_local_field_group(
 				'label'         => __( 'Desktop Columns', 'classic-city-core' ),
 				'name'          => 'desktop_columns',
 				'type'          => 'select',
-				'choices'       => array( 2 => '2', 3 => '3', 4 => '4', 5 => '5' ),
+				'choices'       => array( 1 => '1', 2 => '2', 3 => '3', 4 => '4', 5 => '5' ),
 				'default_value' => 3,
 				'wrapper'       => array( 'width' => '40' ),
 			),

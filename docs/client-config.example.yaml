@@ -2,8 +2,8 @@
 # Worked example for a fictional client.
 # Schema reference: docs/CHIEF_OF_STUFF_HANDOFF.md
 
-schema_version: 1.0
-generated_at: 2026-05-18T14:30:00Z
+schema_version: 2.0
+generated_at: 2026-07-09T14:30:00Z
 generated_by: chief-of-stuff
 
 client:
@@ -34,9 +34,8 @@ infrastructure:
 
 brand:
   palette:
-    # Use the agent's best read from transcripts / brand-docs. "auto" lets the
-    # parent theme's palette-helper compute the paired text color rather than
-    # locking it in here.
+    # Brand PAIRS only (v2.0). Use the agent's best read from transcripts /
+    # brand-docs; "auto" derives the -alt hover/gradient partner from the base.
     cta: "#FF6B35"
     cta-alt: "auto"
     primary: "#2E86AB"
@@ -45,10 +44,13 @@ brand:
     secondary-alt: "auto"
     tertiary: "#F18F01"
     tertiary-alt: "auto"
-    light: "#F5F5F5"
-    light-alt: "auto"
-    dark: "#1A1A1A"
-    dark-alt: "auto"
+  neutrals:
+    # canvas/panel/ink model — docs/THEME_TOKENS.md. mode picks which end of
+    # the gray-10…100 ramp canvas/panel read from; gray_tint hues the ramp.
+    mode: "light"                     # light | dark (dark = sg-trialport style)
+    gray_tint: null                   # e.g. "#9998B0" for a purple-tinted ramp
+    canvas: "auto"                    # override only if the brand demands it
+    panel: "auto"
   typography:
     heading:
       family: "Inter"
@@ -82,8 +84,8 @@ source_material:
 
 overrides_json_path: null             # optional: absolute path to a JSON file with extra
                                       # theme.json overrides (typeScale, spacing, shadows,
-                                      # layout.contentSize, etc.) passed to
-                                      # `wp style-guide new-client --overrides=...`
+                                      # layout.contentSize, etc.) applied by hand to the
+                                      # child theme.json during Track B
 
 deployment:
   initial_deploy_target: "staging"    # ALWAYS "staging" unless Chris has explicitly

@@ -2,7 +2,7 @@
 /**
  * Hero block render template.
  *
- * Markup contract: BLOCK_MARKUP_CONTRACT.md § Hero (standard).
+ * Field keys: docs/BLOCKS.md (generated registry). This render.php is the canonical markup contract.
  *
  * @package ClassicCityCore
  */
@@ -11,7 +11,9 @@ $image = get_field( 'image' );
 $image = ccc_resolve_image_or_demo( $image, 'hero', 960, 720 );
 $side  = get_field( 'image_side' ) ?: 'right';
 
-$classes = array( 'sg-block-hero' );
+/* `sg-hero` shared "this is the page's hero" marker — appears on
+   every hero variant. Marker-only (no CSS); see CLAUDE.md. */
+$classes = array( 'sg-hero', 'sg-block-hero' );
 if ( $side === 'left' ) {
 	$classes[] = 'image-left';
 }

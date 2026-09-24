@@ -1,0 +1,37 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/highlight-tiles",
+	"title": "Highlight Tiles",
+	"description": "Marketing tile grid — asymmetric bento of headline-led cards over a 3fr/5fr/4fr column system × 3 rows, with per-column tall+short tile pairings. 6-tile uses all three columns; 4-tile drops the rightmost. Per-card palette color and optional image with Background (full-bleed cover + scrim) or Inline (centered, constrained-width) treatment.",
+	"category": "theme",
+	"icon": "grid-view",
+	"keywords": [
+		"highlights",
+		"tiles",
+		"value",
+		"marketing",
+		"pitch"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"align": [
+			"wide",
+			"full"
+		],
+		"anchor": true,
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}

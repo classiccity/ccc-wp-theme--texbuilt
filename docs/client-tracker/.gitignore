@@ -1,0 +1,19 @@
+# The CLIENT example page IS committed. Only the internal build is ignored.
+#
+# Why the client example ships: `build-tracker.py` is the actual template — all
+# the HTML, CSS and JS live inside it as Python strings — but nobody should have
+# to run Python just to see what the thing looks like. Committing the rendered
+# example makes the template reviewable on GitHub, in a fresh clone, or by
+# someone evaluating it rather than building with it. It is fictional
+# placeholder data, so there is nothing to leak.
+#
+# Why the INTERNAL build never ships: this template's one real promise is that
+# internal content cannot reach a client-readable surface. The parent theme is
+# deployed to every client site and its files are publicly fetchable, so a file
+# literally named `*.internal.html` sitting at a public URL on every install
+# contradicts that promise — even with fictional data — and bakes in a habit
+# that will eventually be repeated with real data.
+#
+# A CHILD theme is the same shape: commit your `round-N.html`, because that file
+# IS the deliverable; never commit `*.internal.html`. See README.md.
+*.internal.html

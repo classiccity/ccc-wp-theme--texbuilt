@@ -1,0 +1,43 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/comparison-table",
+	"title": "Comparison Table",
+	"description": "Us against them, one metric at a time. Each row names a metric and draws two paired bars — ours and theirs — scaled against each other rather than against a shared total, so every metric keeps its own units. Bar lengths are derived from the values server-side, and a row whose two values are not in the same unit prints without bars instead of drawing a false picture.",
+	"category": "theme",
+	"icon": "editor-justify",
+	"keywords": [
+		"comparison",
+		"benchmark",
+		"peer average",
+		"versus",
+		"bars"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"anchor": true,
+		"align": [
+			"wide",
+			"full"
+		],
+		"color": {
+			"background": true,
+			"gradients": true,
+			"text": false,
+			"link": false
+		},
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}

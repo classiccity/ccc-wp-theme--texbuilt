@@ -1,0 +1,42 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/hero-3-up",
+	"title": "Hero 3 Up",
+	"description": "Hero with a 2-column intro row (eyebrow + heading on the left, description + button on the right) and a hero image below. Fully field-driven; no Inner Blocks. The wrapper carries .sg-hero so it self-identifies as the page's top section.",
+	"category": "theme",
+	"icon": "align-pull-right",
+	"keywords": [
+		"hero",
+		"intro",
+		"3 up",
+		"image"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"align": [
+			"full"
+		],
+		"anchor": true,
+		"color": {
+			"background": true,
+			"gradients": true,
+			"text": false,
+			"link": false
+		},
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php",
+		"blockVersion": 3
+	}
+}

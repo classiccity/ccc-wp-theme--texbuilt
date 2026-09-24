@@ -1,0 +1,33 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/post-card",
+	"title": "Post Card",
+	"description": "Renders the current Query Loop post (featured image, category, title, excerpt, read-more) using the shared image-card markup. Built to drop into a Query Loop's Post Template — not for standalone use.",
+	"category": "theme",
+	"icon": "excerpt-view",
+	"keywords": [
+		"post",
+		"card",
+		"query",
+		"loop",
+		"blog"
+	],
+	"textdomain": "classic-city-core",
+	"ancestor": [
+		"core/post-template"
+	],
+	"supports": {
+		"html": false,
+		"align": false,
+		"anchor": false,
+		"spacing": {
+			"margin": false,
+			"padding": false
+		}
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}

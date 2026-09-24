@@ -6,6 +6,11 @@
  * scroller (single row, CSS-animated infinite loop). Scroller-only settings
  * (speed, direction, pause-on-hover) are conditional on layout === 'scroller'.
  *
+ * Two appearance toggles apply to both layouts and both default to OFF:
+ *   light_plate — pale panel behind the strip, for dark sections.
+ *   grayscale   — desaturates the marks. This was unconditional CSS until
+ *                 2026-08-21; see usage.md for why it is opt-in now.
+ *
  * @package ClassicCityCore
  */
 
@@ -100,6 +105,26 @@ acf_add_local_field_group(
 						),
 					),
 				),
+			),
+			array(
+				'key'           => 'field_logo_strip_light_plate',
+				'label'         => __( 'Light Plate Behind Logos', 'classic-city-core' ),
+				'name'          => 'light_plate',
+				'type'          => 'true_false',
+				'ui'            => 1,
+				'default_value' => 0,
+				'instructions'  => __( 'Lays a pale panel behind the strip so logos drawn in dark ink on a transparent background stay legible on a dark section. Leave off on light sections — it would just draw a white box for no reason.', 'classic-city-core' ),
+				'wrapper'       => array( 'width' => '50' ),
+			),
+			array(
+				'key'           => 'field_logo_strip_grayscale',
+				'label'         => __( 'Desaturate Logos', 'classic-city-core' ),
+				'name'          => 'grayscale',
+				'type'          => 'true_false',
+				'ui'            => 1,
+				'default_value' => 0,
+				'instructions'  => __( 'Renders every logo in greyscale. Off by default: these are usually registered marks and their colour is part of them. Only turn it on where the mark owners are content with it.', 'classic-city-core' ),
+				'wrapper'       => array( 'width' => '50' ),
 			),
 			array(
 				'key'          => 'field_logo_strip_items',

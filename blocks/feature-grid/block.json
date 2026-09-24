@@ -3,7 +3,7 @@
 	"apiVersion": 3,
 	"name": "classic-city-core/feature-grid",
 	"title": "Feature Grid",
-	"description": "3-column grid of features, each with an icon, heading, and body.",
+	"description": "Grid of features (2-5 columns on desktop), each with an icon, heading, and body.",
 	"category": "theme",
 	"icon": "screenoptions",
 	"keywords": [
@@ -35,7 +35,7 @@
 		"mode": true
 	},
 	"acf": {
-		"mode": "auto",
+		"mode": "preview",
 		"renderTemplate": "render.php"
 	}
 }

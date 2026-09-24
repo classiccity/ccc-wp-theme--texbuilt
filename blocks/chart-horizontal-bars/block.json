@@ -1,0 +1,44 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "classic-city-core/chart-horizontal-bars",
+	"title": "Chart: Horizontal Bars",
+	"description": "A card containing a horizontal bar chart. Each repeater row is a label, a proportional bar, and its value; bar widths are computed server-side as each value's share of the total, so authors type real numbers and never a percentage. Rows can be flagged as highlighted. The block-level color picker paints the card, and its border is auto-derived to that color's palette partner (its “alt”).",
+	"category": "theme",
+	"icon": "chart-bar",
+	"keywords": [
+		"chart",
+		"bar chart",
+		"horizontal bars",
+		"data",
+		"metrics",
+		"distribution"
+	],
+	"textdomain": "classic-city-core",
+	"supports": {
+		"html": false,
+		"anchor": true,
+		"align": [
+			"wide",
+			"full"
+		],
+		"color": {
+			"background": true,
+			"gradients": true,
+			"text": false,
+			"link": false
+		},
+		"spacing": {
+			"padding": true,
+			"margin": [
+				"top",
+				"bottom"
+			]
+		},
+		"mode": true
+	},
+	"acf": {
+		"mode": "preview",
+		"renderTemplate": "render.php"
+	}
+}
